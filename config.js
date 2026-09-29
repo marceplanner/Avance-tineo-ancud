@@ -2,6 +2,6 @@
 // Los encuentras en Supabase → Project Settings → API (o "Data API" / "API Keys").
 // La clave "anon" o "publishable" es pública por diseño: la seguridad la dan las reglas del archivo esquema.sql.
 window.APP_CONFIG = {
-  SUPABASE_URL: "https://TU-PROYECTO.supabase.co",
-  SUPABASE_ANON_KEY: "PEGA-AQUI-TU-CLAVE-ANON-O-PUBLISHABLE"
+  SUPABASE_URL: "https://ilpzvzeywyfunugowrsg.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_pvnlExlspL2VtRoUxLCJLw_nrZ3-h7-"
 };
