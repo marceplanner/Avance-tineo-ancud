@@ -335,6 +335,11 @@ const CRUCE_LAYOUT=[["1CA","1CB"],["2C"],"canal",["3C"],["4CA","4CB"]];
 const CRUCE_VANOS=[["1CA","2C"],["1CB","2C"],["2C","3C"],["3C","4CA"],["3C","4CB"]];
 const LAYERS=[{id:"estado",t:"Estado"},{id:"pic",t:"Pictograma P·A·F·M"},{id:"pre",t:"Preliminares"},{id:"fun",t:"Fundación"},{id:"mon",t:"Montaje"},{id:"ten",t:"Tendido"}];
 const IND=[{k:"per",t:"Perturbación controlada",c:"var(--i-per)"},{k:"acc",t:"Camino de acceso",c:"var(--i-acc)"},{k:"fun",t:"Fundación",c:"var(--i-fun)"},{k:"mon",t:"Montaje",c:"var(--i-mon)"}];
+/* Nombres de las fases del conductor (el código interno A/B/C no cambia para conservar los registros) */
+const FASE_TXT={A:"Inferior",B:"Media",C:"Superior"};
+const faseTxt=f=>FASE_TXT[String(f||"").toUpperCase()]||f;
+function normCfg(c){if(!c||!Array.isArray(c.actividades))return c;
+  return Object.assign({},c,{actividades:c.actividades.map(a=>a&&a.circ?Object.assign({},a,{nombre:`Conductor circuito ${a.circ} · fase ${faseTxt(a.fase).toLowerCase()}`}):a)});}
 const LEGACY={tv_con:{id:"tv_con",g:"_old",peso:0,nombre:"Tendido de conductor (registro previo, sin detalle de fase)"}};
 
 const APP=window.APP_CONFIG||{};
@@ -372,7 +377,7 @@ function mapErr(e){const m=(e&&e.message)||String(e||"");const c=e&&e.code;
 async function withRetry(fn){let d=500;for(let i=0;;i++){try{return await fn();}catch(e){if(i<3&&e&&e.code==="unavailable"){await sleep(d+Math.random()*300);d*=2;continue;}throw e;}}}
 async function loadAll(){
   const {data:cf,error:e1}=await sb.from("config").select("id,data");if(e1)throw mapErr(e1);
-  S.cfg=((cf||[]).find(r=>r.id==="proyecto")||{}).data||null;S.uni=((cf||[]).find(r=>r.id==="unidades")||{}).data||null;
+  S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=((cf||[]).find(r=>r.id==="unidades")||{}).data||null;
   const av=new Map();for(let from=0;;from+=1000){const {data,error}=await sb.from("avance").select("id,data").order("id").range(from,from+999);if(error)throw mapErr(error);for(const r of data)av.set(r.id,r.data);if(data.length<1000)break;}
   S.av=av;S.lastLoad=Date.now();
 }
@@ -380,13 +385,13 @@ function subscribe(){
   if(S.chan)return;
   S.chan=sb.channel("cambios-avance")
     .on("postgres_changes",{event:"*",schema:"public",table:"avance"},p=>{const m=new Map(S.av);if(p.eventType==="DELETE"){if(p.old&&p.old.id)m.delete(p.old.id);}else if(p.new&&p.new.id)m.set(p.new.id,p.new.data);S.av=m;schedule();})
-    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=r.data;if(r&&r.id==="unidades")S.uni=r.data;schedule();})
+    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=r.data;schedule();})
     .subscribe();
 }
 async function rpcAvance(key,base,act,hist){const {error}=await sb.rpc("registrar_avance",{p_id:key,p_base:base,p_act:act,p_hist:hist});if(error)throw mapErr(error);}
 function mergeLocal(key,base,act,hist){const prev=S.av.get(key);const d=Object.assign({},prev||base);d.act=Object.assign({},(prev&&prev.act)||{});d.hist=Object.assign({},(prev&&prev.hist)||{},hist);
   for(const [k,v] of Object.entries(act)){const p=d.act[k];if(!p||(p.fecha||"")<=(v.fecha||""))d.act[k]=v;}const m=new Map(S.av);m.set(key,d);S.av=m;}
-async function setConfig(id,data){const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);if(id==="proyecto")S.cfg=data;else if(id==="unidades")S.uni=data;}
+async function setConfig(id,data){const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=data;}
 async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||{};await setConfig(id,Object.assign({},base,patch));}
 
 /* ---------- modelo ---------- */
@@ -668,7 +673,7 @@ function qeHtml(E,title){return `<div class="qe">${title?`<b class="small">${esc
       <div class="row"><button class="btn primary small" id="q-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar "+E.pct+"%"}</button><button class="btn small ghost" id="q-cancel">Cancelar</button></div></div>`;}
 function condGrid(key,ro){const cs=condActs();if(!cs.length)return "";const D=S.drw;const fases=[...new Set(cs.map(a=>a.fase))];const circs=[...new Set(cs.map(a=>a.circ))].sort();
   const done=cs.filter(a=>cur(key,a.id)>=99.95).length;
-  let h=`<div class="cgrid" role="group" aria-label="Tendido de conductor"><span class="small"><b>Conductor</b><br><span class="muted">${done}/${cs.length} fases</span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(f)}</span>`).join("")}`;
+  let h=`<div class="cgrid" role="group" aria-label="Tendido de conductor"><span class="small"><b>Conductor</b><br><span class="muted">${done}/${cs.length} fases</span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(faseTxt(f))}</span>`).join("")}`;
   for(const c of circs){h+=`<span class="small">Circuito ${esc(c)}</span>`;for(const f of fases){const a=cs.find(x=>x.circ===c&&x.fase===f);if(!a){h+=`<span></span>`;continue;}const v=cur(key,a.id);const ed=D&&D.edit&&D.edit.key===key&&D.edit.aid===a.id;
     h+=`<button class="cf ${v>=55?"hi":""} ${ed?"on":""}" style="--p:${clamp(v,0,100).toFixed(0)}%" data-qe="${esc(key)}|${a.id}" ${ro?"disabled":""} data-tip="${esc(a.nombre+" · peso "+fmtP(num(a.peso,0)))}" aria-label="${esc(a.nombre)} ${Math.round(v)}%">${fmtP(v)}</button>`;}}
   h+=`</div>`;
@@ -762,13 +767,13 @@ function vRegistrar(){
           return `<button class="opt" data-ract="__cond" aria-pressed="${r.act==="__cond"}"><span class="t">Tendido de conductor</span><span class="s num">2 circuitos × 3 fases · peso ${fmtP(w)} · ${fmtP(avgOf(cs.map(c=>c.id)),0)} promedio</span></button>`;}
         return `<button class="opt" data-ract="${a.id}" aria-pressed="${r.act===a.id}"><span class="t">${esc(a.nombre)}</span><span class="s num">Peso ${fmtP(num(a.peso,0))} · ${fmtP(avgOf([a.id]),0)} promedio</span></button>`;}).join("")}</div></div>`;
       if(r.act==="__cond"){const cs=condActs();const fases=[...new Set(cs.map(a=>a.fase))];const circs=[...new Set(cs.map(a=>a.circ))].sort();
-        h+=`<div class="grp"><span class="lbl">¿Qué fases? (puedes marcar varias)</span><div class="cgrid" style="max-width:460px"><span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(f)}</span>`).join("")}
-        ${circs.map(c=>`<button class="btn small ghost" data-rcirc="${esc(c)}">Circuito ${esc(c)}</button>`+fases.map(f=>{const a=cs.find(x=>x.circ===c&&x.fase===f);return a?`<button class="cf ${r.fases.has(a.id)?"sel":""}" style="--p:0%" data-rfase="${a.id}" aria-pressed="${r.fases.has(a.id)}">${r.fases.has(a.id)?"✓ ":""}${esc(c)}-${esc(f)}</button>`:"<span></span>";}).join("")).join("")}</div>
+        h+=`<div class="grp"><span class="lbl">¿Qué fases? (puedes marcar varias)</span><div class="cgrid" style="max-width:460px"><span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(faseTxt(f))}</span>`).join("")}
+        ${circs.map(c=>`<button class="btn small ghost" data-rcirc="${esc(c)}">Circuito ${esc(c)}</button>`+fases.map(f=>{const a=cs.find(x=>x.circ===c&&x.fase===f);return a?`<button class="cf ${r.fases.has(a.id)?"sel":""}" style="--p:0%" data-rfase="${a.id}" aria-pressed="${r.fases.has(a.id)}">${r.fases.has(a.id)?"✓ ":""}C${esc(c)} ${esc(faseTxt(f).toLowerCase())}</button>`:"<span></span>";}).join("")).join("")}</div>
         <div class="row"><button class="btn small ghost" data-rfall="1">Todas las fases</button><button class="btn small ghost" data-rfnone="1">Ninguna</button><span class="small muted">${r.fases.size} de ${cs.length} seleccionadas</span></div></div>`;}}
   }
   h+=`</section>`;
   const aids=regAids(r);
-  const act=r.act==="__cond"?(aids.length?{id:"__cond",nombre:"Tendido de conductor ("+aids.map(id=>{const a=actById(id);return a.circ+"-"+a.fase;}).join(", ")+")"}:null):(r.act&&actById(r.act));
+  const act=r.act==="__cond"?(aids.length?{id:"__cond",nombre:"Tendido de conductor ("+aids.map(id=>{const a=actById(id);return "C"+a.circ+" "+faseTxt(a.fase).toLowerCase();}).join(", ")+")"}:null):(r.act&&actById(r.act));
   const word=r.grp==="tva"?"vanos":r.grp==="cr"?"patas":"estructuras";
   h+=`<section class="step ${act?"":"off"} ${r.sel.size?"done":""}"><div class="step-h"><span class="step-n">3</span><div><h3>¿En qué ${word}?</h3><span class="hint">Toca para seleccionar. La barra azul inferior muestra el avance ya registrado.</span></div></div>`;
   if(act){
