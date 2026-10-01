@@ -396,6 +396,10 @@ const SE_ITEMS=(()=>{const L=[];const add=(cat,n,id,grp,desc,tipo)=>L.push({cat,
   return L;})();
 const seItems=cat=>SE_ITEMS.filter(i=>i.cat===cat);
 const seItem=(cat,id)=>SE_ITEMS.find(i=>i.cat===cat&&i.id===id);
+/* Contratista fijo por sector (manda sobre la columna "Contratista" de la matriz) */
+const CONTR_SECTOR={isla:"Globaltec"};
+function normUni(u){if(!u||!Array.isArray(u.estructuras))return u;
+  return Object.assign({},u,{estructuras:u.estructuras.map(e=>e&&CONTR_SECTOR[e.sec]&&e.contr!==CONTR_SECTOR[e.sec]?Object.assign({},e,{contr:CONTR_SECTOR[e.sec]}):e)});}
 const LEGACY={tv_con:{id:"tv_con",g:"_old",peso:0,nombre:"Tendido de conductor (registro previo, sin detalle de fase)"}};
 
 const APP=window.APP_CONFIG||{};
@@ -434,7 +438,7 @@ function mapErr(e){const m=(e&&e.message)||String(e||"");const c=e&&e.code;
 async function withRetry(fn){let d=500;for(let i=0;;i++){try{return await fn();}catch(e){if(i<3&&e&&e.code==="unavailable"){await sleep(d+Math.random()*300);d*=2;continue;}throw e;}}}
 async function loadAll(){
   const {data:cf,error:e1}=await sb.from("config").select("id,data");if(e1)throw mapErr(e1);
-  S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=((cf||[]).find(r=>r.id==="unidades")||{}).data||null;S.se=((cf||[]).find(r=>r.id==="se")||{}).data||null;
+  S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=normUni(((cf||[]).find(r=>r.id==="unidades")||{}).data||null);S.se=((cf||[]).find(r=>r.id==="se")||{}).data||null;
   const av=new Map();for(let from=0;;from+=1000){const {data,error}=await sb.from("avance").select("id,data").order("id").range(from,from+999);if(error)throw mapErr(error);for(const r of data)av.set(r.id,r.data);if(data.length<1000)break;}
   S.av=av;S.lastLoad=Date.now();
 }
@@ -442,13 +446,13 @@ function subscribe(){
   if(S.chan)return;
   S.chan=sb.channel("cambios-avance")
     .on("postgres_changes",{event:"*",schema:"public",table:"avance"},p=>{const m=new Map(S.av);if(p.eventType==="DELETE"){if(p.old&&p.old.id)m.delete(p.old.id);}else if(p.new&&p.new.id)m.set(p.new.id,p.new.data);S.av=m;schedule();})
-    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=r.data;if(r&&r.id==="se")S.se=r.data;schedule();})
+    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;schedule();})
     .subscribe();
 }
 async function rpcAvance(key,base,act,hist){const {error}=await sb.rpc("registrar_avance",{p_id:key,p_base:base,p_act:act,p_hist:hist});if(error)throw mapErr(error);}
 function mergeLocal(key,base,act,hist){const prev=S.av.get(key);const d=Object.assign({},prev||base);d.act=Object.assign({},(prev&&prev.act)||{});d.hist=Object.assign({},(prev&&prev.hist)||{},hist);
   for(const [k,v] of Object.entries(act)){const p=d.act[k];if(!p||(p.fecha||"")<=(v.fecha||""))d.act[k]=v;}const m=new Map(S.av);m.set(key,d);S.av=m;}
-async function setConfig(id,data){const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=data;else if(id==="se")S.se=data;}
+async function setConfig(id,data){const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;}
 async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||{};await setConfig(id,Object.assign({},base,patch));}
 
 /* ---------- modelo ---------- */
@@ -1090,7 +1094,7 @@ function parseGeneral(txt){
   for(let i=hi+1;i<rows.length;i++){const r=rows[i];const id=(r[0]||"").trim();const zona=(r[2]||"").trim();const sec=ZONA[zona.toLowerCase()];
     if(!id||!sec||seen.has(id))continue;seen.add(id);
     const fund=sec==="cruce"?null:fundOf(r[55]);
-    est.push({id,sec,zona,torre:(r[1]||"").trim(),tt:(r[3]||"").trim(),tipo:(r[4]||"").trim().replace("Suspension","Suspensión"),contr:(r[5]||"").trim(),fund});
+    est.push({id,sec,zona,torre:(r[1]||"").trim(),tt:(r[3]||"").trim(),tipo:(r[4]||"").trim().replace("Suspension","Suspensión"),contr:CONTR_SECTOR[sec]||(r[5]||"").trim(),fund});
     const a={};for(const [c,aid] of Object.entries(COLS_G)){const ci=+c;if(sec==="cruce"&&ci>=12&&ci<=40)continue;const v=pv(r[ci]);if(v>0)a[aid]=v;}
     vals.set(kE(sec,id),{meta:{sector:sec,unidad:id,kind:"est"},acts:a});
     if(sec!=="cruce"){const get=(k,x)=>a[x]||0;let f=0;for(const g of FUNG)f=Math.max(f,gPct(get,"",g));const m=gPct(get,"","mon");chk.n++;if(Math.abs(f-pv(r[42]))>0.6||Math.abs(m-pv(r[48]))>0.6)chk.bad.push(id);}
