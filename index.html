@@ -303,26 +303,6 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .tabs2 button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* Subestación Tineo */
-.seplan{border:2px dashed var(--line-2);border-radius:6px;padding:14px;display:grid;gap:14px;grid-template-columns:repeat(6,minmax(0,1fr));background:repeating-linear-gradient(45deg,var(--surface-2) 0 10px,var(--surface) 10px 20px)}
-.zone{grid-column:span var(--span,2);background:var(--surface);border:1px solid var(--line-2);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.zone .zh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--f-disp)}
-.zone.done{border-color:var(--good-ink);box-shadow:inset 0 0 0 1px var(--good-ink)}
-.fgrid{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end}
-.fgrid.g3{display:grid;grid-template-columns:repeat(3,62px);justify-content:center}
-.portal{display:flex;align-items:center;border:1px dashed var(--line-2);border-radius:4px;padding:4px 6px;gap:0}
-.portal .beam{width:26px;height:4px;background:var(--ink-2);margin-top:-22px}
-.portal .pl{font-size:.66rem;color:var(--muted);font-family:var(--f-disp);text-transform:uppercase;letter-spacing:.06em;writing-mode:vertical-rl;transform:rotate(180deg);margin-right:4px}
-.fd{border:0;background:none;padding:3px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:4px;width:62px}
-.fd:hover{background:var(--surface-2)}
-.fd.sel{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
-.fd .fq{width:44px;height:44px;border:2px solid var(--line-2);border-radius:4px;background:linear-gradient(to top,var(--fill-ok) var(--p),var(--surface) var(--p));display:grid;place-items:center;font-weight:700;color:#fff;font-size:1.25rem;position:relative}
-.fd .fq::after{content:"";position:absolute;inset:9px;border:1.5px solid var(--line-2);border-radius:2px;opacity:.7}
-.fd.ok .fq{background:var(--good);border-color:var(--good-ink)}
-.fd.ok .fq::after{border-color:rgba(255,255,255,.55)}
-.fd .fl{font-family:var(--f-mono);font-size:.66rem;font-weight:600;line-height:1.1;text-align:center}
-.fd .fp{font-family:var(--f-mono);font-size:.64rem;color:var(--muted)}
-.fd.ok .fp{color:var(--good-ink);font-weight:600}
-@media (max-width:760px){.seplan{grid-template-columns:1fr}.zone{grid-column:auto}}
 .plan-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .plan-svg{display:block;width:100%;height:auto;min-width:720px}
 .plan-svg .ax{stroke:var(--line-2);stroke-width:1;stroke-dasharray:12 5 2 5}
@@ -484,6 +464,10 @@ const grpActs=g=>g&&g.indexOf("se_")===0?SE_ACTS[g.slice(3)]||[]:actsG(g);
 const secName=id=>id==="se"?"Subestación Tineo":((secById(id)||{}).nombre||id);
 /* --- Subestación: cálculo --- */
 const kSE=(cat,id)=>"se__"+cat+"__"+safeId(id);
+const PESO_SE_DEF=10;
+const pesoSE=()=>num(S.cfg&&S.cfg.pesoSE,PESO_SE_DEF);
+/* Participación real de un peso en el global (los pesos se normalizan aunque no sumen 100) */
+function pesoShare(w){let W=pesoSE();for(const s of secs())if(estr(s.id).length)W+=s.peso;return W?w/W*100:0;}
 function sePesos(){const p=(S.se&&S.se.pesos)||{};return Object.fromEntries(SE_CATS.map(c=>[c.id,num(p[c.id],SE_PESOS_DEF[c.id])]));}
 function seItemPct(get,it){let W=0,P=0;for(const a of SE_ACTS[it.cat]){W+=a.peso;P+=a.peso*get(kSE(it.cat,it.id),a.id);}return W?P/W:0;}
 function seCalc(get){const out={cat:{},grp:{},byI:{},total:0};let W=0,P=0;const pes=sePesos();
@@ -543,7 +527,11 @@ function calcSec(get,sec){
   let W=0,P=0;for(const et of etapas()){const w=num(et.peso,0);W+=w;P+=w*(stg[et.id]||0);}
   return {stg,pct:W?P/W:0,cnt,byE,byV,ind,n:es.length,nv:vs.length,vdone,has:es.length>0};
 }
-function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of secs()){const r=calcSec(get,s.id);out.sec[s.id]=r;if(r.has){W+=s.peso;P+=s.peso*r.pct;}}out.total=W?P/W:0;return out;}
+function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of secs()){const r=calcSec(get,s.id);out.sec[s.id]=r;if(r.has){W+=s.peso;P+=s.peso*r.pct;}}
+  /* La subestación Tineo es parte del proyecto: entra al global con su propio peso */
+  const se=seCalc(get);out.se=se;const ws=pesoSE();if(ws>0){W+=ws;P+=ws*se.total;}
+  out.lineaPct=(()=>{let w=0,p=0;for(const s of secs()){const r=out.sec[s.id];if(r.has){w+=s.peso;p+=s.peso*r.pct;}}return w?p/w:0;})();
+  out.total=W?P/W:0;return out;}
 
 function unitLabel(d){if(!d)return "";if(d.kind==="se")return (SE_CAT_NAME[d.cat]||"S/E")+" "+d.unidad;if(d.kind==="vano")return "Vano "+d.unidad;return d.unidad+(d.pata?" · pata "+d.pata:"");}
 function allHist(filter){const out=[];for(const [k,d] of S.av){if(!d||(filter&&!filter(k,d)))continue;for(const [hid,h] of Object.entries(d.hist||{})){if(h&&h.a)out.push(Object.assign({hid,k,sec:d.sector,uni:d.unidad,lab:unitLabel(d)},h));}}return out.sort((a,b)=>(b.ts||0)-(a.ts||0));}
@@ -578,7 +566,7 @@ function renderChrome(){
 }
 function render(){
   if(S.state==="ok"&&cfgOk())S.P=progress(cur);
-  if(S.state==="ok")S.SE=seCalc(cur);
+  if(S.state==="ok")S.SE=(cfgOk()&&S.P&&S.P.se)||seCalc(cur);
   renderChrome();
   const m=$("#main");const ae=document.activeElement;const fid=ae&&ae.id?ae.id:null;const selS=fid&&ae.selectionStart!=null?ae.selectionStart:null;
   const scrollDb=$("#drawer .db")?$("#drawer .db").scrollTop:0;
@@ -655,8 +643,9 @@ function vResumen(){
    <div class="htxt"><div class="spread"><h2>Avance físico ${sc==="total"?"del proyecto":"· "+esc(secById(sc).nombre)}</h2><div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">Proyecto</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}"><span class="dot" style="--c:${secColor(s.id)}"></span>${esc(s.nombre)}</button>`).join("")}</div></div>
    <div class="stk" data-tip="${cnt.ter} terminadas · ${cnt.eje} en ejecución · ${cnt.sin} sin iniciar">${stkSeg(cnt,N)}</div>
    <div class="legend"><span><i class="sw" style="--c:var(--good)"></i>Terminadas <b class="num">${cnt.ter}</b></span><span><i class="sw" style="--c:var(--eje)"></i>En ejecución <b class="num">${cnt.eje}</b></span><span><i class="sw o"></i>Sin iniciar <b class="num">${cnt.sin}</b></span><span class="muted">de ${N} estructuras</span></div>
-   <div class="minis">${secs().map(s=>{const r=P.sec[s.id];return `<button class="mini" data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(s.nombre)}: ${fmtP(r.pct,1)}\nPeso en el proyecto ${fmtP(s.peso)}">${ring(r.pct,62,secColor(s.id))}<span class="mt"><b>${esc(s.nombre)}</b><span>${r.n} estructuras · ${r.cnt.ter} terminadas</span><span>${r.nv} vanos · ${r.vdone} tendidos</span></span></button>`;}).join("")}</div></div></section>`;
-  {const R=S.SE;h+=`<section class="panel"><button class="mini" data-tab="se" style="--c:var(--c-se);width:100%;border:0;padding:0" data-tip="Ver el detalle de la subestación">${ring(R.total,62,"var(--c-se)")}<span class="mt" style="flex:1"><b>Subestación Tineo · ${SE_CONTRATISTA}</b><span>${SE_CATS.map(c=>`${c.nombre} ${fmtP(R.cat[c.id].pct)} (${R.cat[c.id].done}/${R.cat[c.id].n})`).join(" · ")}</span></span><span class="small muted">Ver →</span></button></section>`;}
+   ${sc==="total"?`<p class="small muted">Global ponderado: ${secs().map(s=>`${esc(s.nombre)} ${fmtP(pesoShare(s.peso))}`).join(" · ")} · S/E Tineo ${fmtP(pesoShare(pesoSE()))}. Línea sola: <b class="num">${fmtP(P.lineaPct,1)}</b>.</p>`:""}
+   <div class="minis" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${secs().map(s=>{const r=P.sec[s.id];return `<button class="mini" data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(s.nombre)}: ${fmtP(r.pct,1)}\nPeso en el global ${fmtP(pesoShare(s.peso))}">${ring(r.pct,62,secColor(s.id))}<span class="mt"><b>${esc(s.nombre)}</b><span>${r.n} estructuras · ${r.cnt.ter} terminadas</span><span>${r.nv} vanos · ${r.vdone} tendidos</span></span></button>`;}).join("")}
+   ${(()=>{const R=S.SE;return `<button class="mini" data-tab="se" style="--c:var(--c-se)" data-tip="Subestación Tineo: ${fmtP(R.total,1)}\nPeso en el global ${fmtP(pesoShare(pesoSE()))}\nToca para ver el detalle">${ring(R.total,62,"var(--c-se)")}<span class="mt"><b>S/E Tineo · ${SE_CONTRATISTA}</b><span>Fundaciones ${R.cat.fun.done}/${R.cat.fun.n} listas</span><span>Estructuras ${R.cat.est.done}/${R.cat.est.n} terminadas</span></span></button>`;})()}</div></div></section>`;
   h+=`<div class="grid2"><section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades</span></div>`;
   if(sc==="total")h+=`<div class="legend">${secs().map(s=>`<span><i class="sw" style="--c:${secColor(s.id)}"></i>${esc(s.nombre)}</span>`).join("")}</div>`;
   h+=`<div class="hbars">`;
@@ -758,13 +747,41 @@ function vCruce(){
 }
 
 /* ---------- Subestación Tineo ---------- */
-function seShort(it){return it.id.replace(/^N[45]-/,"");}
-function seFd(it){const p=seP(it);const ok=p>=99.95;const sel=S.drw&&S.drw.se&&S.drw.cat===it.cat&&S.drw.id===it.id;
-  const tip=`${it.desc} ${it.id}${it.tipo?" · tipo "+it.tipo:""}\nAvance ${fmtP(p,1)}${ok?" · LISTA":""}\nContratista ${SE_CONTRATISTA}`;
-  return `<button class="fd ${ok?"ok":""} ${sel?"sel":""}" data-ose="${it.cat}|${esc(it.id)}" data-tip="${esc(tip)}" aria-label="${esc(it.id+" "+Math.round(p)+"%")}"><span class="fq" style="--p:${clamp(p,0,100).toFixed(0)}%">${ok?"✓":""}</span><span class="fl">${esc(seShort(it))}</span><span class="fp">${fmtP(p)}</span></button>`;}
-function seTw(it){const p=seP(it);const ok=p>=99.95;const sel=S.drw&&S.drw.se&&S.drw.cat===it.cat&&S.drw.id===it.id;
-  const tip=`${it.desc} ${it.id}\nAvance ${fmtP(p,1)}${ok?" · TERMINADA":""}\nContratista ${SE_CONTRATISTA}`;
-  return `<button class="fd ${ok?"ok":""} ${sel?"sel":""}" data-ose="${it.cat}|${esc(it.id)}" data-tip="${esc(tip)}" aria-label="${esc(it.id+" "+Math.round(p)+"%")}">${towerSvg(ok?"var(--good)":fillPct(p),it.grp==="pil"||it.grp==="vig",false)}<span class="fl">${esc(it.id)}</span><span class="fp">${fmtP(p)}</span></button>`;}
+/* --- Planos SVG de la S/E: piezas comunes --- */
+function planCell(it,x,y,w,h,mode,lab,ly){
+  const p=seP(it);const ok=p>=99.95;const ph=h*clamp(p,0,100)/100;const sel=S.drw&&S.drw.se&&S.drw.cat===it.cat&&S.drw.id===it.id;
+  const tip=`${it.desc} ${it.id}${it.tipo?" · tipo "+it.tipo:""}\nAvance ${fmtP(p,1)}${ok?(it.cat==="fun"?" · LISTA":" · TERMINADA"):""}\nContratista ${SE_CONTRATISTA}`;
+  lab=lab||it.id;
+  let g=`<g class="sef ${ok?"ok":""} ${sel?"sel":""}" data-ose="${it.cat}|${esc(it.id)}" role="button" tabindex="0" aria-label="${esc(it.id+", "+Math.round(p)+"%")}" data-tip="${esc(tip)}">`;
+  g+=`<rect class="o" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
+  if(ph>0&&!ok)g+=`<rect class="fl" x="${x}" y="${(y+h-ph).toFixed(1)}" width="${w}" height="${ph.toFixed(1)}"/>`;
+  g+=`<rect class="o2" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
+  if(mode==="big")g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+12}" text-anchor="middle" style="font-size:34px">${ok?"✓":fmtP(p)}</text><text class="lb" x="${x+10}" y="${y+20}" style="font-size:14px">${esc(lab)}</text>`;
+  else if(mode==="bar"){const yy=ly||y+h/2;g+=`<text class="lb" x="${x+w+8}" y="${yy}" style="font-size:13px">${esc(lab)}</text><text class="pt" x="${x+w+8}" y="${yy+15}" style="font-size:11px">${ok?"✓ 100%":fmtP(p)}</text>`;}
+  else if(mode==="tiny"){if(ok)g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" style="font-size:11px">✓</text>`;g+=`<text class="lb" x="${x+w/2}" y="${y+h+13}" text-anchor="middle" style="font-size:10.5px">${esc(lab)}</text>`;}
+  else{const fs=w<40?10:Math.min(20,Math.round(w/5));g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+fs/2-1}" text-anchor="middle" style="font-size:${ok?fs+5:fs}px">${ok?"✓":fmtP(p)}</text><text class="lb" x="${x+w/2}" y="${y+h+15}" text-anchor="middle">${esc(lab)}</text>`;}
+  return g+`</g>`;
+}
+const planAxes=(H,V,x1,x2,y1,y2)=>H.map(y=>`<line class="ax" x1="${x1}" x2="${x2}" y1="${y}" y2="${y}"/>`).join("")+V.map(x=>`<line class="ax" x1="${x}" x2="${x}" y1="${y1}" y2="${y2}"/>`).join("");
+const planNorth=(x,y)=>`<g transform="translate(${x},${y})" aria-hidden="true"><circle r="22" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5"/><path d="M0 -15 L8 12 L0 6 L-8 12 Z" style="fill:var(--ink)"/><text y="-29" text-anchor="middle" class="zt" style="fill:var(--ink)">N</text></g>`;
+const planGrpStats=(cat,grps)=>`<div class="grpstats">${grps.map(g=>{const x=S.SE.grp[cat+"|"+g]||{n:0,done:0,s:0};const d=x.n&&x.done===x.n;return `<span class="${d?"done":""}">${esc(SE_GRP[g])}: ${x.done}/${x.n}${d?" ✓":""} · ${fmtP(x.n?x.s/x.n:0)}</span>`;}).join("")}</div>`;
+/* Plano de estructuras metálicas (posiciones según pictograma de referencia). [x, y, ancho, alto, modo, y de etiqueta] */
+const SE_PLAN_EST={"ES2-1":[267,370,32,36],"ES2-2":[267,446,32,36],"ES2-3":[267,522,32,36],"ES2-4":[267,693,32,36],"ES2-5":[267,769,32,36],"ES2-6":[267,845,32,36],
+  "ES3-1":[551,446,32,36],"ES3-2":[478,522,32,36],"ES3-3":[551,522,32,36],"ES3-4":[551,769,32,36],"ES3-5":[478,845,32,36],"ES3-6":[551,845,32,36],
+  "V01-1":[357,350,14,228,"bar",468],"V01-2":[357,673,14,227,"bar",792],"V01-3":[708,350,14,228,"bar",378],"V01-4":[708,673,14,227,"bar",884],"V01-5":[1047,350,14,228,"bar",468],"V01-6":[1047,673,14,227,"bar",792],
+  "ES1-1":[598,398,279,133,"big"],"ES1-2":[598,721,279,132,"big"],
+  "P01-1":[315,578,97,95],"P01-2":[664,578,100,95],"P02":[1006,578,97,95],
+  "ES4-1":[162,550,72,123],"ES4-2":[162,863,72,137]};
+function seEstPlanSvg(){
+  let g=planAxes([388,464,540,626,711,787,863,948],[283,364,494,567,623,690,715,740,1054],200,1150,262,1135);
+  g+=`<rect class="cerco" x="226" y="302" width="1062" height="813" rx="4"/><text class="zt" x="1280" y="1105" text-anchor="end">Patio 220 kV · cerco</text>`+planNorth(1250,290);
+  for(const [x,y,w,h] of [[315,255,97,95],[664,255,100,95],[1006,255,97,95],[315,900,97,100],[664,900,100,100],[1006,900,97,100]])g+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" style="fill:none;stroke:var(--line-2);stroke-width:1.2;stroke-dasharray:6 4"/>`;
+  g+=`<text class="zt" x="198" y="540" text-anchor="middle">Caseta N4</text><text class="zt" x="198" y="853" text-anchor="middle">Caseta N5</text>`;
+  const order=["vig","pil","gis","pra","ais","n4","n5"];
+  for(const grp of order)for(const it of seItems("est").filter(i=>i.grp===grp)){const pos=SE_PLAN_EST[it.id];if(!pos)continue;const [x,y,w,h,mode,ly]=pos;
+    g+=planCell(it,x,y,w,h,mode||"box",mode==="big"?it.id+" · Equipo GIS":it.id,ly);}
+  return `<div class="plan-wrap"><svg class="plan-svg" viewBox="80 238 1250 910" role="img" aria-label="Plano de estructuras metálicas del patio 220 kV de la S/E Tineo">${g}</svg></div>`;
+}
 /* Plano de fundaciones del patio 220 kV (posiciones según pictograma de referencia; unidades del dibujo) */
 const SE_PLAN={"F2.1":[288,349,34,36],"F2.2":[288,421,34,36],"F2.3":[288,493,34,36],"F2.4":[288,654,34,36],"F2.5":[288,726,34,36],"F2.6":[288,798,34,36],
   "F3.1":[585,421,34,36],"F3.2":[509,493,34,36],"F3.3":[585,493,34,36],"F3.4":[585,726,34,36],"F3.5":[509,798,34,36],"F3.6":[585,798,34,36],
@@ -772,30 +789,15 @@ const SE_PLAN={"F2.1":[288,349,34,36],"F2.2":[288,421,34,36],"F2.3":[288,493,34,
   "F1B.1":[339,547,42,89],"F1B.2":[398,547,42,89],"F1A.2":[704,547,45,89],"F1A.1":[766,547,43,89],"F1.2":[1062,547,43,89],"F1.1":[1122,547,43,89]};
 (()=>{const px=[178,237],py4=[521,565,619],py5=[816,870,927];for(let i=0;i<6;i++){SE_PLAN["N4-Pila "+(i+1)]=[px[i%2],py4[Math.floor(i/2)],17,17];SE_PLAN["N5-Pila "+(i+1)]=[px[i%2],py5[Math.floor(i/2)],17,17];}})();
 function sePlanSvg(){
-  const H=[367,439,511,592,672,744,816,897],V=[305,390,526,602,662,734,758,783,1114];
-  let g=H.map(y=>`<line class="ax" x1="222" x2="1215" y1="${y}" y2="${y}"/>`).join("")+V.map(x=>`<line class="ax" x1="${x}" x2="${x}" y1="268" y2="1000"/>`).join("");
-  g+=`<rect class="cerco" x="246" y="292" width="1113" height="696" rx="4"/>`;
-  g+=`<text class="zt" x="1352" y="980" text-anchor="end">Patio 220 kV · cerco</text>`;
-  g+=`<g transform="translate(1318,330)" aria-hidden="true"><circle r="22" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5"/><path d="M0 -15 L8 12 L0 6 L-8 12 Z" style="fill:var(--ink)"/><text y="-29" text-anchor="middle" class="zt" style="fill:var(--ink)">N</text></g>`;
+  let g=planAxes([367,439,511,592,672,744,816,897],[305,390,526,602,662,734,758,783,1114],222,1215,268,1000);
+  g+=`<rect class="cerco" x="246" y="292" width="1113" height="696" rx="4"/><text class="zt" x="1352" y="980" text-anchor="end">Patio 220 kV · cerco</text>`+planNorth(1318,330);
   g+=`<text class="zt" x="211" y="505" text-anchor="middle">Caseta N4</text><text class="zt" x="211" y="800" text-anchor="middle">Caseta N5</text>`;
-  for(const it of seItems("fun")){const pos=SE_PLAN[it.id];if(!pos)continue;const [x,y,w,h]=pos;
-    const p=seP(it);const ok=p>=99.95;const ph=h*clamp(p,0,100)/100;const sel=S.drw&&S.drw.se&&S.drw.cat==="fun"&&S.drw.id===it.id;
-    const big=w>200,tiny=w<20;const lab=tiny?it.id.replace(/^N[45]-Pila /,"P"):it.id;
-    const tip=`${it.desc} ${it.id}${it.tipo?" · tipo "+it.tipo:""}\nAvance ${fmtP(p,1)}${ok?" · LISTA":""}\nContratista ${SE_CONTRATISTA}`;
-    g+=`<g class="sef ${ok?"ok":""} ${sel?"sel":""}" data-ose="fun|${esc(it.id)}" role="button" tabindex="0" aria-label="${esc(it.id+", "+Math.round(p)+"%")}" data-tip="${esc(tip)}">`;
-    g+=`<rect class="o" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
-    if(ph>0&&!ok)g+=`<rect class="fl" x="${x}" y="${(y+h-ph).toFixed(1)}" width="${w}" height="${ph.toFixed(1)}"/>`;
-    g+=`<rect class="o2" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
-    if(big){g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+12}" text-anchor="middle" style="font-size:34px">${ok?"✓":fmtP(p)}</text><text class="lb" x="${x+10}" y="${y+20}" style="font-size:14px">${esc(it.id)} · Equipo HIS</text>`;}
-    else if(!tiny){g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" style="font-size:${ok?15:10}px">${ok?"✓":fmtP(p)}</text><text class="lb" x="${x+w/2}" y="${y+h+15}" text-anchor="middle">${esc(lab)}</text>`;}
-    else{if(ok)g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" style="font-size:11px">✓</text>`;g+=`<text class="lb" x="${x+w/2}" y="${y+h+13}" text-anchor="middle" style="font-size:10.5px">${esc(lab)}</text>`;}
-    g+=`</g>`;}
+  for(const it of seItems("fun")){const pos=SE_PLAN[it.id];if(!pos)continue;const [x,y,w,h]=pos;const mode=w>200?"big":w<20?"tiny":"box";
+    g+=planCell(it,x,y,w,h,mode,mode==="big"?it.id+" · Equipo HIS":mode==="tiny"?it.id.replace(/^N[45]-Pila /,"P"):it.id);}
   return `<div class="plan-wrap"><svg class="plan-svg" viewBox="100 255 1290 760" role="img" aria-label="Plano de fundaciones del patio 220 kV de la S/E Tineo">${g}</svg></div>`;
 }
-function seZone(cat,grp,span,body){const g=(S.SE.grp[cat+"|"+grp])||{n:0,done:0,s:0};const done=g.n&&g.done===g.n;
-  return `<div class="zone ${done?"done":""}" style="--span:${span}"><div class="zh"><b>${esc(SE_GRP[grp])}</b><span class="small ${done?"":"muted"}" style="${done?"color:var(--good-ink);font-weight:600":""}">${g.done}/${g.n} ${done?"✓":"listas"} · ${fmtP(g.n?g.s/g.n:0)}</span></div>${body}</div>`;}
 function vSE(){
-  const R=S.SE;const pes=sePesos();const F=id=>seItem("fun",id);
+  const R=S.SE;const pes=sePesos();
   let h=`<div class="stack">`;
   h+=`<section class="panel hero">${ring(R.total,172,"var(--c-se)",fmtP(R.total,1),"S/E Tineo")}
    <div class="htxt"><div class="spread"><h2>Subestación Tineo · Nueva Puerto Montt</h2><span class="chip" style="font-size:.85rem">Contratista <b class="mono" style="color:var(--ink)">${SE_CONTRATISTA}</b></span></div>
@@ -806,12 +808,13 @@ function vSE(){
   h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Pictograma de fundaciones</h2><span class="small"><b class="num" style="color:var(--good-ink)">${fc.done}</b> de ${fc.n} fundaciones listas · ${fmtP(fc.pct,1)}</span></div>
   <div class="legend"><span><i class="sw o"></i>Sin iniciar</span><span><i class="sw" style="--c:var(--fill-ok)"></i>Se va llenando según el avance</span><span><i class="sw" style="--c:var(--good)"></i>Lista (100%)</span><span class="muted">Plano del patio 220 kV. Toca una fundación para ver el detalle y registrar.</span></div>
   ${sePlanSvg()}
-  <div class="grpstats">${["mar","pra","ais","his","n4","n5"].map(g=>{const x=R.grp["fun|"+g]||{n:0,done:0,s:0};const d=x.n&&x.done===x.n;return `<span class="${d?"done":""}">${esc(SE_GRP[g])}: ${x.done}/${x.n}${d?" ✓":""} · ${fmtP(x.n?x.s/x.n:0)}</span>`;}).join("")}</div></section>`;
+  ${planGrpStats("fun",["mar","pra","ais","his","n4","n5"])}</section>`;
   // Estructuras
   const ec=R.cat.est;
-  h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Estructuras</h2><span class="small"><b class="num" style="color:var(--good-ink)">${ec.done}</b> de ${ec.n} terminadas · ${fmtP(ec.pct,1)}</span></div>
-  <div class="seplan">${["pil","vig","gis","pra","ais"].map(g=>seZone("est",g,g==="vig"||g==="pra"||g==="ais"?3:g==="pil"?2:1,`<div class="fgrid">${seItems("est").filter(i=>i.grp===g).map(seTw).join("")}</div>`)).join("")}
-   ${seZone("est","n4",1,`<div class="fgrid">${seItems("est").filter(i=>i.grp==="n4").map(seTw).join("")}</div>`)}${seZone("est","n5",1,`<div class="fgrid">${seItems("est").filter(i=>i.grp==="n5").map(seTw).join("")}</div>`)}</div></section>`;
+  h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Pictograma de estructuras metálicas</h2><span class="small"><b class="num" style="color:var(--good-ink)">${ec.done}</b> de ${ec.n} terminadas · ${fmtP(ec.pct,1)}</span></div>
+  <div class="legend"><span><i class="sw o"></i>Sin iniciar</span><span><i class="sw" style="--c:var(--fill-ok)"></i>Se va llenando según el avance</span><span><i class="sw" style="--c:var(--good)"></i>Terminada (100%)</span><span class="muted">Barras verticales = vigas V01. Toca una estructura para ver el detalle y registrar.</span></div>
+  ${seEstPlanSvg()}
+  ${planGrpStats("est",["pil","vig","gis","pra","ais","n4","n5"])}</section>`;
   // Canaletas y drenajes
   h+=`<div class="grid2">${["can","dre"].map(c=>{const x=R.cat[c];return `<section class="panel stack"><div class="spread"><h2>${SE_CAT_NAME[c]}</h2><span class="small">${x.done}/${x.n} listas · ${fmtP(x.pct,1)}</span></div><div class="hbars">${seItems(c).map(it=>{const p=seP(it);return `<button class="hb" data-ose="${c}|${esc(it.id)}"><span class="hl"><b class="mono">${esc(it.id)}</b><small>${esc(it.desc)}</small></span><span class="tracks"><span class="trk"><span class="tb"><i style="--w:${clamp(p,0,100)}%;--c:${p>=99.95?"var(--good)":"var(--c-se)"}"></i></span><span class="tv">${fmtP(p)}</span></span></span></button>`;}).join("")}</div></section>`;}).join("")}</div>`;
   // Tabla de detalle
@@ -1006,7 +1009,7 @@ function vEstructuras(){
 
 /* ---------- Configuración (solo administradores) ---------- */
 function makeDraft(){const c=S.cfg||{};
-  return {nombre:c.nombre||"",codigo:c.codigo||"",tension:c.tension||"",sectores:secs().map(s=>Object.assign({},s)),etapas:etapas().map(e=>Object.assign({},e)),
+  return {nombre:c.nombre||"",codigo:c.codigo||"",tension:c.tension||"",pesoSE:pesoSE(),sectores:secs().map(s=>Object.assign({},s)),etapas:etapas().map(e=>Object.assign({},e)),
     actividades:acts().map(a=>Object.assign({},a)),vanos:Object.fromEntries(SECTORES_BASE.map(b=>[b.id,vanos(b.id).map(v=>v.a+"; "+v.b).join("\n")]))};}
 function sumTxt(v){return `<span class="num ${Math.abs(v-100)>.01?"warnline":"muted"} small">Suma: ${String(Math.round(v*10)/10).replace(".",",")}%${Math.abs(v-100)>.01?" (debería ser 100%)":""}</span>`;}
 function vConfig(){
@@ -1023,8 +1026,8 @@ function vConfig(){
   <div class="form-grid"><div class="field"><label for="i-gen">Matriz general (CSV)</label><input id="i-gen" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="i-cru">Matriz cruce (CSV)</label><input id="i-cru" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="i-fecha">Fecha de corte</label><input id="i-fecha" type="date" max="${today()}" value="${today()}"></div></div>
   <div class="row"><button class="btn" id="i-run" ${busy?"disabled":""}>Importar archivos</button></div></section>`;
   h+=`<section class="panel stack"><h2>Proyecto</h2><div class="form-grid"><div class="field"><label for="c-nombre">Nombre</label><input id="c-nombre" type="text" data-cf="nombre" value="${esc(d.nombre)}"></div><div class="field"><label for="c-codigo">Código</label><input id="c-codigo" type="text" data-cf="codigo" value="${esc(d.codigo)}"></div><div class="field"><label for="c-tension">Descripción corta</label><input id="c-tension" type="text" data-cf="tension" value="${esc(d.tension)}"></div></div></section>`;
-  const ss=d.sectores.reduce((x,s)=>x+num(s.peso,0),0),es=d.etapas.reduce((x,e)=>x+num(e.peso,0),0);const ten=d.etapas.find(e=>e.id==="ten")||{};
-  h+=`<section class="panel stack"><div class="spread"><h2>Peso de cada sector</h2>${sumTxt(ss)}</div><div class="form-grid">${d.sectores.map((s,i)=>`<div class="field"><label for="c-sp-${s.id}">${esc(s.nombre)} (%)</label><input id="c-sp-${s.id}" type="number" step="0.1" min="0" data-sp="${i}" value="${num(s.peso,0)}"></div>`).join("")}</div></section>`;
+  const ss=d.sectores.reduce((x,s)=>x+num(s.peso,0),0)+num(d.pesoSE,0),es=d.etapas.reduce((x,e)=>x+num(e.peso,0),0);const ten=d.etapas.find(e=>e.id==="ten")||{};
+  h+=`<section class="panel stack"><div class="spread"><h2>Peso en el avance global del proyecto</h2>${sumTxt(ss)}</div><p class="muted small">Ponderador de cada parte en el % global del Resumen. Idealmente según el valorizado del contrato. Si no suman 100, la app los normaliza igual.</p><div class="form-grid">${d.sectores.map((s,i)=>`<div class="field"><label for="c-sp-${s.id}">${esc(s.nombre)} (%)</label><input id="c-sp-${s.id}" type="number" step="0.1" min="0" data-sp="${i}" value="${num(s.peso,0)}"></div>`).join("")}<div class="field"><label for="c-sp-se">Subestación Tineo (%)</label><input id="c-sp-se" type="number" step="0.1" min="0" data-pse="1" value="${num(d.pesoSE,0)}"></div></div></section>`;
   h+=`<section class="panel stack"><div class="spread"><h2>Peso de cada etapa</h2>${sumTxt(es)}</div><div class="form-grid">${d.etapas.map((e,i)=>`<div class="field"><label for="c-ep-${e.id}">${esc(e.nombre)} (%)</label><input id="c-ep-${e.id}" type="number" step="0.1" min="0" data-ep="${i}" value="${num(e.peso,0)}"></div>`).join("")}</div>
   <div class="spread"><h3>Tendido: reparto torre / vano</h3>${sumTxt(num(ten.torre,30)+num(ten.vano,70))}</div><div class="form-grid"><div class="field"><label for="c-tt">Actividades en torre (%)</label><input id="c-tt" type="number" min="0" data-tsp="torre" value="${num(ten.torre,30)}"></div><div class="field"><label for="c-tv">Actividades por vano (%)</label><input id="c-tv" type="number" min="0" data-tsp="vano" value="${num(ten.vano,70)}"></div></div></section>`;
   h+=`<section class="panel stack"><h2>Actividades y pesos dentro de cada grupo</h2>${grupos().map(g=>{const list=d.actividades.map((a,i)=>[a,i]).filter(([a])=>a.g===g.id);const sm=list.reduce((x,[a])=>x+num(a.peso,0),0);
@@ -1048,7 +1051,7 @@ async function guardarConfig(){
   if(d.actividades.some(a=>!String(a.nombre||"").trim()))errs.push("Hay actividades sin nombre.");
   if(errs.length){toast(errs.slice(0,2).join(" "),true);return;}
   S.saving=true;render();
-  try{await updateConfig("proyecto",{nombre:d.nombre.trim(),codigo:d.codigo.trim(),tension:d.tension.trim(),
+  try{await updateConfig("proyecto",{nombre:d.nombre.trim(),codigo:d.codigo.trim(),tension:d.tension.trim(),pesoSE:num(d.pesoSE,0),
       sectores:d.sectores.map(s=>({id:s.id,nombre:s.nombre,peso:num(s.peso,0),desc:s.desc||""})),
       etapas:d.etapas.map(e=>Object.assign({id:e.id,nombre:e.nombre,peso:num(e.peso,0)},e.id==="ten"?{torre:num(e.torre,30),vano:num(e.vano,70)}:{})),
       actividades:d.actividades.map(a=>Object.assign({id:a.id,nombre:String(a.nombre).trim(),g:a.g,peso:num(a.peso,0)},a.circ?{circ:a.circ,fase:a.fase}:{})),vanos:vn});
@@ -1216,7 +1219,9 @@ function descargarCSV(){
   for(const s of secs())for(const v of vanos(s.id))L.push([s.nombre,v.label,v.tt].concat(actsG("tva").map(a=>f(cur(v.key,a.id))),[f(S.P.sec[s.id].byV[v.key]||0)]).map(q).join(";"));
   L.push("");L.push("RESUMEN");L.push("Sector;"+etapas().map(e=>e.nombre+" %").join(";")+";Total sector %");
   for(const s of secs()){const r=S.P.sec[s.id];L.push([s.nombre].concat(etapas().map(e=>f(r.stg[e.id]||0)),[f(r.pct)]).map(q).join(";"));}
-  L.push(["PROYECTO"].concat(etapas().map(()=>""),[f(S.P.total)]).map(q).join(";"));
+  L.push(["LÍNEA (Continente + Cruce + Isla)"].concat(etapas().map(()=>""),[f(S.P.lineaPct)]).map(q).join(";"));
+  L.push(["SUBESTACIÓN TINEO"].concat(etapas().map(()=>""),[f(S.SE.total)]).map(q).join(";"));
+  L.push(["PROYECTO (global ponderado)"].concat(etapas().map(()=>""),[f(S.P.total)]).map(q).join(";"));
   L.push("");L.push("SUBESTACIÓN TINEO · Contratista "+SE_CONTRATISTA+" · Avance global "+f(S.SE.total)+"%");L.push("Partida;N°;ID;Descripción;Grupo;Tipo;Avance %;Estado");
   for(const c of SE_CATS)for(const it of seItems(c.id)){const p=seP(it);L.push([c.nombre,it.n,it.id,it.desc,SE_GRP[it.grp]||"",it.tipo,f(p),EST_TXT[seEst(p)]].map(q).join(";"));}
   L.push("");L.push("REGISTROS EN TERRENO");L.push("Fecha;Sector;Unidad;Actividad;Avance %;Inspector;Observación");
@@ -1296,6 +1301,7 @@ document.addEventListener("input",ev=>{
   if(!S.draft)return;
   if(ds.cf)S.draft[ds.cf]=t.value;
   else if(ds.sp)S.draft.sectores[+ds.sp].peso=num(t.value,0);
+  else if(ds.pse)S.draft.pesoSE=num(t.value,0);
   else if(ds.ep)S.draft.etapas[+ds.ep].peso=num(t.value,0);
   else if(ds.tsp){const e=S.draft.etapas.find(x=>x.id==="ten");if(e)e[ds.tsp]=num(t.value,0);}
   else if(ds.an)S.draft.actividades[+ds.an].nombre=t.value;
@@ -1311,7 +1317,7 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="m-c")return set(()=>{S.map.contr=t.value;});
   if(t.id==="t-tt")return set(()=>{S.tbl.tt=t.value;});
   if(t.id==="t-est")return set(()=>{S.tbl.est=t.value;});
-  if(t.id==="q-pct"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
+  if(t.id==="q-pct"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&S.state==="ok"&&Date.now()-S.lastLoad>120000){try{await loadAll();render();}catch(e){}}});
 
 /* ---------- inicio ---------- */
