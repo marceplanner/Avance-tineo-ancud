@@ -19,6 +19,7 @@
   --i-per:#eda100; --i-acc:#e87ba4; --i-fun:#008300; --i-mon:#4a3aa7;
   --seq-hi:#1c5cab; --on-seq:#ffffff; --vano-hi:#c9501d; --water:#d7e6f5;
   --good:#0ca30c; --good-ink:#006300; --eje:#3987e5; --warn:#fab219; --warn-ink:#8a5a00; --crit-ink:#b02a2a;
+  --c-se:#4a3aa7; --fill-ok:#bfe6bf;
   --shadow:0 1px 2px rgba(20,33,43,.06),0 4px 16px rgba(20,33,43,.05);
   --f-disp:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -34,6 +35,7 @@
     --i-per:#c98500; --i-acc:#d55181; --i-fun:#0ca30c; --i-mon:#9085e9;
     --seq-hi:#86b6ef; --on-seq:#0e1316; --vano-hi:#f08a5d; --water:#16283a;
     --good:#0ca30c; --good-ink:#2fc22f; --eje:#5b9cf0; --warn-ink:#fab219; --crit-ink:#f07474;
+    --c-se:#9085e9; --fill-ok:#1f4d24;
     --shadow:0 1px 2px rgba(0,0,0,.3);
   }
 }
@@ -300,6 +302,47 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .tabs2 button{border:1px solid var(--line-2);background:var(--surface);padding:5px 12px;border-radius:999px;font-size:.84rem}
 .tabs2 button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
+/* Subestación Tineo */
+.seplan{border:2px dashed var(--line-2);border-radius:6px;padding:14px;display:grid;gap:14px;grid-template-columns:repeat(6,minmax(0,1fr));background:repeating-linear-gradient(45deg,var(--surface-2) 0 10px,var(--surface) 10px 20px)}
+.zone{grid-column:span var(--span,2);background:var(--surface);border:1px solid var(--line-2);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.zone .zh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--f-disp)}
+.zone.done{border-color:var(--good-ink);box-shadow:inset 0 0 0 1px var(--good-ink)}
+.fgrid{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end}
+.fgrid.g3{display:grid;grid-template-columns:repeat(3,62px);justify-content:center}
+.portal{display:flex;align-items:center;border:1px dashed var(--line-2);border-radius:4px;padding:4px 6px;gap:0}
+.portal .beam{width:26px;height:4px;background:var(--ink-2);margin-top:-22px}
+.portal .pl{font-size:.66rem;color:var(--muted);font-family:var(--f-disp);text-transform:uppercase;letter-spacing:.06em;writing-mode:vertical-rl;transform:rotate(180deg);margin-right:4px}
+.fd{border:0;background:none;padding:3px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:4px;width:62px}
+.fd:hover{background:var(--surface-2)}
+.fd.sel{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.fd .fq{width:44px;height:44px;border:2px solid var(--line-2);border-radius:4px;background:linear-gradient(to top,var(--fill-ok) var(--p),var(--surface) var(--p));display:grid;place-items:center;font-weight:700;color:#fff;font-size:1.25rem;position:relative}
+.fd .fq::after{content:"";position:absolute;inset:9px;border:1.5px solid var(--line-2);border-radius:2px;opacity:.7}
+.fd.ok .fq{background:var(--good);border-color:var(--good-ink)}
+.fd.ok .fq::after{border-color:rgba(255,255,255,.55)}
+.fd .fl{font-family:var(--f-mono);font-size:.66rem;font-weight:600;line-height:1.1;text-align:center}
+.fd .fp{font-family:var(--f-mono);font-size:.64rem;color:var(--muted)}
+.fd.ok .fp{color:var(--good-ink);font-weight:600}
+@media (max-width:760px){.seplan{grid-template-columns:1fr}.zone{grid-column:auto}}
+.plan-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.plan-svg{display:block;width:100%;height:auto;min-width:720px}
+.plan-svg .ax{stroke:var(--line-2);stroke-width:1;stroke-dasharray:12 5 2 5}
+.plan-svg .cerco{fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-dasharray:10 6}
+.plan-svg .zt{font-family:var(--f-disp);font-weight:600;font-size:13px;letter-spacing:.06em;fill:var(--muted);text-transform:uppercase}
+.sef{cursor:pointer;outline:none}
+.sef .o{fill:var(--surface);stroke:none}
+.sef .fl{fill:var(--fill-ok)}
+.sef .o2{fill:none;stroke:var(--ink-2);stroke-width:1.6}
+.sef.ok .o{fill:var(--good)}
+.sef.ok .o2{stroke:var(--good-ink)}
+.sef:hover .o2,.sef:focus-visible .o2{stroke:var(--accent);stroke-width:2.6}
+.sef.sel .o2{stroke:var(--accent);stroke-width:3.2}
+.sef .pt{font-family:var(--f-mono);font-weight:600;fill:var(--ink)}
+.sef.ok .pt{fill:#fff}
+.sef .lb{font-family:var(--f-mono);font-weight:600;font-size:12px;fill:var(--ink-2)}
+.sef.ok .lb{fill:var(--good-ink)}
+.grpstats{display:flex;flex-wrap:wrap;gap:8px}
+.grpstats span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.8rem;color:var(--ink-2);background:var(--surface)}
+.grpstats span.done{border-color:var(--good-ink);color:var(--good-ink);font-weight:600}
 .gtip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;padding:7px 10px;border-radius:4px;z-index:40;max-width:260px;white-space:pre-line;display:none;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;font-size:.92rem;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .toast.err{background:var(--crit-ink);color:#fff}
@@ -324,7 +367,7 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 (function(){
 "use strict";
 const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"Cruce"},{id:"isla",nombre:"Isla"}];
-const TABS=[{id:"resumen",t:"Resumen"},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"registrar",t:"Registrar avance"},{id:"estructuras",t:"Estructuras"},{id:"config",t:"Configuración",admin:true}];
+const TABS=[{id:"resumen",t:"Resumen"},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"estructuras",t:"Estructuras"},{id:"config",t:"Configuración",admin:true}];
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -340,6 +383,39 @@ const FASE_TXT={A:"Inferior",B:"Media",C:"Superior"};
 const faseTxt=f=>FASE_TXT[String(f||"").toUpperCase()]||f;
 function normCfg(c){if(!c||!Array.isArray(c.actividades))return c;
   return Object.assign({},c,{actividades:c.actividades.map(a=>a&&a.circ?Object.assign({},a,{nombre:`Conductor circuito ${a.circ} · fase ${faseTxt(a.fase).toLowerCase()}`}):a)});}
+/* ===== Subestación Tineo (Nueva Puerto Montt) · catálogo según matrices de obras civiles y estructuras ===== */
+const SE_CONTRATISTA="PINE";
+const SE_CATS=[{id:"fun",nombre:"Fundaciones",uno:"fundación"},{id:"est",nombre:"Estructuras",uno:"estructura"},{id:"can",nombre:"Canaletas",uno:"canaleta"},{id:"dre",nombre:"Drenajes",uno:"drenaje"}];
+const SE_CAT_NAME=Object.fromEntries(SE_CATS.map(c=>[c.id,c.nombre]));
+const SE_PESOS_DEF={fun:55,est:25,can:15,dre:5};
+const SE_TOTCOL={fun:32,est:17,can:18,dre:14};
+/* [id, nombre, abreviado, peso %, columna en la matriz CSV] */
+const SE_ACTS={
+  fun:[["sf_rep","Replanteo y trazado","Repl.",5,9],["sf_sel","Sello de excavación","Sello",10,10],["sf_emp","Emplantillado o mejoramiento","Empl.",5,11],["sf_sum","Suministro de enfierradura","Sum. enf.",4,13],["sf_azp","Armado enfierradura zapata","Arm. zap.",4,14],["sf_izp","Instalación enfierradura zapata","Inst. zap.",4,15],["sf_avs","Armado enfierradura vástago","Arm. vást.",4,16],["sf_ivs","Instalación enfierradura vástago","Inst. vást.",4,17],["sf_mzp","Moldaje zapata","Mold. zap.",3,19],["sf_mvs","Moldaje vástago","Mold. vást.",4,20],["sf_per","Instalación (pre) pernos de anclaje","Pernos",8,22],["sf_hzp","Hormigón zapata","H. zap.",10,23],["sf_hvs","Hormigón vástago","H. vást.",10,24],["sf_des","Descimbre","Descim.",5,26],["sf_pos","Post-pernos de anclaje","Post-pern.",5,28],["sf_imp","Impermeabilización","Imperm.",5,29],["sf_rel","Relleno estructural","Relleno",10,30]],
+  est:[["ee_pre","Pre-armado","Pre-arm.",15,9],["ee_mon","Montaje","Montaje",30,10],["ee_gir","Giro y aplome","Giro",25,12],["ee_tor","Torqueo","Torqueo",25,13],["ee_gro","Grouting","Grout.",5,15]],
+  can:[["sc_rex","Replanteo y excavación","Repl./exc.",20,9],["sc_emp","Emplantillado","Empl.",5,11],["sc_enf","Instalación de enfierradura","Enf.",15,12],["sc_hlo","Hormigonado de losa","H. losa",15,13],["sc_mol","Moldaje de coronamiento","Mold.",5,14],["sc_hmu","Hormigonado de muros","H. muros",15,15],["sc_des","Descimbre","Descim.",5,16],["sc_rel","Relleno compactado y terminaciones","Relleno",20,17]],
+  dre:[["sd_rep","Replanteo","Repl.",5,9],["sd_exc","Excavación","Exc.",35,11],["sd_geo","Instalación de geotextil","Geotextil",25,12],["sd_gra","Colocación de grava","Grava",35,13]]};
+for(const k in SE_ACTS)SE_ACTS[k]=SE_ACTS[k].map(([id,nombre,c,peso,col])=>({id,nombre,c,peso,col,g:"se_"+k}));
+const SE_ACT_BY_ID=Object.fromEntries([].concat(...Object.values(SE_ACTS)).map(a=>[a.id,a]));
+const SE_GRP={mar:"Marco de líneas",pra:"Pararrayos",ais:"Aisladores de pedestal",his:"Equipo híbrido HIS",n4:"Caseta diagonal N4",n5:"Caseta diagonal N5",pil:"Pilares marco de líneas",vig:"Vigas marco de líneas",gis:"Equipo GIS",can:"Canaletas de control y fuerza",dre:"Drenaje longitudinal"};
+const SE_ITEMS=(()=>{const L=[];const add=(cat,n,id,grp,desc,tipo)=>L.push({cat,n,id,grp,desc,tipo:tipo||""});
+  [["F1.1","F1"],["F1.2","F1"],["F1A.1","F1A"],["F1A.2","F2A"],["F1B.1","F2A"],["F1B.2","F2A"]].forEach(([id,t],i)=>add("fun",i+1,id,"mar","Fundación marco de líneas",t));
+  ["F3A","F4A","F4B","F4C","F4D","F5A"].forEach((t,i)=>add("fun",7+i,"F2."+(i+1),"pra","Fundación pararrayos",t));
+  ["F6A","F6A","F6A","F6B","F6B","F6B"].forEach((t,i)=>add("fun",13+i,"F3."+(i+1),"ais","Fundación aislador de pedestal",t));
+  add("fun",19,"F4.1","his","Fundación equipo híbrido HIS","F7A");add("fun",20,"F4.2","his","Fundación equipo híbrido HIS","F5");
+  for(let i=0;i<6;i++)add("fun",21+i,"N4-Pila "+(i+1),"n4","Fundación caseta diagonal N4","F"+(6+i));
+  for(let i=0;i<6;i++)add("fun",27+i,"N5-Pila "+(i+1),"n5","Fundación caseta diagonal N5","F"+(12+i));
+  add("est",1,"P01-1","pil","Pilar marco de líneas C/E");add("est",2,"P01-2","pil","Pilar marco de líneas C/E");add("est",3,"P02","pil","Pilar marco de líneas S/E");
+  for(let i=1;i<=6;i++)add("est",3+i,"V01-"+i,"vig","Viga marco de líneas");
+  add("est",10,"ES1-1","gis","Estructura equipo GIS");add("est",11,"ES1-2","gis","Estructura equipo GIS");
+  for(let i=1;i<=6;i++)add("est",11+i,"ES2-"+i,"pra","Estructura pararrayos");
+  for(let i=1;i<=6;i++)add("est",17+i,"ES3-"+i,"ais","Estructura aislador de pedestal");
+  add("est",24,"ES4-1","n4","Caseta diagonal N4");add("est",25,"ES4-2","n5","Caseta diagonal N5");
+  for(let i=1;i<=9;i++)add("can",i,"C-"+i,"can",i===8?"Canaleta entrada sala de control":"Canaleta de control y fuerza");
+  for(let i=2;i<=5;i++)add("dre",i,"D-"+i,"dre","Drenaje longitudinal");
+  return L;})();
+const seItems=cat=>SE_ITEMS.filter(i=>i.cat===cat);
+const seItem=(cat,id)=>SE_ITEMS.find(i=>i.cat===cat&&i.id===id);
 const LEGACY={tv_con:{id:"tv_con",g:"_old",peso:0,nombre:"Tendido de conductor (registro previo, sin detalle de fase)"}};
 
 const APP=window.APP_CONFIG||{};
@@ -350,7 +426,8 @@ const S={me:null,userName:"",userEmail:"",canWrite:false,canAdmin:false,
   cfg:null,uni:null,av:new Map(),state:"loading",authMode:AUTH_HASH&&/invite|recovery/.test(AUTH_HASH[1])?"setpass":null,authMsg:"",authErr:"",P:null,
   tab:"resumen",dash:"total",dashEt:null,reg:null,
   map:{layer:"estado",tt:"",contr:"",q:""},tbl:{sec:"continente",q:"",tt:"",est:""},
-  drw:null,draft:null,saving:false,imp:null,chan:null,lastLoad:0};
+  drw:null,draft:null,saving:false,imp:null,chan:null,lastLoad:0,
+  se:null,SE:null,seCat:"fun",seDraft:null};
 
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -377,7 +454,7 @@ function mapErr(e){const m=(e&&e.message)||String(e||"");const c=e&&e.code;
 async function withRetry(fn){let d=500;for(let i=0;;i++){try{return await fn();}catch(e){if(i<3&&e&&e.code==="unavailable"){await sleep(d+Math.random()*300);d*=2;continue;}throw e;}}}
 async function loadAll(){
   const {data:cf,error:e1}=await sb.from("config").select("id,data");if(e1)throw mapErr(e1);
-  S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=((cf||[]).find(r=>r.id==="unidades")||{}).data||null;
+  S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=((cf||[]).find(r=>r.id==="unidades")||{}).data||null;S.se=((cf||[]).find(r=>r.id==="se")||{}).data||null;
   const av=new Map();for(let from=0;;from+=1000){const {data,error}=await sb.from("avance").select("id,data").order("id").range(from,from+999);if(error)throw mapErr(error);for(const r of data)av.set(r.id,r.data);if(data.length<1000)break;}
   S.av=av;S.lastLoad=Date.now();
 }
@@ -385,13 +462,13 @@ function subscribe(){
   if(S.chan)return;
   S.chan=sb.channel("cambios-avance")
     .on("postgres_changes",{event:"*",schema:"public",table:"avance"},p=>{const m=new Map(S.av);if(p.eventType==="DELETE"){if(p.old&&p.old.id)m.delete(p.old.id);}else if(p.new&&p.new.id)m.set(p.new.id,p.new.data);S.av=m;schedule();})
-    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=r.data;schedule();})
+    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=r.data;if(r&&r.id==="se")S.se=r.data;schedule();})
     .subscribe();
 }
 async function rpcAvance(key,base,act,hist){const {error}=await sb.rpc("registrar_avance",{p_id:key,p_base:base,p_act:act,p_hist:hist});if(error)throw mapErr(error);}
 function mergeLocal(key,base,act,hist){const prev=S.av.get(key);const d=Object.assign({},prev||base);d.act=Object.assign({},(prev&&prev.act)||{});d.hist=Object.assign({},(prev&&prev.hist)||{},hist);
   for(const [k,v] of Object.entries(act)){const p=d.act[k];if(!p||(p.fecha||"")<=(v.fecha||""))d.act[k]=v;}const m=new Map(S.av);m.set(key,d);S.av=m;}
-async function setConfig(id,data){const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=data;}
+async function setConfig(id,data){const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=data;else if(id==="se")S.se=data;}
 async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||{};await setConfig(id,Object.assign({},base,patch));}
 
 /* ---------- modelo ---------- */
@@ -402,7 +479,21 @@ const acts=()=>((S.cfg&&S.cfg.actividades)||[]);
 let GC={cfg:null,uni:null,m:{},v:{}};
 function gc(){if(GC.cfg!==S.cfg||GC.uni!==S.uni)GC={cfg:S.cfg,uni:S.uni,m:{},v:{}};return GC;}
 const actsG=g=>{const c=gc();return c.m[g]||(c.m[g]=acts().filter(a=>a.g===g));};
-const actById=id=>acts().find(a=>a.id===id)||LEGACY[id];
+const actById=id=>acts().find(a=>a.id===id)||SE_ACT_BY_ID[id]||LEGACY[id];
+const grpActs=g=>g&&g.indexOf("se_")===0?SE_ACTS[g.slice(3)]||[]:actsG(g);
+const secName=id=>id==="se"?"Subestación Tineo":((secById(id)||{}).nombre||id);
+/* --- Subestación: cálculo --- */
+const kSE=(cat,id)=>"se__"+cat+"__"+safeId(id);
+function sePesos(){const p=(S.se&&S.se.pesos)||{};return Object.fromEntries(SE_CATS.map(c=>[c.id,num(p[c.id],SE_PESOS_DEF[c.id])]));}
+function seItemPct(get,it){let W=0,P=0;for(const a of SE_ACTS[it.cat]){W+=a.peso;P+=a.peso*get(kSE(it.cat,it.id),a.id);}return W?P/W:0;}
+function seCalc(get){const out={cat:{},grp:{},byI:{},total:0};let W=0,P=0;const pes=sePesos();
+  for(const c of SE_CATS){const its=seItems(c.id);let s=0,done=0,eje=0;
+    for(const it of its){const p=seItemPct(get,it);out.byI[it.cat+"|"+it.id]=p;s+=p;if(p>=99.95)done++;else if(p>0)eje++;
+      const gk=c.id+"|"+it.grp;const g=out.grp[gk]||(out.grp[gk]={n:0,done:0,s:0});g.n++;g.s+=p;if(p>=99.95)g.done++;}
+    const v=its.length?s/its.length:0;out.cat[c.id]={pct:v,n:its.length,done,eje,sin:its.length-done-eje};W+=pes[c.id];P+=pes[c.id]*v;}
+  out.total=W?P/W:0;return out;}
+const seP=it=>(S.SE&&S.SE.byI[it.cat+"|"+it.id])||0;
+const seEst=p=>p>=99.95?"ter":p>0?"eje":"sin";
 const grupos=()=>((S.cfg&&S.cfg.grupos)||[]);
 const grupoById=id=>grupos().find(g=>g.id===id)||{id,nombre:id};
 const etapas=()=>((S.cfg&&S.cfg.etapas)||[]);
@@ -454,7 +545,7 @@ function calcSec(get,sec){
 }
 function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of secs()){const r=calcSec(get,s.id);out.sec[s.id]=r;if(r.has){W+=s.peso;P+=s.peso*r.pct;}}out.total=W?P/W:0;return out;}
 
-function unitLabel(d){if(!d)return "";if(d.kind==="vano")return "Vano "+d.unidad;return d.unidad+(d.pata?" · pata "+d.pata:"");}
+function unitLabel(d){if(!d)return "";if(d.kind==="se")return (SE_CAT_NAME[d.cat]||"S/E")+" "+d.unidad;if(d.kind==="vano")return "Vano "+d.unidad;return d.unidad+(d.pata?" · pata "+d.pata:"");}
 function allHist(filter){const out=[];for(const [k,d] of S.av){if(!d||(filter&&!filter(k,d)))continue;for(const [hid,h] of Object.entries(d.hist||{})){if(h&&h.a)out.push(Object.assign({hid,k,sec:d.sector,uni:d.unidad,lab:unitLabel(d)},h));}}return out.sort((a,b)=>(b.ts||0)-(a.ts||0));}
 function lastUpdate(){let m=null;for(const d of S.av.values())for(const h of Object.values((d&&d.hist)||{}))if(h&&h.fecha&&(!m||h.fecha>m))m=h.fecha;return m;}
 const autor=h=>h.imp?"Carga desde matriz Excel":(h.pn||"Inspector");
@@ -487,6 +578,7 @@ function renderChrome(){
 }
 function render(){
   if(S.state==="ok"&&cfgOk())S.P=progress(cur);
+  if(S.state==="ok")S.SE=seCalc(cur);
   renderChrome();
   const m=$("#main");const ae=document.activeElement;const fid=ae&&ae.id?ae.id:null;const selS=fid&&ae.selectionStart!=null?ae.selectionStart:null;
   const scrollDb=$("#drawer .db")?$("#drawer .db").scrollTop:0;
@@ -496,7 +588,7 @@ function render(){
     if(S.canAdmin&&S.tab==="config"){html+=vConfig();}
     else html+=`<div class="panel empty stack" style="align-items:center"><h2>La app aún no tiene datos cargados</h2><p>${S.canAdmin?"Ve a <b>Configuración</b> e importa el respaldo de la app anterior (archivo JSON).":"Un administrador debe cargar los datos del proyecto."}</p>${S.canAdmin?`<button class="btn primary" data-tab="config">Ir a Configuración</button>`:""}</div>`;
     m.innerHTML=html;$("#drawer").innerHTML="";restoreFocus(fid,selS);return;}
-  html+=({resumen:vResumen,linea:vLinea,cruce:vCruce,registrar:vRegistrar,estructuras:vEstructuras,config:vConfig}[S.tab]||vResumen)();
+  html+=({resumen:vResumen,linea:vLinea,cruce:vCruce,se:vSE,registrar:vRegistrar,estructuras:vEstructuras,config:vConfig}[S.tab]||vResumen)();
   m.innerHTML=html;
   $("#drawer").innerHTML=S.drw?vDrawer():"";
   const db=$("#drawer .db");if(db)db.scrollTop=scrollDb;
@@ -564,6 +656,7 @@ function vResumen(){
    <div class="stk" data-tip="${cnt.ter} terminadas · ${cnt.eje} en ejecución · ${cnt.sin} sin iniciar">${stkSeg(cnt,N)}</div>
    <div class="legend"><span><i class="sw" style="--c:var(--good)"></i>Terminadas <b class="num">${cnt.ter}</b></span><span><i class="sw" style="--c:var(--eje)"></i>En ejecución <b class="num">${cnt.eje}</b></span><span><i class="sw o"></i>Sin iniciar <b class="num">${cnt.sin}</b></span><span class="muted">de ${N} estructuras</span></div>
    <div class="minis">${secs().map(s=>{const r=P.sec[s.id];return `<button class="mini" data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(s.nombre)}: ${fmtP(r.pct,1)}\nPeso en el proyecto ${fmtP(s.peso)}">${ring(r.pct,62,secColor(s.id))}<span class="mt"><b>${esc(s.nombre)}</b><span>${r.n} estructuras · ${r.cnt.ter} terminadas</span><span>${r.nv} vanos · ${r.vdone} tendidos</span></span></button>`;}).join("")}</div></div></section>`;
+  {const R=S.SE;h+=`<section class="panel"><button class="mini" data-tab="se" style="--c:var(--c-se);width:100%;border:0;padding:0" data-tip="Ver el detalle de la subestación">${ring(R.total,62,"var(--c-se)")}<span class="mt" style="flex:1"><b>Subestación Tineo · ${SE_CONTRATISTA}</b><span>${SE_CATS.map(c=>`${c.nombre} ${fmtP(R.cat[c.id].pct)} (${R.cat[c.id].done}/${R.cat[c.id].n})`).join(" · ")}</span></span><span class="small muted">Ver →</span></button></section>`;}
   h+=`<div class="grid2"><section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades</span></div>`;
   if(sc==="total")h+=`<div class="legend">${secs().map(s=>`<span><i class="sw" style="--c:${secColor(s.id)}"></i>${esc(s.nombre)}</span>`).join("")}</div>`;
   h+=`<div class="hbars">`;
@@ -604,7 +697,7 @@ function tramosChart(){
 function feedHtml(list){
   if(!list.length)return `<p class="muted">Aún no hay avances registrados en terreno. Usa <b>Registrar avance</b> o toca una estructura en el pictograma.</p>`;
   return `<div class="feed">${list.map(e=>{const a=actById(e.a);const s=secById(e.sec);const d=S.av.get(e.k);const openId=d&&d.kind==="vano"?d.a:e.uni;
-    return `<div class="it"><span class="d">${esc(fmtD(e.fecha))}</span><div class="w"><div><span class="chip"><span class="dot" style="--c:${secColor(e.sec)}"></span>${esc(s?s.nombre:e.sec)}</span> · <button class="linkbtn" data-open="${e.sec}|${esc(openId)}">${esc(e.lab)}</button> · ${esc(a?a.nombre:e.a)}</div><div class="o">${esc(autor(e))}${e.obs&&!e.imp?" — "+esc(e.obs):""}</div></div><span class="p num">${fmtP(num(e.pct,0))}</span></div>`;}).join("")}</div>`;
+    return `<div class="it"><span class="d">${esc(fmtD(e.fecha))}</span><div class="w"><div><span class="chip"><span class="dot" style="--c:${secColor(e.sec)}"></span>${esc(secName(e.sec))}</span> · ${d&&d.kind==="se"?`<button class="linkbtn" data-ose="${esc(d.cat)}|${esc(d.unidad)}">`:`<button class="linkbtn" data-open="${e.sec}|${esc(openId)}">`}${esc(e.lab)}</button> · ${esc(a?a.nombre:e.a)}</div><div class="o">${esc(autor(e))}${e.obs&&!e.imp?" — "+esc(e.obs):""}</div></div><span class="p num">${fmtP(num(e.pct,0))}</span></div>`;}).join("")}</div>`;
 }
 
 /* ---------- Pictograma de la línea ---------- */
@@ -664,6 +757,86 @@ function vCruce(){
   return h;
 }
 
+/* ---------- Subestación Tineo ---------- */
+function seShort(it){return it.id.replace(/^N[45]-/,"");}
+function seFd(it){const p=seP(it);const ok=p>=99.95;const sel=S.drw&&S.drw.se&&S.drw.cat===it.cat&&S.drw.id===it.id;
+  const tip=`${it.desc} ${it.id}${it.tipo?" · tipo "+it.tipo:""}\nAvance ${fmtP(p,1)}${ok?" · LISTA":""}\nContratista ${SE_CONTRATISTA}`;
+  return `<button class="fd ${ok?"ok":""} ${sel?"sel":""}" data-ose="${it.cat}|${esc(it.id)}" data-tip="${esc(tip)}" aria-label="${esc(it.id+" "+Math.round(p)+"%")}"><span class="fq" style="--p:${clamp(p,0,100).toFixed(0)}%">${ok?"✓":""}</span><span class="fl">${esc(seShort(it))}</span><span class="fp">${fmtP(p)}</span></button>`;}
+function seTw(it){const p=seP(it);const ok=p>=99.95;const sel=S.drw&&S.drw.se&&S.drw.cat===it.cat&&S.drw.id===it.id;
+  const tip=`${it.desc} ${it.id}\nAvance ${fmtP(p,1)}${ok?" · TERMINADA":""}\nContratista ${SE_CONTRATISTA}`;
+  return `<button class="fd ${ok?"ok":""} ${sel?"sel":""}" data-ose="${it.cat}|${esc(it.id)}" data-tip="${esc(tip)}" aria-label="${esc(it.id+" "+Math.round(p)+"%")}">${towerSvg(ok?"var(--good)":fillPct(p),it.grp==="pil"||it.grp==="vig",false)}<span class="fl">${esc(it.id)}</span><span class="fp">${fmtP(p)}</span></button>`;}
+/* Plano de fundaciones del patio 220 kV (posiciones según pictograma de referencia; unidades del dibujo) */
+const SE_PLAN={"F2.1":[288,349,34,36],"F2.2":[288,421,34,36],"F2.3":[288,493,34,36],"F2.4":[288,654,34,36],"F2.5":[288,726,34,36],"F2.6":[288,798,34,36],
+  "F3.1":[585,421,34,36],"F3.2":[509,493,34,36],"F3.3":[585,493,34,36],"F3.4":[585,726,34,36],"F3.5":[509,798,34,36],"F3.6":[585,798,34,36],
+  "F4.1":[636,376,291,126],"F4.2":[636,681,291,126],
+  "F1B.1":[339,547,42,89],"F1B.2":[398,547,42,89],"F1A.2":[704,547,45,89],"F1A.1":[766,547,43,89],"F1.2":[1062,547,43,89],"F1.1":[1122,547,43,89]};
+(()=>{const px=[178,237],py4=[521,565,619],py5=[816,870,927];for(let i=0;i<6;i++){SE_PLAN["N4-Pila "+(i+1)]=[px[i%2],py4[Math.floor(i/2)],17,17];SE_PLAN["N5-Pila "+(i+1)]=[px[i%2],py5[Math.floor(i/2)],17,17];}})();
+function sePlanSvg(){
+  const H=[367,439,511,592,672,744,816,897],V=[305,390,526,602,662,734,758,783,1114];
+  let g=H.map(y=>`<line class="ax" x1="222" x2="1215" y1="${y}" y2="${y}"/>`).join("")+V.map(x=>`<line class="ax" x1="${x}" x2="${x}" y1="268" y2="1000"/>`).join("");
+  g+=`<rect class="cerco" x="246" y="292" width="1113" height="696" rx="4"/>`;
+  g+=`<text class="zt" x="1352" y="980" text-anchor="end">Patio 220 kV · cerco</text>`;
+  g+=`<g transform="translate(1318,330)" aria-hidden="true"><circle r="22" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5"/><path d="M0 -15 L8 12 L0 6 L-8 12 Z" style="fill:var(--ink)"/><text y="-29" text-anchor="middle" class="zt" style="fill:var(--ink)">N</text></g>`;
+  g+=`<text class="zt" x="211" y="505" text-anchor="middle">Caseta N4</text><text class="zt" x="211" y="800" text-anchor="middle">Caseta N5</text>`;
+  for(const it of seItems("fun")){const pos=SE_PLAN[it.id];if(!pos)continue;const [x,y,w,h]=pos;
+    const p=seP(it);const ok=p>=99.95;const ph=h*clamp(p,0,100)/100;const sel=S.drw&&S.drw.se&&S.drw.cat==="fun"&&S.drw.id===it.id;
+    const big=w>200,tiny=w<20;const lab=tiny?it.id.replace(/^N[45]-Pila /,"P"):it.id;
+    const tip=`${it.desc} ${it.id}${it.tipo?" · tipo "+it.tipo:""}\nAvance ${fmtP(p,1)}${ok?" · LISTA":""}\nContratista ${SE_CONTRATISTA}`;
+    g+=`<g class="sef ${ok?"ok":""} ${sel?"sel":""}" data-ose="fun|${esc(it.id)}" role="button" tabindex="0" aria-label="${esc(it.id+", "+Math.round(p)+"%")}" data-tip="${esc(tip)}">`;
+    g+=`<rect class="o" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
+    if(ph>0&&!ok)g+=`<rect class="fl" x="${x}" y="${(y+h-ph).toFixed(1)}" width="${w}" height="${ph.toFixed(1)}"/>`;
+    g+=`<rect class="o2" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
+    if(big){g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+12}" text-anchor="middle" style="font-size:34px">${ok?"✓":fmtP(p)}</text><text class="lb" x="${x+10}" y="${y+20}" style="font-size:14px">${esc(it.id)} · Equipo HIS</text>`;}
+    else if(!tiny){g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" style="font-size:${ok?15:10}px">${ok?"✓":fmtP(p)}</text><text class="lb" x="${x+w/2}" y="${y+h+15}" text-anchor="middle">${esc(lab)}</text>`;}
+    else{if(ok)g+=`<text class="pt" x="${x+w/2}" y="${y+h/2+4}" text-anchor="middle" style="font-size:11px">✓</text>`;g+=`<text class="lb" x="${x+w/2}" y="${y+h+13}" text-anchor="middle" style="font-size:10.5px">${esc(lab)}</text>`;}
+    g+=`</g>`;}
+  return `<div class="plan-wrap"><svg class="plan-svg" viewBox="100 255 1290 760" role="img" aria-label="Plano de fundaciones del patio 220 kV de la S/E Tineo">${g}</svg></div>`;
+}
+function seZone(cat,grp,span,body){const g=(S.SE.grp[cat+"|"+grp])||{n:0,done:0,s:0};const done=g.n&&g.done===g.n;
+  return `<div class="zone ${done?"done":""}" style="--span:${span}"><div class="zh"><b>${esc(SE_GRP[grp])}</b><span class="small ${done?"":"muted"}" style="${done?"color:var(--good-ink);font-weight:600":""}">${g.done}/${g.n} ${done?"✓":"listas"} · ${fmtP(g.n?g.s/g.n:0)}</span></div>${body}</div>`;}
+function vSE(){
+  const R=S.SE;const pes=sePesos();const F=id=>seItem("fun",id);
+  let h=`<div class="stack">`;
+  h+=`<section class="panel hero">${ring(R.total,172,"var(--c-se)",fmtP(R.total,1),"S/E Tineo")}
+   <div class="htxt"><div class="spread"><h2>Subestación Tineo · Nueva Puerto Montt</h2><span class="chip" style="font-size:.85rem">Contratista <b class="mono" style="color:var(--ink)">${SE_CONTRATISTA}</b></span></div>
+   <p class="small muted">Obras civiles y montaje de estructuras del patio. Avance ponderado por partida: ${SE_CATS.map(c=>`${c.nombre} ${fmtP(pes[c.id])}`).join(" · ")}.</p>
+   <div class="minis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">${SE_CATS.map(c=>{const x=R.cat[c.id];return `<button class="mini" data-secat="${c.id}" aria-pressed="${S.seCat===c.id}" style="--c:var(--c-se)" data-tip="${esc(c.nombre)}: ${fmtP(x.pct,1)}\n${x.done} listas · ${x.eje} en avance · ${x.sin} sin iniciar">${ring(x.pct,62,x.done===x.n&&x.n?"var(--good)":"var(--c-se)")}<span class="mt"><b>${esc(c.nombre)}</b><span>${x.done}/${x.n} al 100%</span><span>${x.eje} en avance</span></span></button>`;}).join("")}</div></div></section>`;
+  // Pictograma de fundaciones
+  const fc=R.cat.fun;
+  h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Pictograma de fundaciones</h2><span class="small"><b class="num" style="color:var(--good-ink)">${fc.done}</b> de ${fc.n} fundaciones listas · ${fmtP(fc.pct,1)}</span></div>
+  <div class="legend"><span><i class="sw o"></i>Sin iniciar</span><span><i class="sw" style="--c:var(--fill-ok)"></i>Se va llenando según el avance</span><span><i class="sw" style="--c:var(--good)"></i>Lista (100%)</span><span class="muted">Plano del patio 220 kV. Toca una fundación para ver el detalle y registrar.</span></div>
+  ${sePlanSvg()}
+  <div class="grpstats">${["mar","pra","ais","his","n4","n5"].map(g=>{const x=R.grp["fun|"+g]||{n:0,done:0,s:0};const d=x.n&&x.done===x.n;return `<span class="${d?"done":""}">${esc(SE_GRP[g])}: ${x.done}/${x.n}${d?" ✓":""} · ${fmtP(x.n?x.s/x.n:0)}</span>`;}).join("")}</div></section>`;
+  // Estructuras
+  const ec=R.cat.est;
+  h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Estructuras</h2><span class="small"><b class="num" style="color:var(--good-ink)">${ec.done}</b> de ${ec.n} terminadas · ${fmtP(ec.pct,1)}</span></div>
+  <div class="seplan">${["pil","vig","gis","pra","ais"].map(g=>seZone("est",g,g==="vig"||g==="pra"||g==="ais"?3:g==="pil"?2:1,`<div class="fgrid">${seItems("est").filter(i=>i.grp===g).map(seTw).join("")}</div>`)).join("")}
+   ${seZone("est","n4",1,`<div class="fgrid">${seItems("est").filter(i=>i.grp==="n4").map(seTw).join("")}</div>`)}${seZone("est","n5",1,`<div class="fgrid">${seItems("est").filter(i=>i.grp==="n5").map(seTw).join("")}</div>`)}</div></section>`;
+  // Canaletas y drenajes
+  h+=`<div class="grid2">${["can","dre"].map(c=>{const x=R.cat[c];return `<section class="panel stack"><div class="spread"><h2>${SE_CAT_NAME[c]}</h2><span class="small">${x.done}/${x.n} listas · ${fmtP(x.pct,1)}</span></div><div class="hbars">${seItems(c).map(it=>{const p=seP(it);return `<button class="hb" data-ose="${c}|${esc(it.id)}"><span class="hl"><b class="mono">${esc(it.id)}</b><small>${esc(it.desc)}</small></span><span class="tracks"><span class="trk"><span class="tb"><i style="--w:${clamp(p,0,100)}%;--c:${p>=99.95?"var(--good)":"var(--c-se)"}"></i></span><span class="tv">${fmtP(p)}</span></span></span></button>`;}).join("")}</div></section>`;}).join("")}</div>`;
+  // Tabla de detalle
+  const cat=S.seCat;const as=SE_ACTS[cat];
+  h+=`<section class="panel stack"><div class="spread"><h2>Detalle por actividad</h2><div class="seg" role="group" aria-label="Partida">${SE_CATS.map(c=>`<button data-secat="${c.id}" aria-pressed="${cat===c.id}">${c.nombre}</button>`).join("")}</div></div>
+  <div class="tbl-wrap" style="max-height:620px"><table><thead><tr><th>N°</th><th>ID</th><th>Descripción</th>${cat==="fun"?"<th>Tipo</th>":""}${as.map(a=>`<th class="r" title="${esc(a.nombre+" · "+a.peso+"%")}">${esc(a.c)}<br><span class="muted" style="font-weight:500">${a.peso}%</span></th>`).join("")}<th class="r">Total</th><th>Estado</th></tr></thead><tbody>
+  ${seItems(cat).map(it=>{const k=kSE(cat,it.id);const p=seP(it);return `<tr><td class="num muted">${it.n}</td><td><button class="linkbtn" data-ose="${cat}|${esc(it.id)}">${esc(it.id)}</button></td><td class="small">${esc(it.desc)}</td>${cat==="fun"?`<td class="mono small">${esc(it.tipo)}</td>`:""}${as.map(a=>heatTd(cur(k,a.id))).join("")}<td class="r num"><b>${fmtP(p,1)}</b></td><td>${estHtml(seEst(p))}</td></tr>`;}).join("")}
+  </tbody></table></div></section>`;
+  h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en la subestación</h2></div>${feedHtml(allHist((k,d)=>d.sector==="se").filter(x=>!x.imp).slice(0,10))}</section>`;
+  return h+`</div>`;
+}
+function openDrawerSE(cat,id){if(!seItem(cat,id))return;S.drw={se:true,sec:"se",cat,id,edit:null};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
+function vDrawerSE(){
+  const D=S.drw;const it=seItem(D.cat,D.id);if(!it)return "";const p=seP(it);const k=kSE(D.cat,D.id);
+  const list=seItems(D.cat);const idx=list.indexOf(it);const pv=list[idx-1],nx=list[idx+1];
+  const hist=allHist(kk=>kk===k).filter(x=>!x.imp).slice(0,12);
+  let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(it.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:var(--c-se)"></span>Subestación Tineo · ${esc(SE_CAT_NAME[D.cat])}</span><h2><span class="mono">${esc(it.id)}</span></h2>${estHtml(seEst(p))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
+  h+=`<div class="meta"><div><span>Descripción</span>${esc(it.desc)}</div><div><span>Grupo</span>${esc(SE_GRP[it.grp]||"")}</div>${it.tipo?`<div><span>Tipo</span><b class="mono">${esc(it.tipo)}</b></div>`:""}<div><span>Contratista</span><b>${SE_CONTRATISTA}</b></div></div>`;
+  h+=`<div class="rings" style="justify-content:flex-start;gap:16px;align-items:center">${ring(p,96,p>=99.95?"var(--good)":"var(--c-se)",fmtP(p,1),"Avance")}<span class="small muted">${p>=99.95?`<b style="color:var(--good-ink)">${D.cat==="fun"?"Fundación lista":"Terminada"}.</b> `:""}Toca una actividad para registrar su avance acumulado.</span></div>`;
+  h+=`<div class="agrp"><h3><span>Actividades</span><span class="num">${fmtP(p,1)}</span></h3>${actRows(k,null,p>=99.95?"var(--good)":"var(--c-se)",SE_ACTS[D.cat])}</div>`;
+  h+=`<div class="agrp"><h3><span>Historial</span></h3>${hist.length?`<div class="feed">${hist.map(x=>{const a=actById(x.a);return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w">${esc(a?a.nombre:x.a)}<div class="o">${esc(autor(x))}${x.obs?" — "+esc(x.obs):""}</div></div><span class="p num">${fmtP(num(x.pct,0))}</span></div>`;}).join("")}</div>`:`<span class="small muted">Sin registros todavía.</span>`}</div>`;
+  h+=`<div class="row" style="justify-content:space-between">${pv?`<button class="btn small ghost" data-ose="${D.cat}|${esc(pv.id)}">← ${esc(pv.id)}</button>`:"<span></span>"}${nx?`<button class="btn small ghost" data-ose="${D.cat}|${esc(nx.id)}">${esc(nx.id)} →</button>`:""}</div>`;
+  return h+`</div></aside>`;
+}
+
 /* ---------- Panel de estructura ---------- */
 function openDrawer(sec,id,pata){const e=estById(sec,id);if(!e)return;S.drw={sec,id,edit:null,pata:pata||(sec==="cruce"&&patas(id)[0]?patas(id)[0].pata:null),fgSel:null};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
 function closeDrawer(){S.drw=null;render();}
@@ -679,14 +852,15 @@ function condGrid(key,ro){const cs=condActs();if(!cs.length)return "";const D=S.
   h+=`</div>`;
   if(D&&D.edit&&D.edit.key===key&&cs.some(a=>a.id===D.edit.aid))h+=qeHtml(D.edit,actById(D.edit.aid).nombre);
   return h;}
-function actRows(key,g,col){const ro=!S.canWrite;const D=S.drw;let condDone=false;
-  return actsG(g).map(a=>{
+function actRows(key,g,col,list){const ro=!S.canWrite;const D=S.drw;let condDone=false;
+  return (list||actsG(g)).map(a=>{
     if(a.circ){if(condDone)return "";condDone=true;return condGrid(key,ro);}
     const v=cur(key,a.id);const ed=D.edit&&D.edit.key===key&&D.edit.aid===a.id;const d=S.av.get(key);const x=d&&d.act&&d.act[a.id];
     let h=`<button class="arow ${v<=0?"z":""}" data-qe="${esc(key)}|${a.id}" ${ro?"disabled":""} aria-expanded="${ed}" data-tip="${esc(a.nombre+" · peso "+fmtP(num(a.peso,0))+(x?"\nÚltimo registro "+fmtD(x.fecha):""))}"><span class="an">${esc(a.nombre)}</span><span class="ab"><i style="--w:${clamp(v,0,100)}%${col?";--c:"+col:""}"></i></span><span class="av">${fmtP(v)}</span></button>`;
     if(ed)h+=qeHtml(D.edit);
     return h;}).join("");}
 function vDrawer(){
+  if(S.drw&&S.drw.se)return vDrawerSE();
   const D=S.drw;const sec=D.sec;const e=estById(sec,D.id);if(!e)return "";const r=S.P.sec[sec];const st=r.byE[e.id];const k=kE(sec,e.id);
   const vs=vanosOf(sec,e.id);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Estructura ${esc(e.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor(sec)}"></span>${esc(secById(sec).nombre)} · ${esc(e.tt||"")}</span><h2>Estructura <span class="mono">${esc(e.id)}</span></h2>${estHtml(estado(st))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
@@ -711,12 +885,12 @@ function vDrawer(){
   h+=`<div class="row" style="justify-content:space-between">${pv?`<button class="btn small ghost" data-open="${sec}|${esc(pv.id)}">← ${esc(pv.id)}</button>`:"<span></span>"}${nx?`<button class="btn small ghost" data-open="${sec}|${esc(nx.id)}">${esc(nx.id)} →</button>`:""}</div>`;
   return h+`</div></aside>`;
 }
-function metaForKey(key){const D=S.drw;const sec=D.sec;const e=estById(sec,D.id);
+function metaForKey(key){const D=S.drw;if(D.se)return key===kSE(D.cat,D.id)?{kind:"se",unidad:D.id,cat:D.cat}:null;const sec=D.sec;const e=estById(sec,D.id);
   if(key===kE(sec,e.id))return {kind:"est",unidad:e.id};
   for(const p of patas(e.id))if(key===kP(sec,e.id,p.pata))return {kind:"pata",unidad:e.id,pata:p.pata};
   for(const v of vanosOf(sec,e.id))if(key===v.key)return {kind:"vano",unidad:v.label,a:v.a,b:v.b};
   return null;}
-function baseOf(sec,meta){return Object.assign({sector:sec,kind:meta.kind,unidad:meta.unidad},meta.pata?{pata:meta.pata}:{},meta.a?{a:meta.a,b:meta.b}:{});}
+function baseOf(sec,meta){return Object.assign({sector:sec,kind:meta.kind,unidad:meta.unidad},meta.pata?{pata:meta.pata}:{},meta.a?{a:meta.a,b:meta.b}:{},meta.cat?{cat:meta.cat,contratista:SE_CONTRATISTA}:{});}
 async function saveOne(key,sec,meta,aids,pct,fecha,obs,ts){
   if(!Array.isArray(aids))aids=[aids];
   const rnd=Math.random().toString(36).slice(2,7);const act={},hist={};const cu={pct,fecha,por:S.me,pn:S.userName,ts};
@@ -744,6 +918,8 @@ function grpFor(etapa,sec){if(etapa==="pre")return "pre";if(etapa==="mon")return
 function unitsFor(r,all){
   if(!r.sec||!r.grp)return [];
   const q=(r.q||"").trim().toLowerCase();
+  if(r.sec==="se"){const cat=r.grp.slice(3);let its=seItems(cat);if(!all&&q)its=its.filter(i=>i.id.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q));
+    return its.map(i=>({uid:i.id,label:i.id,sub:SE_GRP[i.grp]||"",key:kSE(cat,i.id),meta:{kind:"se",unidad:i.id,cat}}));}
   if(r.grp==="tva"){let vs=vanos(r.sec);if(!all){if(r.tt)vs=vs.filter(v=>v.tt===r.tt);if(q)vs=vs.filter(v=>v.label.toLowerCase().includes(q));}
     return vs.map(v=>({uid:v.a+">"+v.b,label:v.label,sub:(v.tt||"").replace("Tramo ","T"),key:v.key,meta:{kind:"vano",unidad:v.label,a:v.a,b:v.b}}));}
   if(r.grp==="cr")return estr("cruce").flatMap(e=>patas(e.id).map(p=>({uid:e.id+"|"+p.pata,label:e.id+"·"+p.pata,sub:"Torre "+(e.torre||e.id),key:kP("cruce",e.id,p.pata),meta:{kind:"pata",unidad:e.id,pata:p.pata}})));
@@ -754,15 +930,16 @@ function unitsFor(r,all){
 function vRegistrar(){
   const r=S.reg;const P=S.P;
   let h=`<div class="steps"><div class="note">Para marcar <b>varias estructuras o vanos a la vez</b> con el mismo avance. Para una sola estructura es más rápido tocarla en el <b>Pictograma de la línea</b>.</div>`;
-  h+=`<section class="step ${r.sec?"done":""}"><div class="step-h"><span class="step-n">1</span><h3>¿En qué sector estuviste?</h3></div><div class="opts">${secs().map(s=>`<button class="opt" data-rsec="${s.id}" aria-pressed="${r.sec===s.id}"><span class="t"><span class="dot" style="--c:${secColor(s.id)}"></span>${esc(s.nombre)}</span><span class="s num">${P.sec[s.id].n} estructuras · ${P.sec[s.id].nv} vanos · ${fmtP(P.sec[s.id].pct,1)}</span></button>`).join("")}</div></section>`;
+  h+=`<section class="step ${r.sec?"done":""}"><div class="step-h"><span class="step-n">1</span><h3>¿En qué sector estuviste?</h3></div><div class="opts">${secs().map(s=>`<button class="opt" data-rsec="${s.id}" aria-pressed="${r.sec===s.id}"><span class="t"><span class="dot" style="--c:${secColor(s.id)}"></span>${esc(s.nombre)}</span><span class="s num">${P.sec[s.id].n} estructuras · ${P.sec[s.id].nv} vanos · ${fmtP(P.sec[s.id].pct,1)}</span></button>`).join("")}<button class="opt" data-rsec="se" aria-pressed="${r.sec==="se"}"><span class="t"><span class="dot" style="--c:var(--c-se)"></span>Subestación Tineo</span><span class="s num">${SE_ITEMS.length} elementos · ${SE_CONTRATISTA} · ${fmtP(S.SE.total,1)}</span></button></div></section>`;
   h+=`<section class="step ${r.sec?"":"off"} ${r.act?"done":""}"><div class="step-h"><span class="step-n">2</span><h3>¿Qué actividad inspeccionaste?</h3></div>`;
-  if(r.sec){const stg=P.sec[r.sec].stg;
-    h+=`<div class="grp"><span class="lbl">Etapa</span><div class="opts">${etapas().map(e=>`<button class="opt" data-retapa="${e.id}" aria-pressed="${r.etapa===e.id}"><span class="t">${esc(e.nombre)}</span><span class="s num">${fmtP(stg[e.id]||0,1)} en el sector</span></button>`).join("")}</div></div>`;
+  if(r.sec){const stg=r.sec==="se"?{}:P.sec[r.sec].stg;
+    if(r.sec==="se")h+=`<div class="grp"><span class="lbl">Partida</span><div class="opts">${SE_CATS.map(c=>`<button class="opt" data-rgrp="se_${c.id}" aria-pressed="${r.grp==="se_"+c.id}"><span class="t">${esc(c.nombre)}</span><span class="s num">${S.SE.cat[c.id].n} elementos · ${fmtP(S.SE.cat[c.id].pct,1)}</span></button>`).join("")}</div></div>`;
+    else h+=`<div class="grp"><span class="lbl">Etapa</span><div class="opts">${etapas().map(e=>`<button class="opt" data-retapa="${e.id}" aria-pressed="${r.etapa===e.id}"><span class="t">${esc(e.nombre)}</span><span class="s num">${fmtP(stg[e.id]||0,1)} en el sector</span></button>`).join("")}</div></div>`;
     if(r.etapa==="fun"&&r.sec!=="cruce"){const es=estr(r.sec);
       h+=`<div class="grp"><span class="lbl">Tipo de fundación</span><div class="opts">${FUNG.map(g=>{const n=es.filter(e=>e.fund===g).length;return `<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${esc(grupoById(g).nombre)}</span><span class="s">${n} estructura(s)${es.some(e=>!e.fund)?" + sin tipo definido":""}</span></button>`;}).join("")}</div></div>`;}
     if(r.etapa==="ten")h+=`<div class="grp"><span class="lbl">¿Dónde?</span><div class="opts"><button class="opt" data-rgrp="tto" aria-pressed="${r.grp==="tto"}"><span class="t">En la torre</span><span class="s">Vestido, engrapado, puentes · ${fmtP(stg.tenT,1)}</span></button><button class="opt" data-rgrp="tva" aria-pressed="${r.grp==="tva"}"><span class="t">En el vano</span><span class="s">Cable piloto, conductor, OPGW, flechado · ${fmtP(stg.tenV,1)}</span></button></div></div>`;
     if(r.grp){const us=unitsFor(r,true);const avgOf=ids=>us.length?us.reduce((x,u)=>x+curM(u.key,ids),0)/us.length:0;let condShown=false;
-      h+=`<div class="grp"><span class="lbl">Actividad</span><div class="opts">${actsG(r.grp).map(a=>{
+      h+=`<div class="grp"><span class="lbl">Actividad</span><div class="opts">${grpActs(r.grp).map(a=>{
         if(a.circ){if(condShown)return "";condShown=true;const cs=condActs();const w=cs.reduce((x,c)=>x+num(c.peso,0),0);
           return `<button class="opt" data-ract="__cond" aria-pressed="${r.act==="__cond"}"><span class="t">Tendido de conductor</span><span class="s num">2 circuitos × 3 fases · peso ${fmtP(w)} · ${fmtP(avgOf(cs.map(c=>c.id)),0)} promedio</span></button>`;}
         return `<button class="opt" data-ract="${a.id}" aria-pressed="${r.act===a.id}"><span class="t">${esc(a.nombre)}</span><span class="s num">Peso ${fmtP(num(a.peso,0))} · ${fmtP(avgOf([a.id]),0)} promedio</span></button>`;}).join("")}</div></div>`;
@@ -774,11 +951,11 @@ function vRegistrar(){
   h+=`</section>`;
   const aids=regAids(r);
   const act=r.act==="__cond"?(aids.length?{id:"__cond",nombre:"Tendido de conductor ("+aids.map(id=>{const a=actById(id);return "C"+a.circ+" "+faseTxt(a.fase).toLowerCase();}).join(", ")+")"}:null):(r.act&&actById(r.act));
-  const word=r.grp==="tva"?"vanos":r.grp==="cr"?"patas":"estructuras";
+  const word=r.sec==="se"?"elementos":r.grp==="tva"?"vanos":r.grp==="cr"?"patas":"estructuras";
   h+=`<section class="step ${act?"":"off"} ${r.sel.size?"done":""}"><div class="step-h"><span class="step-n">3</span><div><h3>¿En qué ${word}?</h3><span class="hint">Toca para seleccionar. La barra azul inferior muestra el avance ya registrado.</span></div></div>`;
   if(act){
     if(r.grp!=="cr"){const tts=[...new Set(estr(r.sec).map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
-      h+=`<div class="filters"><div class="field"><label for="r-q">Buscar N°</label><input id="r-q" type="search" value="${esc(r.q)}" placeholder="Ej.: 115"></div><div class="field"><label for="r-tt">Tramo de tendido</label><select id="r-tt"><option value="">Todos</option>${tts.map(t=>`<option ${r.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>${FUNG.includes(r.grp)?`<label class="small row" style="gap:6px"><input type="checkbox" id="r-all" ${r.verTodas?"checked":""}> Ver también otros tipos de fundación</label>`:""}</div>`;}
+      h+=`<div class="filters"><div class="field"><label for="r-q">Buscar N°</label><input id="r-q" type="search" value="${esc(r.q)}" placeholder="Ej.: 115"></div>${tts.length?`<div class="field"><label for="r-tt">Tramo de tendido</label><select id="r-tt"><option value="">Todos</option>${tts.map(t=>`<option ${r.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>`:""}${FUNG.includes(r.grp)?`<label class="small row" style="gap:6px"><input type="checkbox" id="r-all" ${r.verTodas?"checked":""}> Ver también otros tipos de fundación</label>`:""}</div>`;}
     const us=unitsFor(r,false);
     h+=`<div class="row"><button class="btn small ghost" data-rsel="pend">Seleccionar pendientes visibles</button><button class="btn small ghost" data-rsel="none">Quitar selección</button><span class="muted num small">${r.sel.size} seleccionada(s) · ${us.length} visibles</span></div>`;
     h+=us.length?`<div class="units">${us.map(u=>{const p=curM(u.key,aids);return `<button class="u" data-ru="${esc(u.uid)}" aria-pressed="${r.sel.has(u.uid)}" style="--p:${clamp(p,0,100)}%"><span class="id">${esc(u.label)}</span><span class="up">${esc(u.sub)} · ${fmtP(p)}</span></button>`;}).join("")}</div>`:`<p class="muted">No hay ${word} con esos filtros.</p>`;}
@@ -789,7 +966,7 @@ function vRegistrar(){
     h+=`<div class="quick" role="group" aria-label="Avance rápido">${[0,25,50,75,100].map(v=>`<button data-rpct="${v}" aria-pressed="${r.pct===v}">${v}%</button>`).join("")}</div>
     <div class="form-grid"><div class="field"><label for="r-pct">Otro valor (%)</label><input id="r-pct" type="number" min="0" max="100" step="1" value="${r.pct}"></div><div class="field"><label for="r-fecha">Fecha de la inspección</label><input id="r-fecha" type="date" max="${today()}" value="${esc(r.fecha)}"></div></div>
     <div class="field"><label for="r-obs">Observación (opcional)</label><textarea id="r-obs" maxlength="500">${esc(r.obs)}</textarea></div>
-    <div class="summary">Vas a registrar <b>${esc(act.nombre)} = ${r.pct}%</b> en <b>${r.sel.size}</b> ${word} de <b>${esc(secById(r.sec).nombre)}</b> (<span class="mono">${[...r.sel].slice(0,10).map(u=>esc(byUid.get(u)?byUid.get(u).label:u)).join(", ")}${r.sel.size>10?"…":""}</span>), fecha <b>${esc(fmtD(r.fecha))}</b>.</div>
+    <div class="summary">Vas a registrar <b>${esc(act.nombre)} = ${r.pct}%</b> en <b>${r.sel.size}</b> ${word} de <b>${esc(secName(r.sec))}</b> (<span class="mono">${[...r.sel].slice(0,10).map(u=>esc(byUid.get(u)?byUid.get(u).label:u)).join(", ")}${r.sel.size>10?"…":""}</span>), fecha <b>${esc(fmtD(r.fecha))}</b>.</div>
     ${lower.length?`<div class="warnline">⚠ ${lower.length} seleccionada(s) ya tienen un avance mayor. Guardar lo corregirá hacia abajo.</div>`:""}
     <div class="row"><button class="btn primary" id="r-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar avance"}</button><button class="btn ghost" data-rreset="1">Empezar de nuevo</button></div>`;}
   return h+`</section></div>`;
@@ -806,7 +983,7 @@ async function guardar(){
   for(const uid of r.sel){const u=byUid.get(uid);if(!u)continue;try{await saveOne(u.key,r.sec,u.meta,act.id,r.pct,r.fecha,r.obs,ts);ok++;}catch(e){err=e;break;}}
   S.saving=false;
   if(err){saveErr(err,ok,r.sel.size);render();return;}
-  toast(`Avance guardado: ${act.nombre} ${r.pct}% en ${ok} ${r.grp==="tva"?"vano(s)":r.grp==="cr"?"pata(s)":"estructura(s)"}.`);
+  toast(`Avance guardado: ${act.nombre} ${r.pct}% en ${ok} ${r.sec==="se"?"elemento(s)":r.grp==="tva"?"vano(s)":r.grp==="cr"?"pata(s)":"estructura(s)"}.`);
   r.sel=new Set();r.obs="";render();
 }
 
@@ -853,6 +1030,13 @@ function vConfig(){
   h+=`<section class="panel stack"><h2>Actividades y pesos dentro de cada grupo</h2>${grupos().map(g=>{const list=d.actividades.map((a,i)=>[a,i]).filter(([a])=>a.g===g.id);const sm=list.reduce((x,[a])=>x+num(a.peso,0),0);
     return `<div class="stack" style="gap:6px"><div class="spread"><h3>${esc(g.nombre)}</h3>${sumTxt(sm)}</div><div class="tbl-wrap"><table><tbody>${list.map(([a,i])=>`<tr><td style="min-width:240px;width:100%"><input id="c-an-${i}" type="text" data-an="${i}" value="${esc(a.nombre)}" aria-label="Nombre"></td><td style="width:110px"><input id="c-ap-${i}" type="number" step="0.1" min="0" data-ap="${i}" value="${num(a.peso,0)}" aria-label="Peso %"></td></tr>`).join("")}</tbody></table></div></div>`;}).join("")}</section>`;
   h+=`<section class="panel stack"><h2>Vanos</h2><p class="muted small">Una línea por vano: <span class="mono">Desde; Hasta</span>. Por defecto, cada estructura con la siguiente de la matriz general. En el cruce: 1CA–2C, 1CB–2C, 2C–3C, 3C–4CA y 3C–4CB.</p><div class="form-grid">${d.sectores.map(s=>`<div class="field"><label for="c-v-${s.id}">${esc(s.nombre)}</label><textarea class="code" id="c-v-${s.id}" data-vn="${s.id}">${esc(d.vanos[s.id])}</textarea></div>`).join("")}</div></section>`;
+  {const sp=S.seDraft||sePesos();const sm=SE_CATS.reduce((x,c)=>x+num(sp[c.id],0),0);
+  h+=`<section class="panel stack"><div class="spread"><h2>Subestación Tineo · ${SE_CONTRATISTA}</h2>${sumTxt(sm)}</div><p class="muted small">Peso de cada partida en el avance global de la subestación. Los pesos de las actividades vienen de las matrices de obras civiles y estructuras.</p>
+  <div class="form-grid">${SE_CATS.map(c=>`<div class="field"><label for="se-p-${c.id}">${c.nombre} (%)</label><input id="se-p-${c.id}" type="number" min="0" step="0.1" data-sep="${c.id}" value="${num(sp[c.id],0)}"></div>`).join("")}</div>
+  <div class="row"><button class="btn small" id="se-save" ${S.saving?"disabled":""}>Guardar pesos S/E</button></div>
+  <h3>Cargar matrices de la subestación (CSV)</h3>
+  <div class="form-grid"><div class="field"><label for="se-f">Matriz Fundaciones (incluye canaletas y drenajes)</label><input id="se-f" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="se-e">Matriz Estructuras</label><input id="se-e" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="se-fecha">Fecha de corte</label><input id="se-fecha" type="date" max="${today()}" value="${today()}"></div></div>
+  <div class="row"><button class="btn" id="se-imp" ${busy?"disabled":""}>Importar matrices S/E</button></div></section>`;}
   h+=`<section class="panel stack"><h2>Usuarios</h2><p class="muted small">Las cuentas se crean e invitan desde Supabase (Authentication → Users → Invite user). Todo usuario con sesión puede ver y registrar avances. Solo quienes estén en la tabla <span class="mono">admins</span> ven esta pestaña y pueden cambiar la configuración. Revisa la guía de publicación.</p></section>`;
   h+=`<div class="row"><button class="btn primary" id="c-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar configuración"}</button><button class="btn ghost" id="c-discard">Descartar cambios</button></div>`;
   return h+`</div>`;
@@ -962,6 +1146,65 @@ async function importarArchivos(){
   await importar(g,c,fecha);
 }
 
+/* ---------- Subestación: pesos e importación ---------- */
+async function guardarSE(){
+  const sp=S.seDraft||sePesos();S.saving=true;render();
+  try{await setConfig("se",Object.assign({},S.se||{},{pesos:Object.fromEntries(SE_CATS.map(c=>[c.id,num(sp[c.id],0)]))}));S.seDraft=null;toast("Pesos de la subestación guardados.");}
+  catch(e){toast(e.code==="denied"?"No tienes permiso de administrador.":"No se pudo guardar.",true);}
+  S.saving=false;render();
+}
+function seRowVals(cat,r){const a={};for(const x of SE_ACTS[cat]){const v=pv(r[x.col]);if(v>0)a[x.id]=v;}return a;}
+function parseSEFund(txt){
+  const rows=splitRows(txt);let mode=null;const out=[];const chk={n:0,bad:[]};
+  for(const r of rows){const c1=(r[1]||"").trim();const C=c1.toUpperCase();
+    if(C==="CANALETAS"){mode="can";continue;}if(C==="DRENAJES"){mode="dre";continue;}
+    if(C==="FUNDACIONES"&&mode){mode="end";continue;}
+    if(!mode&&/^item$/i.test(c1)&&/^id$/i.test((r[3]||"").trim())&&/replanteo/i.test(r[9]||"")){mode="fun";continue;}
+    if(!mode||mode==="end"||!/^\d+$/.test(c1))continue;
+    const it=SE_ITEMS.find(x=>x.cat===mode&&x.n===+c1);if(!it)continue;
+    const a=seRowVals(mode,r);out.push({it,a});
+    const W=SE_ACTS[mode].reduce((x,y)=>x+y.peso,0);const t=SE_ACTS[mode].reduce((x,y)=>x+y.peso*(a[y.id]||0),0)/W;chk.n++;
+    const tc=(r[SE_TOTCOL[mode]]||"").trim();if(tc&&Math.abs(t-pv(tc))>0.6)chk.bad.push(it.id);}
+  if(!out.some(x=>x.it.cat==="fun"))throw new Error("La matriz de fundaciones de la S/E no tiene el formato esperado (falta la fila de encabezado 'Item / ID / Replanteo').");
+  return {out,chk};
+}
+function parseSEEst(txt){
+  const rows=splitRows(txt);let mode=null;const out=[];const chk={n:0,bad:[]};
+  for(const r of rows){const c1=(r[1]||"").trim();
+    if(!mode&&/^item$/i.test(c1)&&/pre-?armado/i.test(r[9]||"")){mode="est";continue;}
+    if(mode&&/^estructuras$/i.test(c1))break;
+    if(!mode||!/^\d+$/.test(c1))continue;
+    const it=SE_ITEMS.find(x=>x.cat==="est"&&x.n===+c1);if(!it)continue;
+    const a=seRowVals("est",r);out.push({it,a});
+    const t=SE_ACTS.est.reduce((x,y)=>x+y.peso*(a[y.id]||0),0)/100;chk.n++;
+    const tc=(r[SE_TOTCOL.est]||"").trim();if(tc&&Math.abs(t-pv(tc))>0.6)chk.bad.push(it.id);}
+  if(!out.length)throw new Error("La matriz de estructuras de la S/E no tiene el formato esperado (falta la fila 'Item / Pre-Armado').");
+  return {out,chk};
+}
+async function importarArchivosSE(){
+  const ff=$("#se-f").files[0],fe=$("#se-e").files[0],fecha=$("#se-fecha").value||today();
+  if(!ff&&!fe){toast("Selecciona al menos una matriz de la subestación.",true);return;}
+  if(fecha>today()){toast("La fecha de corte no puede ser futura.",true);return;}
+  if(S.imp&&S.imp.running)return;
+  S.imp={running:true,title:"Cargando matrices de la subestación…",done:0,total:0,msg:"Leyendo matrices"};render();
+  try{
+    const rows=[],chks=[];
+    if(ff){const P=parseSEFund(await decodeBuf(await ff.arrayBuffer()));rows.push(...P.out);chks.push(P.chk);}
+    if(fe){const P=parseSEEst(await decodeBuf(await fe.arrayBuffer()));rows.push(...P.out);chks.push(P.chk);}
+    const ts=Date.now();const ops=[];
+    for(const {it,a} of rows){const k=kSE(it.cat,it.id);const ch={};for(const x of SE_ACTS[it.cat]){const v=a[x.id]||0;if(Math.abs(cur(k,x.id)-v)>0.01)ch[x.id]=v;}if(Object.keys(ch).length)ops.push({k,it,ch});}
+    S.imp.total=ops.length;S.imp.msg="Guardando avances";render();
+    let i=0;const worker=async()=>{while(i<ops.length){const op=ops[i++];const act={},hist={};
+      for(const [aid,v] of Object.entries(op.ch)){hist["i"+ts+"_"+aid]={a:aid,pct:v,fecha,por:S.me,pn:S.userName,obs:"Carga desde matriz S/E",ts,imp:true};act[aid]={pct:v,fecha,por:S.me,pn:S.userName,ts};}
+      const base=baseOf("se",{kind:"se",unidad:op.it.id,cat:op.it.cat});await withRetry(()=>rpcAvance(op.k,base,act,hist));mergeLocal(op.k,base,act,hist);S.imp.done++;schedule();}};
+    await Promise.all([worker(),worker(),worker()]);
+    await withRetry(()=>setConfig("se",Object.assign({},S.se||{},{importado:{fecha,ts,filas:rows.length,cambios:ops.length}})));
+    const bad=[].concat(...chks.map(c=>c.bad)),n=chks.reduce((x,c)=>x+c.n,0);
+    S.imp={running:false,ok:true,msg:`Matrices S/E cargadas con fecha ${fmtD(fecha)}: ${rows.length} elementos leídos, ${ops.length} con cambios.`,chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con el "Avance parcial" del Excel (${bad.slice(0,8).join(", ")}).`:`Verificación: las ${n} filas cuadran con el "Avance parcial" del Excel.`};
+  }catch(e){S.imp={running:false,ok:false,msg:e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"Error")};}
+  render();
+}
+
 /* ---------- CSV ---------- */
 function descargarCSV(){
   const hist=allHist().filter(x=>!x.imp);
@@ -974,6 +1217,8 @@ function descargarCSV(){
   L.push("");L.push("RESUMEN");L.push("Sector;"+etapas().map(e=>e.nombre+" %").join(";")+";Total sector %");
   for(const s of secs()){const r=S.P.sec[s.id];L.push([s.nombre].concat(etapas().map(e=>f(r.stg[e.id]||0)),[f(r.pct)]).map(q).join(";"));}
   L.push(["PROYECTO"].concat(etapas().map(()=>""),[f(S.P.total)]).map(q).join(";"));
+  L.push("");L.push("SUBESTACIÓN TINEO · Contratista "+SE_CONTRATISTA+" · Avance global "+f(S.SE.total)+"%");L.push("Partida;N°;ID;Descripción;Grupo;Tipo;Avance %;Estado");
+  for(const c of SE_CATS)for(const it of seItems(c.id)){const p=seP(it);L.push([c.nombre,it.n,it.id,it.desc,SE_GRP[it.grp]||"",it.tipo,f(p),EST_TXT[seEst(p)]].map(q).join(";"));}
   L.push("");L.push("REGISTROS EN TERRENO");L.push("Fecha;Sector;Unidad;Actividad;Avance %;Inspector;Observación");
   for(const h of hist.slice().reverse()){const a=actById(h.a),s=secById(h.sec);L.push([fmtD(h.fecha),s?s.nombre:h.sec,h.lab,a?a.nombre:h.a,f(num(h.pct,0)),h.pn||"",h.obs||""].map(q).join(";"));}
   descargar("avance-tineo-ancud-"+today()+".csv","﻿"+L.join("\r\n"),"text/csv;charset=utf-8");toast("Archivo descargado.");
@@ -989,10 +1234,11 @@ document.addEventListener("scroll",()=>{tipEl().style.display="none";},true);
 /* ---------- eventos ---------- */
 function go(tab){S.tab=tab;tipEl().style.display="none";try{history.replaceState(null,"","#"+tab);}catch(e){}render();window.scrollTo({top:0});}
 function keepSel(){const ok=new Set(unitsFor(S.reg,true).map(u=>u.uid));S.reg.sel=new Set([...S.reg.sel].filter(u=>ok.has(u)));}
+document.addEventListener("keydown",ev=>{const t=ev.target;if((ev.key==="Enter"||ev.key===" ")&&t&&t.matches&&t.matches("g[data-ose]")){ev.preventDefault();const v=t.getAttribute("data-ose");const i=v.indexOf("|");openDrawerSE(v.slice(0,i),v.slice(i+1));}});
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&S.drw){if(S.drw.edit){S.drw.edit=null;render();}else closeDrawer();}});
 document.addEventListener("submit",ev=>{ev.preventDefault();if(ev.target.id==="f-login")doLogin();else if(ev.target.id==="f-pass")doSetPass();});
 document.addEventListener("click",ev=>{
-  const b=ev.target.closest("button,[data-close]");if(!b)return;const ds=b.dataset;const r=S.reg;
+  const b=ev.target.closest("button,[data-close],g[data-ose]");if(!b)return;const ds=b.dataset;const r=S.reg;
   if(ds.close){closeDrawer();return;}
   if(ds.forgot){doForgot();return;}
   if(ds.logout){sb&&sb.auth.signOut();return;}
@@ -1001,6 +1247,10 @@ document.addEventListener("click",ev=>{
   if(ds.reload){location.reload();return;}
   if(ds.tab){go(ds.tab);return;}
   if(ds.open){const [s,id]=ds.open.split("|");tipEl().style.display="none";openDrawer(s,id,ds.pata);return;}
+  if(ds.ose){const i=ds.ose.indexOf("|");tipEl().style.display="none";openDrawerSE(ds.ose.slice(0,i),ds.ose.slice(i+1));return;}
+  if(ds.secat){S.seCat=ds.secat;render();return;}
+  if(b.id==="se-save"){guardarSE();return;}
+  if(b.id==="se-imp"){importarArchivosSE();return;}
   if(ds.dash){S.dash=ds.dash;render();return;}
   if(ds.dashet){S.dashEt=S.dashEt===ds.dashet?null:ds.dashet;render();return;}
   if(ds.gott){S.map.tt=ds.gott;go("linea");return;}
@@ -1052,6 +1302,7 @@ document.addEventListener("input",ev=>{
   else if(ds.ap)S.draft.actividades[+ds.ap].peso=num(t.value,0);
   else if(ds.vn)S.draft.vanos[ds.vn]=t.value;
 });
+document.addEventListener("input",ev=>{const t=ev.target;if(t.dataset&&t.dataset.sep){if(!S.seDraft)S.seDraft=sePesos();S.seDraft[t.dataset.sep]=num(t.value,0);}});
 document.addEventListener("change",ev=>{const t=ev.target;
   const set=fn=>{fn();pendingRender=false;render();};
   if(t.id==="r-tt")return set(()=>{S.reg.tt=t.value;});
