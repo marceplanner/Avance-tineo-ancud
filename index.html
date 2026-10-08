@@ -939,16 +939,21 @@ function vDrawer(){
   const D=S.drw;const sec=D.sec;const e=estById(sec,D.id);if(!e)return "";const r=S.P.sec[sec];const st=r.byE[e.id];const k=kE(sec,e.id);
   const vs=vanosOf(sec,e.id);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Estructura ${esc(e.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor(sec)}"></span>${esc(secById(sec).nombre)} · ${esc(e.tt||"")}</span><h2>Estructura <span class="mono">${esc(e.id)}</span></h2>${estHtml(estado(st))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
-  h+=`<div class="meta"><div><span>Tipo</span>${esc(e.tipo||"—")}</div><div><span>Torre</span><b class="mono">${esc(e.torre||"—")}</b></div><div><span>Contratista</span>${esc(e.contr||"—")}</div><div><span>Fundación</span>${st.fg?esc(grupoById(st.fg).nombre):"Sin definir"}</div></div>`;
+  h+=`<div class="meta"><div><span>Tipo</span>${esc(e.tipo||"—")}</div><div><span>Torre</span><b class="mono">${esc(e.torre||"—")}</b></div><div><span>Contratista</span>${esc(e.contr||"—")}</div><div><span>Fundación</span>${(()=>{const g=st.fun>0?st.fg:(sec==="cruce"?st.fg:(D.fgSel||e.fund||null));return g?esc(grupoById(g).nombre):"Sin definir";})()}</div></div>`;
   h+=`<div class="rings">${[["Prelim.",st.pre],["Fundación",st.fun],["Montaje",st.mon],["Tend. torre",st.tto],["Total",totE(st)]].map(([t,v],i)=>`<span class="stack" style="gap:2px;align-items:center">${ring(v,68,i===4?"var(--accent)":"var(--seq-hi)")}<span class="small muted">${t}</span></span>`).join("")}</div>`;
   h+=`<div class="note small">Toca una actividad para registrar su avance acumulado.</div>`;
   h+=`<div class="agrp"><h3><span>Obras preliminares</span><span class="num">${fmtP(st.pre,1)}</span></h3>${actRows(k,"pre")}</div>`;
   if(sec==="cruce"&&patas(e.id).length){const ps=patas(e.id);const p=ps.find(x=>x.pata===D.pata)||ps[0];const kp=kP(sec,e.id,p.pata);
     h+=`<div class="agrp"><h3><span>Fundación por pata</span><span class="num">${fmtP(st.fun,1)}</span></h3><div class="tabs2" role="group">${ps.map(x=>`<button data-dpata="${x.pata}" aria-pressed="${x.pata===p.pata}">Pata ${x.pata} · ${fmtP(gPct(cur,kP(sec,e.id,x.pata),"cr"))}</button>`).join("")}</div><span class="small muted">${esc(p.tf||"")}</span>${actRows(kp,"cr")}</div>`;}
-  else{const known=FUNG.filter(g=>g===st.fg||g===e.fund||gPct(cur,k,g)>0);const show=D.fgSel?[...new Set(known.concat([D.fgSel]))]:known;
+  else{const conAvance=FUNG.filter(g=>gPct(cur,k,g)>0);
     h+=`<div class="agrp"><h3><span>Fundación</span><span class="num">${fmtP(st.fun,1)}</span></h3>`;
-    if(!show.length)h+=`<span class="small muted">Tipo de fundación sin definir. Elige el tipo para registrar:</span><div class="tabs2">${FUNG.map(g=>`<button data-dfg="${g}">${esc(grupoById(g).nombre)}</button>`).join("")}</div>`;
-    for(const g of show)h+=`<span class="lbl" style="margin-top:4px">${esc(grupoById(g).nombre)} · ${fmtP(gPct(cur,k,g),1)}</span>${actRows(k,g)}`;
+    if(!conAvance.length){
+      /* Sin avance en ningún tipo (sin iniciar o vuelta a 0%): se puede elegir o cambiar el tipo de fundación */
+      const selG=D.fgSel||e.fund||null;
+      h+=`<span class="small muted">${selG?"Sin avance de fundación. Puedes mantener o cambiar el tipo antes de registrar:":"Tipo de fundación sin definir. Elige el tipo para registrar:"}</span><div class="tabs2" role="group" aria-label="Tipo de fundación">${FUNG.map(g=>`<button data-dfg="${g}" aria-pressed="${selG===g}">${esc(grupoById(g).nombre)}</button>`).join("")}</div>`;
+      if(selG)h+=`<span class="lbl" style="margin-top:4px">${esc(grupoById(selG).nombre)} · 0%</span>${actRows(k,selG)}`;}
+    else{const show=D.fgSel?[...new Set(conAvance.concat([D.fgSel]))]:conAvance;
+      for(const g of show)h+=`<span class="lbl" style="margin-top:4px">${esc(grupoById(g).nombre)} · ${fmtP(gPct(cur,k,g),1)}</span>${actRows(k,g)}`;}
     h+=`</div>`;}
   h+=`<div class="agrp"><h3><span>Montaje</span><span class="num">${fmtP(st.mon,1)}</span></h3>${actRows(k,"mon")}</div>`;
   h+=`<div class="agrp"><h3><span>Tendido en la torre</span><span class="num">${fmtP(st.tto,1)}</span></h3>${actRows(k,"tto")}</div>`;
@@ -1361,7 +1366,7 @@ document.addEventListener("click",ev=>{
   if(ds.layer){S.map.layer=ds.layer;render();return;}
   if(ds.tsec){S.tbl={sec:ds.tsec,q:"",tt:"",est:""};render();return;}
   if(ds.dpata){S.drw.pata=ds.dpata;S.drw.edit=null;render();return;}
-  if(ds.dfg){S.drw.fgSel=ds.dfg;render();return;}
+  if(ds.dfg){S.drw.fgSel=ds.dfg;S.drw.edit=null;render();return;}
   if(ds.qe){if(!S.canWrite)return;const [key,aid]=ds.qe.split("|");const D=S.drw;if(D.edit&&D.edit.key===key&&D.edit.aid===aid){D.edit=null;}else{const c=cur(key,aid);const ac=actById(aid);D.edit={key,aid,pct:(ac&&ac.circ)||c>=100?100:Math.min(100,[25,50,75,100].find(x=>x>c)||100),fecha:today(),obs:""};}render();return;}
   if(ds.qp){S.drw.edit.pct=+ds.qp;render();return;}
   if(b.id==="q-save"){quickSave();return;}
