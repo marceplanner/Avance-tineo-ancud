@@ -144,6 +144,19 @@ button.hb:focus-visible{outline:2px solid var(--accent)}
 .stk .eje{background:var(--eje);color:var(--on-accent)}
 .stk .sin{background:var(--surface-3);color:var(--ink-2)}
 .stkrow{display:grid;grid-template-columns:110px 1fr 48px;gap:10px;align-items:center;font-size:.86rem}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.kpic{border:1.5px solid var(--line);background:var(--surface);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0}
+.kpic:hover{border-color:var(--ink-2)}
+.kpic .kh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.kpic .kv{display:flex;align-items:baseline;gap:4px;line-height:1}
+.kpic .kv b{font-family:var(--f-disp);font-size:2.2rem;font-weight:700}
+.kpic .kv .of{font-family:var(--f-disp);font-size:1.1rem;color:var(--muted)}
+.kpic .kp{font-family:var(--f-mono);font-weight:600;font-size:.9rem}
+.kpic .kp.ok{color:var(--good-ink)}
+.kpic .kl{display:grid;grid-template-columns:repeat(3,auto);justify-content:space-between;gap:4px 8px;font-size:.78rem;color:var(--ink-2)}
+.kpic .kl span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.kpic .kl b{font-family:var(--f-mono)}
+.kpic .ks{font-size:.76rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
 .sw{width:12px;height:12px;border-radius:2px;display:inline-block;background:var(--c)}
 .sw.o{background:transparent;border:1.5px solid var(--line-2)}
 
@@ -411,7 +424,7 @@ const AUTH_HASH=/type=(invite|recovery|signup|magiclink)/.exec(location.hash||""
 
 const S={me:null,userName:"",userEmail:"",canWrite:false,canAdmin:false,
   cfg:null,uni:null,av:new Map(),state:"loading",authMode:AUTH_HASH&&/invite|recovery/.test(AUTH_HASH[1])?"setpass":null,authMsg:"",authErr:"",P:null,
-  tab:"resumen",dash:"total",dashEt:null,reg:null,
+  tab:"resumen",dash:"total",dashEt:null,dashF:{contr:"",tt:""},reg:null,
   map:{layer:"estado",tt:"",contr:"",q:""},tbl:{sec:"continente",q:"",tt:"",est:""},
   drw:null,draft:null,saving:false,imp:null,chan:null,lastLoad:0,
   se:null,SE:null,seCat:"fun",seDraft:null};
@@ -435,6 +448,7 @@ function descargar(nombre,texto,tipo){const b=new Blob([texto],{type:tipo});cons
 
 /* ---------- datos (Supabase) ---------- */
 function mapErr(e){const m=(e&&e.message)||String(e||"");const c=e&&e.code;
+  if(c==="PGRST301"||/jwt|token.*(expired|invalid)|not authenticated|Debe iniciar sesi/i.test(m))return {code:"auth",message:m};
   if(c==="42501"||/permission|policy|row-level|security/i.test(m))return {code:"denied",message:m};
   if(/fetch|network|timeout|Failed to/i.test(m))return {code:"unavailable",message:m};
   return {code:"error",message:m};}
@@ -660,6 +674,7 @@ function vResumen(){
    ${sc==="total"?`<p class="small muted">Global ponderado: ${secs().map(s=>`${esc(s.nombre)} ${fmtP(pesoShare(s.peso))}`).join(" · ")} · S/E Tineo ${fmtP(pesoShare(pesoSE()))}. Línea sola: <b class="num">${fmtP(P.lineaPct,1)}</b>.</p>`:""}
    <div class="minis" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${secs().map(s=>{const r=P.sec[s.id];return `<button class="mini" data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(s.nombre)}: ${fmtP(r.pct,1)}\nPeso en el global ${fmtP(pesoShare(s.peso))}">${ring(r.pct,62,secColor(s.id))}<span class="mt"><b>${esc(s.nombre)}</b><span>${r.n} estructuras · ${r.cnt.ter} terminadas</span><span>${r.nv} vanos · ${r.vdone} tendidos</span></span></button>`;}).join("")}
    ${(()=>{const R=S.SE;return `<button class="mini" data-tab="se" style="--c:var(--c-se)" data-tip="Subestación Tineo: ${fmtP(R.total,1)}\nPeso en el global ${fmtP(pesoShare(pesoSE()))}\nToca para ver el detalle">${ring(R.total,62,"var(--c-se)")}<span class="mt"><b>S/E Tineo · ${SE_CONTRATISTA}</b><span>Fundaciones ${R.cat.fun.done}/${R.cat.fun.n} listas</span><span>Estructuras ${R.cat.est.done}/${R.cat.est.n} terminadas</span></span></button>`;})()}</div></div></section>`;
+  h+=kpiSection();
   h+=`<div class="grid2"><section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades</span></div>`;
   if(sc==="total")h+=`<div class="legend">${secs().map(s=>`<span><i class="sw" style="--c:${secColor(s.id)}"></i>${esc(s.nombre)}</span>`).join("")}</div>`;
   h+=`<div class="hbars">`;
@@ -673,6 +688,45 @@ function vResumen(){
   h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en terreno</h2><button class="btn small ghost" data-csv="1">Descargar CSV</button></div>${feedHtml(allHist((k,d)=>sc==="total"||d.sector===sc).filter(x=>!x.imp).slice(0,10))}</section>`;
   return h+`</div>`;
 }
+/* --- Tarjetas de indicadores (responden al ámbito y a los filtros de contratista y tramo) --- */
+const cls3=(c,p)=>{c.n++;if(p>=99.95)c.ter++;else if(p>0)c.eje++;else c.sin++;};
+const cnt0=()=>({n:0,ter:0,eje:0,sin:0});
+function kpiData(){
+  const F=S.dashF;const P=S.P;const out={fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,opgw:0};
+  for(const s of scopeSecs()){const r=P.sec[s.id];
+    for(const e of estr(s.id)){if(F.contr&&e.contr!==F.contr)continue;if(F.tt&&e.tt!==F.tt)continue;
+      const st=r.byE[e.id];const k=kE(s.id,e.id);
+      cls3(out.fun,st.fun);cls3(out.mon,st.mon);cls3(out.acc,cur(k,"acc"));
+      const ps=s.id==="cruce"?patas(e.id):[];
+      cls3(out.pat,ps.length?ps.reduce((x,p)=>x+cur(kP(s.id,e.id,p.pata),"cr_pat"),0)/ps.length:cur(k,"pat"));}
+    for(const v of vanos(s.id)){const eb=estById(s.id,v.b)||{};if(F.contr&&eb.contr!==F.contr)continue;if(F.tt&&v.tt!==F.tt)continue;
+      cls3(out.ten,r.byV[v.key]||0);if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
+  return out;}
+function kpiCard(titulo,c,unidad,layer,nota){const pct=c.n?c.ter/c.n*100:0;
+  return `<button class="kpic" data-kpi="${layer}" data-tip="${esc(`${titulo}\n${c.ter} terminadas · ${c.eje} en ejecución · ${c.sin} faltantes (de ${c.n})\nToca para verlo en el pictograma`)}">
+  <span class="kh"><span class="lbl">${esc(titulo)}</span><span class="kp ${pct>=99.95?"ok":""}">${fmtP(pct)}</span></span>
+  <span class="kv"><b class="num">${c.ter}</b><span class="of num">/ ${c.n}</span></span><span class="small" style="color:var(--ink-2)">${esc(unidad)}</span>
+  <span class="stk">${stkSeg(c,c.n)}</span>
+  <span class="kl"><span><i class="sw" style="--c:var(--good)"></i><b>${c.ter}</b> term.</span><span><i class="sw" style="--c:var(--eje)"></i><b>${c.eje}</b> en ejec.</span><span><i class="sw o"></i><b>${c.sin}</b> faltan</span></span>
+  ${nota?`<span class="ks">${nota}</span>`:""}</button>`;}
+function kpiSection(){
+  const F=S.dashF;const ess=[].concat(...scopeSecs().map(s=>estr(s.id)));
+  const contrs=[...new Set(ess.map(e=>e.contr).filter(Boolean))].sort();const tts=[...new Set(ess.map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
+  if(F.contr&&!contrs.includes(F.contr))F.contr="";if(F.tt&&!tts.includes(F.tt))F.tt="";
+  const K=kpiData();const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
+  const filtro=[F.contr&&"contratista "+F.contr,F.tt].filter(Boolean).join(" · ");
+  let h=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Indicadores de avance</h2><span class="small muted">${esc(amb)}${filtro?" · "+esc(filtro):""} · sin S/E Tineo</span></div>
+  <div class="filters"><div class="field"><label for="k-contr">Contratista</label><select id="k-contr"><option value="">Todos</option>${contrs.map(c=>`<option ${F.contr===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+  <div class="field"><label for="k-tt">Tramo de tendido</label><select id="k-tt"><option value="">Todos</option>${tts.map(t=>`<option ${F.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
+  ${F.contr||F.tt?`<button class="btn small ghost" data-kclear="1">Quitar filtros</button>`:""}</div>
+  <div class="kgrid">
+  ${kpiCard("Fundaciones",K.fun,"fundaciones terminadas","fun",S.dash==="cruce"||S.dash==="total"?"En el cruce se mide por pata (promedio de las 4).":"")}
+  ${kpiCard("Montaje de estructuras",K.mon,"estructuras montadas","mon","")}
+  ${kpiCard("Tendido",K.ten,"vanos tendidos al 100%","ten",`Conductor C1: <b>${K.c1}</b>/${K.ten.n} · C2: <b>${K.c2}</b>/${K.ten.n} · OPGW: <b>${K.opgw}</b>/${K.ten.n} vanos`)}
+  ${kpiCard("Caminos de acceso",K.acc,"caminos construidos","pic","")}
+  ${kpiCard("Mallas de puesta a tierra",K.pat,"mallas PAT instaladas","pre",S.dash==="cruce"||S.dash==="total"?"En el cruce se toma la malla PAT de las patas.":"")}
+  </div></section>`;
+  return h;}
 function stkSeg(c,n){if(!n)return "";const seg=k=>c[k]?`<i class="${k}" style="width:${c[k]/n*100}%">${c[k]/n>.06?c[k]:""}</i>`:"";return seg("ter")+seg("eje")+seg("sin");}
 function drillHtml(et){
   const rows=[];
@@ -857,10 +911,11 @@ function vDrawerSE(){
 /* ---------- Panel de estructura ---------- */
 function openDrawer(sec,id,pata){const e=estById(sec,id);if(!e)return;S.drw={sec,id,edit:null,pata:pata||(sec==="cruce"&&patas(id)[0]?patas(id)[0].pata:null),fgSel:null};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
 function closeDrawer(){S.drw=null;render();}
-function qeHtml(E,title){return `<div class="qe">${title?`<b class="small">${esc(title)}</b>`:""}<div class="quick" role="group" aria-label="Avance">${[0,25,50,75,100].map(p=>`<button data-qp="${p}" aria-pressed="${E.pct===p}">${p}%</button>`).join("")}</div>
-      <div class="form-grid"><div class="field"><label for="q-pct">Otro valor (%)</label><input id="q-pct" type="number" min="0" max="100" value="${E.pct}"></div><div class="field"><label for="q-fecha">Fecha</label><input id="q-fecha" type="date" max="${today()}" value="${esc(E.fecha)}"></div></div>
+function qeHtml(E,title){const nf=newerFecha(E.key,[E.aid],E.fecha);return `<div class="qe">${title?`<b class="small">${esc(title)}</b>`:""}<div class="quick" role="group" aria-label="Avance">${[0,25,50,75,100].map(p=>`<button data-qp="${p}" aria-pressed="${E.pct===p}">${p}%</button>`).join("")}</div>
+      ${nf?`<div class="warnline">⚠ Ya hay un registro con fecha ${esc(fmtD(nf))}, posterior a la elegida. Este quedará en el historial pero no cambiará el avance vigente.</div>`:""}
+      <div class="form-grid"><div class="field"><label for="q-pct">Otro valor (%)</label><input id="q-pct" type="number" min="0" max="100" step="any" value="${E.pct}"></div><div class="field"><label for="q-fecha">Fecha</label><input id="q-fecha" type="date" max="${today()}" value="${esc(E.fecha)}"></div></div>
       <div class="field"><label for="q-obs">Observación (opcional)</label><input id="q-obs" type="text" maxlength="500" value="${esc(E.obs)}"></div>
-      <div class="row"><button class="btn primary small" id="q-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar "+E.pct+"%"}</button><button class="btn small ghost" id="q-cancel">Cancelar</button></div></div>`;}
+      <div class="row"><button class="btn primary small" id="q-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar "+fmtP(E.pct,E.pct%1!==0)}</button><button class="btn small ghost" id="q-cancel">Cancelar</button></div></div>`;}
 /* % de un circuito del conductor (promedio ponderado de sus 3 fases) en un vano */
 function circPct(key,c){let W=0,P=0;for(const a of condActs())if(a.circ===c){const w=num(a.peso,0)||1;W+=w;P+=w*cur(key,a.id);}return W?P/W:0;}
 function condGrid(key,ro){const cs=condActs();if(!cs.length)return "";const D=S.drw;const fases=[...new Set(cs.map(a=>a.fase))];const circs=[...new Set(cs.map(a=>a.circ))].sort();
@@ -920,16 +975,27 @@ async function saveOne(key,sec,meta,aids,pct,fecha,obs,ts){
   mergeLocal(key,base,act,hist);
 }
 function saveErr(err,ok,total){
-  if(err&&err.code==="denied")toast("No tienes permiso para registrar avances. Contacta al administrador.",true);
-  else toast(total>1?`Se guardaron ${ok} de ${total}. Revisa tu conexión e intenta de nuevo.`:"No se pudo guardar. Revisa tu conexión e intenta de nuevo.",true);}
+  const pre=total>1?`Se guardaron ${ok} de ${total}. `:"No se guardó. ";
+  if(err&&err.code==="denied")toast(pre+"No tienes permiso para registrar avances. Contacta al administrador.",true);
+  else if(err&&err.code==="auth")toast(pre+"Tu sesión expiró: presiona «Salir», vuelve a ingresar y repite el registro.",true);
+  else if(err&&err.code==="unavailable")toast(pre+"Sin conexión con el servidor. Revisa tu internet e intenta de nuevo.",true);
+  else toast(pre+"El servidor respondió: "+((err&&err.message)||"error desconocido"),true);}
+/* Fecha más reciente ya registrada (posterior a "fecha") para alguna de las actividades; si existe, el nuevo registro
+   queda en el historial pero no cambia el % vigente. */
+function newerFecha(key,aids,fecha){const d=S.av.get(key);let m=null;for(const a of aids){const x=d&&d.act&&d.act[a];if(x&&x.fecha&&x.fecha>fecha&&(!m||x.fecha>m))m=x.fecha;}return m;}
+const pctIn=v=>clamp(Math.round(v*10)/10,0,100);
 async function quickSave(){
-  const E=S.drw&&S.drw.edit;if(!E)return;
-  {const pi=$("#q-pct"),fi=$("#q-fecha"),oi=$("#q-obs");if(pi&&pi.value!==""){const v=num(pi.value,NaN);if(isFinite(v))E.pct=clamp(Math.round(v),0,100);}if(fi&&fi.value)E.fecha=fi.value;if(oi)E.obs=oi.value;}
+  const E=S.drw&&S.drw.edit;if(!E||S.saving)return;
+  {const pi=$("#q-pct"),fi=$("#q-fecha"),oi=$("#q-obs");if(pi&&pi.value!==""){const v=num(pi.value,NaN);if(isFinite(v))E.pct=pctIn(v);}if(fi&&fi.value)E.fecha=fi.value;if(oi)E.obs=oi.value;}
   if(!(E.pct>=0&&E.pct<=100)){toast("El avance debe estar entre 0 y 100%.",true);return;}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(E.fecha)||E.fecha>today()){toast("Revisa la fecha: no puede ser futura.",true);return;}
-  const meta=metaForKey(E.key);if(!meta)return;const a=actById(E.aid);
+  const meta=metaForKey(E.key);if(!meta){toast("No se pudo identificar el elemento. Cierra el panel y vuelve a abrirlo.",true);return;}const a=actById(E.aid);
+  const nf=newerFecha(E.key,[E.aid],E.fecha);
   S.saving=true;render();
-  try{await saveOne(E.key,S.drw.sec,meta,E.aid,E.pct,E.fecha,E.obs,Date.now());S.drw.edit=null;toast(`Guardado: ${a.nombre} ${E.pct}% en ${meta.kind==="vano"?"vano "+meta.unidad:meta.unidad+(meta.pata?" pata "+meta.pata:"")}.`);}
+  try{await saveOne(E.key,S.drw.sec,meta,E.aid,E.pct,E.fecha,E.obs,Date.now());S.drw.edit=null;
+    const donde=meta.kind==="vano"?"vano "+meta.unidad:meta.unidad+(meta.pata?" pata "+meta.pata:"");
+    if(nf)toast(`Guardado en el historial (${a.nombre} ${fmtP(E.pct,E.pct%1!==0)} en ${donde}), pero el avance vigente no cambia: ya hay un registro con fecha posterior (${fmtD(nf)}).`,true);
+    else toast(`Guardado: ${a.nombre} ${fmtP(E.pct,E.pct%1!==0)} en ${donde}.`);}
   catch(err){saveErr(err,0,1);}
   S.saving=false;render();
 }
@@ -985,28 +1051,35 @@ function vRegistrar(){
   h+=`<section class="step ${ready?"":"off"}"><div class="step-h"><span class="step-n">4</span><div><h3>¿Cuál es el avance físico observado?</h3><span class="hint">Porcentaje acumulado de la actividad.</span></div></div>`;
   if(ready){const byUid=new Map(unitsFor(r,true).map(u=>[u.uid,u]));const lower=[...r.sel].filter(u=>byUid.get(u)&&aids.some(a=>cur(byUid.get(u).key,a)>r.pct));
     h+=`<div class="quick" role="group" aria-label="Avance rápido">${[0,25,50,75,100].map(v=>`<button data-rpct="${v}" aria-pressed="${r.pct===v}">${v}%</button>`).join("")}</div>
-    <div class="form-grid"><div class="field"><label for="r-pct">Otro valor (%)</label><input id="r-pct" type="number" min="0" max="100" step="1" value="${r.pct}"></div><div class="field"><label for="r-fecha">Fecha de la inspección</label><input id="r-fecha" type="date" max="${today()}" value="${esc(r.fecha)}"></div></div>
+    <div class="form-grid"><div class="field"><label for="r-pct">Otro valor (%)</label><input id="r-pct" type="number" min="0" max="100" step="any" value="${r.pct}"></div><div class="field"><label for="r-fecha">Fecha de la inspección</label><input id="r-fecha" type="date" max="${today()}" value="${esc(r.fecha)}"></div></div>
     <div class="field"><label for="r-obs">Observación (opcional)</label><textarea id="r-obs" maxlength="500">${esc(r.obs)}</textarea></div>
-    <div class="summary">Vas a registrar <b>${esc(act.nombre)} = ${r.pct}%</b> en <b>${r.sel.size}</b> ${word} de <b>${esc(secName(r.sec))}</b> (<span class="mono">${[...r.sel].slice(0,10).map(u=>esc(byUid.get(u)?byUid.get(u).label:u)).join(", ")}${r.sel.size>10?"…":""}</span>), fecha <b>${esc(fmtD(r.fecha))}</b>.</div>
+    <div class="summary">Vas a registrar <b>${esc(act.nombre)} = ${fmtP(r.pct,r.pct%1!==0)}</b> en <b>${r.sel.size}</b> ${word} de <b>${esc(secName(r.sec))}</b> (<span class="mono">${[...r.sel].slice(0,10).map(u=>esc(byUid.get(u)?byUid.get(u).label:u)).join(", ")}${r.sel.size>10?"…":""}</span>), fecha <b>${esc(fmtD(r.fecha))}</b>.</div>
     ${lower.length?`<div class="warnline">⚠ ${lower.length} seleccionada(s) ya tienen un avance mayor. Guardar lo corregirá hacia abajo.</div>`:""}
+    ${(()=>{const atr=[...r.sel].filter(u=>byUid.get(u)&&newerFecha(byUid.get(u).key,aids,r.fecha));return atr.length?`<div class="warnline">⚠ ${atr.length} seleccionada(s) ya tienen un registro con fecha posterior a ${esc(fmtD(r.fecha))}: este registro quedará en su historial pero no cambiará su avance vigente.</div>`:"";})()}
     <div class="row"><button class="btn primary" id="r-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar avance"}</button><button class="btn ghost" data-rreset="1">Empezar de nuevo</button></div>`;}
   return h+`</section></div>`;
 }
 async function guardar(){
-  const r=S.reg;const aids=regAids(r);
-  {const pi=$("#r-pct"),fi=$("#r-fecha"),oi=$("#r-obs");if(pi&&pi.value!==""){const v=num(pi.value,NaN);if(isFinite(v))r.pct=clamp(Math.round(v),0,100);}if(fi&&fi.value)r.fecha=fi.value;if(oi)r.obs=oi.value;}
+  const r=S.reg;const aids=regAids(r);if(S.saving)return;
+  {const pi=$("#r-pct"),fi=$("#r-fecha"),oi=$("#r-obs");if(pi&&pi.value!==""){const v=num(pi.value,NaN);if(isFinite(v))r.pct=pctIn(v);}if(fi&&fi.value)r.fecha=fi.value;if(oi)r.obs=oi.value;}
   if(r.act==="__cond"&&!aids.length){toast("Elige al menos una fase del conductor.",true);return;}
   const act=r.act==="__cond"?{id:aids,nombre:"Tendido de conductor ("+aids.length+" fase"+(aids.length>1?"s":"")+")"}:actById(r.act);
   if(!act||!r.sec||!r.sel.size)return;
   if(!(r.pct>=0&&r.pct<=100)){toast("El avance debe estar entre 0 y 100%.",true);return;}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(r.fecha)||r.fecha>today()){toast("Revisa la fecha: no puede ser futura.",true);return;}
   const byUid=new Map(unitsFor(r,true).map(u=>[u.uid,u]));
-  S.saving=true;render();const ts=Date.now();let ok=0,err=null;
-  for(const uid of r.sel){const u=byUid.get(uid);if(!u)continue;try{await saveOne(u.key,r.sec,u.meta,act.id,r.pct,r.fecha,r.obs,ts);ok++;}catch(e){err=e;break;}}
+  const ids=Array.isArray(act.id)?act.id:[act.id];
+  const atras=[...r.sel].filter(uid=>{const u=byUid.get(uid);return u&&newerFecha(u.key,ids,r.fecha);});
+  S.saving=true;render();const ts=Date.now();let ok=0,err=null;const hechos=new Set();
+  for(const uid of r.sel){const u=byUid.get(uid);if(!u)continue;try{await saveOne(u.key,r.sec,u.meta,act.id,r.pct,r.fecha,r.obs,ts);ok++;hechos.add(uid);}catch(e){err=e;break;}}
   S.saving=false;
-  if(err){saveErr(err,ok,r.sel.size);render();return;}
-  toast(`Avance guardado: ${act.nombre} ${r.pct}% en ${ok} ${r.sec==="se"?"elemento(s)":r.grp==="tva"?"vano(s)":r.grp==="cr"?"pata(s)":"estructura(s)"}.`);
-  r.sel=new Set();r.obs="";render();
+  /* lo ya guardado se quita de la selección para no duplicarlo al reintentar */
+  r.sel=new Set([...r.sel].filter(uid=>!hechos.has(uid)));
+  if(err){saveErr(err,ok,ok+r.sel.size);render();return;}
+  const word=r.sec==="se"?"elemento(s)":r.grp==="tva"?"vano(s)":r.grp==="cr"?"pata(s)":"estructura(s)";
+  if(atras.length)toast(`Guardado en ${ok} ${word}. Atención: en ${atras.length} ya había un registro con fecha posterior, así que su avance vigente no cambió (queda en el historial).`,true);
+  else toast(`Avance guardado: ${act.nombre} ${fmtP(r.pct,r.pct%1!==0)} en ${ok} ${word}.`);
+  r.obs="";render();
 }
 
 /* ---------- Estructuras (tabla) ---------- */
@@ -1131,9 +1204,13 @@ function parseCruce(txt){
 }
 async function decodeBuf(buf){try{return new TextDecoder("utf-8",{fatal:true}).decode(buf);}catch(e){return new TextDecoder("windows-1252").decode(buf);}}
 function managedFor(meta){if(meta.kind==="pata")return actsG("cr").map(a=>a.id);const gs=meta.sector==="cruce"?["pre","mon"]:["pre","amet","ahor","zv","pila","mon"];return acts().filter(a=>gs.includes(a.g)).map(a=>a.id);}
+/* ¿El valor vigente de esta actividad viene de una importación de Excel? (las cargas antiguas no marcaban "imp" en act, pero su historial sí) */
+function vigenteImportado(d,a){const x=d&&d.act&&d.act[a];if(!x)return true;return !!(x.imp||(d.hist&&d.hist["i"+x.ts+"_"+a]&&d.hist["i"+x.ts+"_"+a].imp));}
+/* No reemplazar lo registrado en terreno (en la app) con fecha igual o posterior al corte del Excel */
+function protegido(d,a,fecha){const x=d&&d.act&&d.act[a];return !!(x&&!vigenteImportado(d,a)&&(x.fecha||"")>=fecha);}
 async function writeOp(op,fecha,ts){
   const act={},hist={};
-  for(const [a,v] of Object.entries(op.ch)){hist["i"+ts+"_"+a]={a,pct:v,fecha,por:S.me,pn:S.userName,obs:"Carga desde matriz Excel",ts,imp:true};act[a]={pct:v,fecha,por:S.me,pn:S.userName,ts};}
+  for(const [a,v] of Object.entries(op.ch)){hist["i"+ts+"_"+a]={a,pct:v,fecha,por:S.me,pn:S.userName,obs:"Carga desde matriz Excel",ts,imp:true};act[a]={pct:v,fecha,por:S.me,pn:S.userName,ts,imp:true};}
   const base=baseOf(op.x.meta.sector,op.x.meta);
   await rpcAvance(op.k,base,act,hist);mergeLocal(op.k,base,act,hist);
 }
@@ -1146,16 +1223,16 @@ async function importar(genTxt,cruTxt,fecha){
     const uni={v:2,estructuras:G.est.map(e=>e.sec==="cruce"&&torreCr[e.id]?Object.assign({},e,{torre:torreCr[e.id]}):e),patas:C.patas,ts:Date.now()};
     S.imp.msg="Guardando la lista de estructuras";render();
     await withRetry(()=>setConfig("unidades",uni));
-    const vals=new Map([...G.vals,...C.vals]);const ts=Date.now();const ops=[];
+    const vals=new Map([...G.vals,...C.vals]);const ts=Date.now();const ops=[];let prot=0;
     for(const [k,x] of vals){const d=S.av.get(k);const ch={};
-      for(const a of managedFor(x.meta)){const v=x.acts[a]||0;const c=d&&d.act&&d.act[a]?num(d.act[a].pct,0):0;if(Math.abs(c-v)>0.01)ch[a]=v;}
+      for(const a of managedFor(x.meta)){const v=x.acts[a]||0;const c=d&&d.act&&d.act[a]?num(d.act[a].pct,0):0;if(Math.abs(c-v)>0.01){if(protegido(d,a,fecha)){prot++;continue;}ch[a]=v;}}
       if(Object.keys(ch).length)ops.push({k,d,x,ch});}
     S.imp.total=ops.length;S.imp.msg="Guardando avances";render();
     let i=0;const worker=async()=>{while(i<ops.length){const op=ops[i++];await withRetry(()=>writeOp(op,fecha,ts));S.imp.done++;schedule();}};
     await Promise.all([worker(),worker(),worker()]);
     await withRetry(()=>updateConfig("proyecto",{importPendiente:false,importado:{fecha,ts,cambios:ops.length,estructuras:uni.estructuras.length,patas:uni.patas.length}}));
     const bad=G.chk.bad.concat(C.chk.bad);
-    S.imp={running:false,ok:true,msg:`Carga completa con fecha ${fmtD(fecha)}: ${uni.estructuras.length} estructuras y ${uni.patas.length} patas; ${ops.length} con cambios.`,
+    S.imp={running:false,ok:true,msg:`Carga completa con fecha ${fmtD(fecha)}: ${uni.estructuras.length} estructuras y ${uni.patas.length} patas; ${ops.length} con cambios.${prot?` Se respetaron ${prot} avance(s) registrados en terreno con fecha igual o posterior al corte.`:""}`,
       chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con los totales del Excel (${bad.slice(0,8).join(", ")}${bad.length>8?"…":""}).`:`Verificación: los totales de las ${G.chk.n+C.chk.n} filas cuadran con el Excel.`};
   }catch(e){S.imp={running:false,ok:false,msg:e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"Error")};}
   render();
@@ -1214,15 +1291,16 @@ async function importarArchivosSE(){
     if(ff){const P=parseSEFund(await decodeBuf(await ff.arrayBuffer()));rows.push(...P.out);chks.push(P.chk);}
     if(fe){const P=parseSEEst(await decodeBuf(await fe.arrayBuffer()));rows.push(...P.out);chks.push(P.chk);}
     const ts=Date.now();const ops=[];
-    for(const {it,a} of rows){const k=kSE(it.cat,it.id);const ch={};for(const x of SE_ACTS[it.cat]){const v=a[x.id]||0;if(Math.abs(cur(k,x.id)-v)>0.01)ch[x.id]=v;}if(Object.keys(ch).length)ops.push({k,it,ch});}
+    let prot=0;
+    for(const {it,a} of rows){const k=kSE(it.cat,it.id);const d=S.av.get(k);const ch={};for(const x of SE_ACTS[it.cat]){const v=a[x.id]||0;if(Math.abs(cur(k,x.id)-v)>0.01){if(protegido(d,x.id,fecha)){prot++;continue;}ch[x.id]=v;}}if(Object.keys(ch).length)ops.push({k,it,ch});}
     S.imp.total=ops.length;S.imp.msg="Guardando avances";render();
     let i=0;const worker=async()=>{while(i<ops.length){const op=ops[i++];const act={},hist={};
-      for(const [aid,v] of Object.entries(op.ch)){hist["i"+ts+"_"+aid]={a:aid,pct:v,fecha,por:S.me,pn:S.userName,obs:"Carga desde matriz S/E",ts,imp:true};act[aid]={pct:v,fecha,por:S.me,pn:S.userName,ts};}
+      for(const [aid,v] of Object.entries(op.ch)){hist["i"+ts+"_"+aid]={a:aid,pct:v,fecha,por:S.me,pn:S.userName,obs:"Carga desde matriz S/E",ts,imp:true};act[aid]={pct:v,fecha,por:S.me,pn:S.userName,ts,imp:true};}
       const base=baseOf("se",{kind:"se",unidad:op.it.id,cat:op.it.cat});await withRetry(()=>rpcAvance(op.k,base,act,hist));mergeLocal(op.k,base,act,hist);S.imp.done++;schedule();}};
     await Promise.all([worker(),worker(),worker()]);
     await withRetry(()=>setConfig("se",Object.assign({},S.se||{},{importado:{fecha,ts,filas:rows.length,cambios:ops.length}})));
     const bad=[].concat(...chks.map(c=>c.bad)),n=chks.reduce((x,c)=>x+c.n,0);
-    S.imp={running:false,ok:true,msg:`Matrices S/E cargadas con fecha ${fmtD(fecha)}: ${rows.length} elementos leídos, ${ops.length} con cambios.`,chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con el "Avance parcial" del Excel (${bad.slice(0,8).join(", ")}).`:`Verificación: las ${n} filas cuadran con el "Avance parcial" del Excel.`};
+    S.imp={running:false,ok:true,msg:`Matrices S/E cargadas con fecha ${fmtD(fecha)}: ${rows.length} elementos leídos, ${ops.length} con cambios.${prot?` Se respetaron ${prot} avance(s) registrados en terreno con fecha igual o posterior al corte.`:""}`,chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con el "Avance parcial" del Excel (${bad.slice(0,8).join(", ")}).`:`Verificación: las ${n} filas cuadran con el "Avance parcial" del Excel.`};
   }catch(e){S.imp={running:false,ok:false,msg:e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"Error")};}
   render();
 }
@@ -1277,6 +1355,8 @@ document.addEventListener("click",ev=>{
   if(b.id==="se-imp"){importarArchivosSE();return;}
   if(ds.dash){S.dash=ds.dash;render();return;}
   if(ds.dashet){S.dashEt=S.dashEt===ds.dashet?null:ds.dashet;render();return;}
+  if(ds.kpi){S.map.layer=ds.kpi;S.map.contr=S.dashF.contr;S.map.tt=S.dashF.tt;S.map.q="";go("linea");return;}
+  if(ds.kclear){S.dashF={contr:"",tt:""};render();return;}
   if(ds.gott){S.map.tt=ds.gott;go("linea");return;}
   if(ds.layer){S.map.layer=ds.layer;render();return;}
   if(ds.tsec){S.tbl={sec:ds.tsec,q:"",tt:"",est:""};render();return;}
@@ -1308,12 +1388,12 @@ document.addEventListener("click",ev=>{
 });
 document.addEventListener("input",ev=>{
   const t=ev.target,ds=t.dataset;
-  if(t.id==="q-pct"){const v=num(t.value,NaN);if(isFinite(v)&&S.drw&&S.drw.edit)S.drw.edit.pct=clamp(Math.round(v),0,100);return;}
+  if(t.id==="q-pct"){const v=num(t.value,NaN);if(isFinite(v)&&S.drw&&S.drw.edit)S.drw.edit.pct=pctIn(v);return;}
   if(t.id==="q-fecha"){if(S.drw&&S.drw.edit)S.drw.edit.fecha=t.value;return;}
   if(t.id==="q-obs"){if(S.drw&&S.drw.edit)S.drw.edit.obs=t.value;return;}
   if(t.id==="r-obs"){S.reg.obs=t.value;return;}
   if(t.id==="r-fecha"){S.reg.fecha=t.value;return;}
-  if(t.id==="r-pct"){const v=num(t.value,NaN);if(isFinite(v))S.reg.pct=clamp(Math.round(v),0,100);return;}
+  if(t.id==="r-pct"){const v=num(t.value,NaN);if(isFinite(v))S.reg.pct=pctIn(v);return;}
   if(t.id==="r-q"){S.reg.q=t.value;render();return;}
   if(t.id==="m-q"){S.map.q=t.value;render();return;}
   if(t.id==="t-q"){S.tbl.q=t.value;render();return;}
@@ -1333,10 +1413,12 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="r-tt")return set(()=>{S.reg.tt=t.value;});
   if(t.id==="r-all")return set(()=>{S.reg.verTodas=t.checked;});
   if(t.id==="m-tt")return set(()=>{S.map.tt=t.value;});
+  if(t.id==="k-contr")return set(()=>{S.dashF.contr=t.value;});
+  if(t.id==="k-tt")return set(()=>{S.dashF.tt=t.value;});
   if(t.id==="m-c")return set(()=>{S.map.contr=t.value;});
   if(t.id==="t-tt")return set(()=>{S.tbl.tt=t.value;});
   if(t.id==="t-est")return set(()=>{S.tbl.est=t.value;});
-  if(t.id==="q-pct"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
+  if(t.id==="q-pct"||t.id==="q-fecha"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&S.state==="ok"&&Date.now()-S.lastLoad>120000){try{await loadAll();render();}catch(e){}}});
 
 /* ---------- inicio ---------- */
