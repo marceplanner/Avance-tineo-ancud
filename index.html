@@ -298,6 +298,9 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .cgrid .cf.on,.cgrid .cf[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
 .cgrid .cf:disabled{cursor:default}
 .cgrid .cf.sel{background:var(--accent-soft);color:var(--ink)}
+.cgrid.wt{grid-template-columns:84px repeat(3,minmax(0,1fr)) 58px}
+.cgrid .ctot{font-family:var(--f-mono);font-size:.8rem;font-weight:600;text-align:right}
+.cgrid .ctot.ok{color:var(--good-ink)}
 .tabs2{display:flex;gap:4px;flex-wrap:wrap}
 .tabs2 button{border:1px solid var(--line-2);background:var(--surface);padding:5px 12px;border-radius:999px;font-size:.84rem}
 .tabs2 button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -553,11 +556,18 @@ function towerSvg(fill,anc,big){const w=big?26:22,h=big?30:26;
   return `<svg width="${w}" height="${h}" viewBox="0 0 22 26" aria-hidden="true"><path d="${d}" fill="${fill}" stroke="var(--ink)" stroke-width="1" stroke-linejoin="round"/><path d="M8 18 L14 18 M9 13.5 L13 13.5" stroke="var(--ink)" stroke-width=".6" opacity=".5"/></svg>`;}
 
 /* ---------- render ---------- */
-let rq=0,pendingRender=false;
+let rq=0,pendingRender=false,ptrDown=false;
+/* Mientras el mouse/dedo está presionado no se redibuja: si no, el botón tocado (p. ej. "Guardar")
+   se reemplaza entre el pointerdown y el click y el click se pierde. Se redibuja al soltar. */
+document.addEventListener("pointerdown",()=>{ptrDown=true;},true);
+const ptrRelease=()=>{if(!ptrDown)return;setTimeout(()=>{ptrDown=false;if(pendingRender){const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();}},0);};
+document.addEventListener("pointerup",ptrRelease,true);
+document.addEventListener("pointercancel",ptrRelease,true);
 function schedule(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;const ae=document.activeElement;
+  if(ptrDown){pendingRender=true;return;}
   if(ae&&($("#main").contains(ae)||$("#drawer").contains(ae))&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file"){pendingRender=true;renderChrome();return;}
   render();});}
-document.addEventListener("focusout",()=>{if(pendingRender){setTimeout(()=>{const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();},60);}});
+document.addEventListener("focusout",()=>{if(pendingRender){setTimeout(()=>{if(ptrDown)return;const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();},60);}});
 
 function renderChrome(){
   const c=S.cfg||{};const ok=S.state==="ok";
@@ -726,7 +736,7 @@ function lineHtml(sec,es,r){
     const vl=prev?vanoBetween(sec,prev.id,e.id):null,vr=next?vanoBetween(sec,e.id,next.id):null;
     const vv=v=>v?`style="--v:${Math.round(r.byV[v.key]||0)}%"`:"";
     const k=kE(sec,e.id);const anc=/ancl/i.test(e.tipo||"");const big=sec==="cruce";
-    const tip=`Estructura ${e.id} · ${e.tipo||""}${e.torre?" · "+e.torre:""}\n${e.tt||""}${e.contr?" · "+e.contr:""}\nPrelim. ${fmtP(st.pre)} · Fund. ${fmtP(st.fun)} · Mont. ${fmtP(st.mon)} · Tend. ${fmtP(st.tto)}${vr&&L==="ten"?`\nVano ${vr.label}: ${fmtP(r.byV[vr.key]||0)} · conductor ${condActs().filter(a=>cur(vr.key,a.id)>=99.95).length}/${condActs().length} fases · OPGW ${fmtP(cur(vr.key,"tv_opg"))}`:""}\n${EST_TXT[estado(st)]}`;
+    const tip=`Estructura ${e.id} · ${e.tipo||""}${e.torre?" · "+e.torre:""}\n${e.tt||""}${e.contr?" · "+e.contr:""}\nPrelim. ${fmtP(st.pre)} · Fund. ${fmtP(st.fun)} · Mont. ${fmtP(st.mon)} · Tend. ${fmtP(st.tto)}${vr&&L==="ten"?`\nVano ${vr.label}: ${fmtP(r.byV[vr.key]||0)} · conductor C1 ${fmtP(circPct(vr.key,"1"))} · C2 ${fmtP(circPct(vr.key,"2"))} · OPGW ${fmtP(cur(vr.key,"tv_opg"))}`:""}\n${EST_TXT[estado(st)]}`;
     const marks=L==="pic"?`<span class="mk">${IND.map(x=>{const v=x.k==="per"||x.k==="acc"?cur(k,x.k):st[x.k];return `<i class="${v>=99.95?"full":v>0?"part":""}" style="--c:${x.c}"></i>`;}).join("")}</span>`:"";
     h+=`<button class="tw ${L==="pic"?"pic":""} ${matchF(e)?"":"dim"} ${selId===e.id?"sel":""}" data-open="${sec}|${esc(e.id)}" data-tip="${esc(tip)}" aria-label="${esc(tip)}"><span class="vl ${vClass(vl,r)}" ${vv(vl)}></span><span class="vr ${vClass(vr,r)}" ${vv(vr)}></span>${towerSvg(layerFill(sec,e,st),anc,big)}<span class="n">${esc(e.id)}</span>${marks}</button>`;
     if(sec==="cruce"&&e.id==="2C"&&next&&next.id==="3C"){const v=vanoBetween(sec,"2C","3C");h+=`<span class="canalseg" data-tip="${v?`Vano de cruce 2C–3C: ${fmtP(r.byV[v.key]||0)} tendido`:"Canal de Chacao"}"><span class="vl ${vClass(v,r)}" ${vv(v)}></span>CANAL DE CHACAO</span>`;}
@@ -851,11 +861,14 @@ function qeHtml(E,title){return `<div class="qe">${title?`<b class="small">${esc
       <div class="form-grid"><div class="field"><label for="q-pct">Otro valor (%)</label><input id="q-pct" type="number" min="0" max="100" value="${E.pct}"></div><div class="field"><label for="q-fecha">Fecha</label><input id="q-fecha" type="date" max="${today()}" value="${esc(E.fecha)}"></div></div>
       <div class="field"><label for="q-obs">Observación (opcional)</label><input id="q-obs" type="text" maxlength="500" value="${esc(E.obs)}"></div>
       <div class="row"><button class="btn primary small" id="q-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar "+E.pct+"%"}</button><button class="btn small ghost" id="q-cancel">Cancelar</button></div></div>`;}
+/* % de un circuito del conductor (promedio ponderado de sus 3 fases) en un vano */
+function circPct(key,c){let W=0,P=0;for(const a of condActs())if(a.circ===c){const w=num(a.peso,0)||1;W+=w;P+=w*cur(key,a.id);}return W?P/W:0;}
 function condGrid(key,ro){const cs=condActs();if(!cs.length)return "";const D=S.drw;const fases=[...new Set(cs.map(a=>a.fase))];const circs=[...new Set(cs.map(a=>a.circ))].sort();
   const done=cs.filter(a=>cur(key,a.id)>=99.95).length;
-  let h=`<div class="cgrid" role="group" aria-label="Tendido de conductor"><span class="small"><b>Conductor</b><br><span class="muted">${done}/${cs.length} fases</span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(faseTxt(f))}</span>`).join("")}`;
+  let h=`<div class="cgrid wt" role="group" aria-label="Tendido de conductor"><span class="small"><b>Conductor</b><br><span class="muted">${done}/${cs.length} fases</span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(faseTxt(f))}</span>`).join("")}<span class="lbl" style="text-align:right">Circuito</span>`;
   for(const c of circs){h+=`<span class="small">Circuito ${esc(c)}</span>`;for(const f of fases){const a=cs.find(x=>x.circ===c&&x.fase===f);if(!a){h+=`<span></span>`;continue;}const v=cur(key,a.id);const ed=D&&D.edit&&D.edit.key===key&&D.edit.aid===a.id;
-    h+=`<button class="cf ${v>=55?"hi":""} ${ed?"on":""}" style="--p:${clamp(v,0,100).toFixed(0)}%" data-qe="${esc(key)}|${a.id}" ${ro?"disabled":""} data-tip="${esc(a.nombre+" · peso "+fmtP(num(a.peso,0)))}" aria-label="${esc(a.nombre)} ${Math.round(v)}%">${fmtP(v)}</button>`;}}
+    h+=`<button class="cf ${v>=55?"hi":""} ${ed?"on":""}" style="--p:${clamp(v,0,100).toFixed(0)}%" data-qe="${esc(key)}|${a.id}" ${ro?"disabled":""} data-tip="${esc(a.nombre+" · peso "+fmtP(num(a.peso,0)))}" aria-label="${esc(a.nombre)} ${Math.round(v)}%">${fmtP(v)}</button>`;}
+    const cv=circPct(key,c);h+=`<span class="ctot ${cv>=99.95?"ok":""}">${cv>=99.95?"✓ ":""}${fmtP(cv)}</span>`;}
   h+=`</div>`;
   if(D&&D.edit&&D.edit.key===key&&cs.some(a=>a.id===D.edit.aid))h+=qeHtml(D.edit,actById(D.edit.aid).nombre);
   return h;}
@@ -911,6 +924,7 @@ function saveErr(err,ok,total){
   else toast(total>1?`Se guardaron ${ok} de ${total}. Revisa tu conexión e intenta de nuevo.`:"No se pudo guardar. Revisa tu conexión e intenta de nuevo.",true);}
 async function quickSave(){
   const E=S.drw&&S.drw.edit;if(!E)return;
+  {const pi=$("#q-pct"),fi=$("#q-fecha"),oi=$("#q-obs");if(pi&&pi.value!==""){const v=num(pi.value,NaN);if(isFinite(v))E.pct=clamp(Math.round(v),0,100);}if(fi&&fi.value)E.fecha=fi.value;if(oi)E.obs=oi.value;}
   if(!(E.pct>=0&&E.pct<=100)){toast("El avance debe estar entre 0 y 100%.",true);return;}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(E.fecha)||E.fecha>today()){toast("Revisa la fecha: no puede ser futura.",true);return;}
   const meta=metaForKey(E.key);if(!meta)return;const a=actById(E.aid);
@@ -948,7 +962,7 @@ function vRegistrar(){
     if(r.grp){const us=unitsFor(r,true);const avgOf=ids=>us.length?us.reduce((x,u)=>x+curM(u.key,ids),0)/us.length:0;let condShown=false;
       h+=`<div class="grp"><span class="lbl">Actividad</span><div class="opts">${grpActs(r.grp).map(a=>{
         if(a.circ){if(condShown)return "";condShown=true;const cs=condActs();const w=cs.reduce((x,c)=>x+num(c.peso,0),0);
-          return `<button class="opt" data-ract="__cond" aria-pressed="${r.act==="__cond"}"><span class="t">Tendido de conductor</span><span class="s num">2 circuitos × 3 fases · peso ${fmtP(w)} · ${fmtP(avgOf(cs.map(c=>c.id)),0)} promedio</span></button>`;}
+          return `<button class="opt" data-ract="__cond" aria-pressed="${r.act==="__cond"}"><span class="t">Tendido de conductor</span><span class="s num">2 circuitos × 3 fases · peso ${fmtP(w)} · ${[...new Set(cs.map(c=>c.circ))].sort().map(ci=>`C${ci} ${fmtP(avgOf(cs.filter(x=>x.circ===ci).map(x=>x.id)),0)}`).join(" · ")}</span></button>`;}
         return `<button class="opt" data-ract="${a.id}" aria-pressed="${r.act===a.id}"><span class="t">${esc(a.nombre)}</span><span class="s num">Peso ${fmtP(num(a.peso,0))} · ${fmtP(avgOf([a.id]),0)} promedio</span></button>`;}).join("")}</div></div>`;
       if(r.act==="__cond"){const cs=condActs();const fases=[...new Set(cs.map(a=>a.fase))];const circs=[...new Set(cs.map(a=>a.circ))].sort();
         h+=`<div class="grp"><span class="lbl">¿Qué fases? (puedes marcar varias)</span><div class="cgrid" style="max-width:460px"><span></span>${fases.map(f=>`<span class="lbl" style="text-align:center">Fase ${esc(faseTxt(f))}</span>`).join("")}
@@ -980,6 +994,7 @@ function vRegistrar(){
 }
 async function guardar(){
   const r=S.reg;const aids=regAids(r);
+  {const pi=$("#r-pct"),fi=$("#r-fecha"),oi=$("#r-obs");if(pi&&pi.value!==""){const v=num(pi.value,NaN);if(isFinite(v))r.pct=clamp(Math.round(v),0,100);}if(fi&&fi.value)r.fecha=fi.value;if(oi)r.obs=oi.value;}
   if(r.act==="__cond"&&!aids.length){toast("Elige al menos una fase del conductor.",true);return;}
   const act=r.act==="__cond"?{id:aids,nombre:"Tendido de conductor ("+aids.length+" fase"+(aids.length>1?"s":"")+")"}:actById(r.act);
   if(!act||!r.sec||!r.sel.size)return;
@@ -1267,7 +1282,7 @@ document.addEventListener("click",ev=>{
   if(ds.tsec){S.tbl={sec:ds.tsec,q:"",tt:"",est:""};render();return;}
   if(ds.dpata){S.drw.pata=ds.dpata;S.drw.edit=null;render();return;}
   if(ds.dfg){S.drw.fgSel=ds.dfg;render();return;}
-  if(ds.qe){if(!S.canWrite)return;const [key,aid]=ds.qe.split("|");const D=S.drw;if(D.edit&&D.edit.key===key&&D.edit.aid===aid){D.edit=null;}else{const c=cur(key,aid);D.edit={key,aid,pct:c>=100?100:Math.min(100,[25,50,75,100].find(x=>x>c)||100),fecha:today(),obs:""};}render();return;}
+  if(ds.qe){if(!S.canWrite)return;const [key,aid]=ds.qe.split("|");const D=S.drw;if(D.edit&&D.edit.key===key&&D.edit.aid===aid){D.edit=null;}else{const c=cur(key,aid);const ac=actById(aid);D.edit={key,aid,pct:(ac&&ac.circ)||c>=100?100:Math.min(100,[25,50,75,100].find(x=>x>c)||100),fecha:today(),obs:""};}render();return;}
   if(ds.qp){S.drw.edit.pct=+ds.qp;render();return;}
   if(b.id==="q-save"){quickSave();return;}
   if(b.id==="q-cancel"){S.drw.edit=null;render();return;}
@@ -1314,7 +1329,7 @@ document.addEventListener("input",ev=>{
 });
 document.addEventListener("input",ev=>{const t=ev.target;if(t.dataset&&t.dataset.sep){if(!S.seDraft)S.seDraft=sePesos();S.seDraft[t.dataset.sep]=num(t.value,0);}});
 document.addEventListener("change",ev=>{const t=ev.target;
-  const set=fn=>{fn();pendingRender=false;render();};
+  const set=fn=>{fn();if(ptrDown){pendingRender=true;return;}pendingRender=false;render();};
   if(t.id==="r-tt")return set(()=>{S.reg.tt=t.value;});
   if(t.id==="r-all")return set(()=>{S.reg.verTodas=t.checked;});
   if(t.id==="m-tt")return set(()=>{S.map.tt=t.value;});
