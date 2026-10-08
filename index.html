@@ -711,14 +711,14 @@ function kpiCard(titulo,c,unidad,layer,nota){const pct=c.n?c.ter/c.n*100:0;
   ${nota?`<span class="ks">${nota}</span>`:""}</button>`;}
 function kpiSection(){
   const F=S.dashF;const ess=[].concat(...scopeSecs().map(s=>estr(s.id)));
-  const contrs=[...new Set(ess.map(e=>e.contr).filter(Boolean))].sort();const tts=[...new Set(ess.map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
-  if(F.contr&&!contrs.includes(F.contr))F.contr="";if(F.tt&&!tts.includes(F.tt))F.tt="";
+  const contrs=[...new Set(ess.map(e=>e.contr).filter(Boolean))].sort();F.tt="";
+  if(F.contr&&!contrs.includes(F.contr))F.contr="";
   const K=kpiData();const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
-  const filtro=[F.contr&&"contratista "+F.contr,F.tt].filter(Boolean).join(" · ");
+  const filtro=F.contr?"contratista "+F.contr:"";
   let h=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Indicadores de avance</h2><span class="small muted">${esc(amb)}${filtro?" · "+esc(filtro):""} · sin S/E Tineo</span></div>
-  <div class="filters"><div class="field"><label for="k-contr">Contratista</label><select id="k-contr"><option value="">Todos</option>${contrs.map(c=>`<option ${F.contr===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
-  <div class="field"><label for="k-tt">Tramo de tendido</label><select id="k-tt"><option value="">Todos</option>${tts.map(t=>`<option ${F.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
-  ${F.contr||F.tt?`<button class="btn small ghost" data-kclear="1">Quitar filtros</button>`:""}</div>
+  <div class="filters"><div class="field"><label for="k-sec">Sector</label><select id="k-sec"><option value="total" ${S.dash==="total"?"selected":""}>Todos</option>${secs().map(s=>`<option value="${s.id}" ${S.dash===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
+  <div class="field"><label for="k-contr">Contratista</label><select id="k-contr"><option value="">Todos</option>${contrs.map(c=>`<option ${F.contr===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+  ${F.contr||S.dash!=="total"?`<button class="btn small ghost" data-kclear="1">Quitar filtros</button>`:""}</div>
   <div class="kgrid">
   ${kpiCard("Fundaciones",K.fun,"fundaciones terminadas","fun",S.dash==="cruce"||S.dash==="total"?"En el cruce se mide por pata (promedio de las 4).":"")}
   ${kpiCard("Montaje de estructuras",K.mon,"estructuras montadas","mon","")}
@@ -1356,7 +1356,7 @@ document.addEventListener("click",ev=>{
   if(ds.dash){S.dash=ds.dash;render();return;}
   if(ds.dashet){S.dashEt=S.dashEt===ds.dashet?null:ds.dashet;render();return;}
   if(ds.kpi){S.map.layer=ds.kpi;S.map.contr=S.dashF.contr;S.map.tt=S.dashF.tt;S.map.q="";go("linea");return;}
-  if(ds.kclear){S.dashF={contr:"",tt:""};render();return;}
+  if(ds.kclear){S.dashF={contr:"",tt:""};S.dash="total";render();return;}
   if(ds.gott){S.map.tt=ds.gott;go("linea");return;}
   if(ds.layer){S.map.layer=ds.layer;render();return;}
   if(ds.tsec){S.tbl={sec:ds.tsec,q:"",tt:"",est:""};render();return;}
@@ -1414,7 +1414,7 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="r-all")return set(()=>{S.reg.verTodas=t.checked;});
   if(t.id==="m-tt")return set(()=>{S.map.tt=t.value;});
   if(t.id==="k-contr")return set(()=>{S.dashF.contr=t.value;});
-  if(t.id==="k-tt")return set(()=>{S.dashF.tt=t.value;});
+  if(t.id==="k-sec")return set(()=>{S.dash=t.value;S.dashEt=null;});
   if(t.id==="m-c")return set(()=>{S.map.contr=t.value;});
   if(t.id==="t-tt")return set(()=>{S.tbl.tt=t.value;});
   if(t.id==="t-est")return set(()=>{S.tbl.est=t.value;});
