@@ -144,6 +144,24 @@ button.hb:focus-visible{outline:2px solid var(--accent)}
 .stk .eje{background:var(--eje);color:var(--on-accent)}
 .stk .sin{background:var(--surface-3);color:var(--ink-2)}
 .stkrow{display:grid;grid-template-columns:110px 1fr 48px;gap:10px;align-items:center;font-size:.86rem}
+.smx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table.smx{border-collapse:separate;border-spacing:2px;width:auto;font-size:.75rem}
+.smx th,.smx td{padding:0;border:0;white-space:nowrap;background:none}
+.smx .rh{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;padding:2px 12px 2px 8px;font-family:var(--f-disp);font-weight:600;font-size:.82rem;color:var(--ink);min-width:178px;text-transform:none;letter-spacing:0;border-right:1px solid var(--line)}
+.smx .rh small{display:block;font-family:var(--f-mono);font-weight:500;font-size:.68rem;color:var(--muted)}
+.smx .gh{font-family:var(--f-disp);font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:2px 3px;border-bottom:1.5px solid var(--line-2);position:static}
+.smx .gh.gs{color:var(--ink);font-size:.74rem;border-bottom:3px solid var(--c)}
+.smx tr.ids th{vertical-align:bottom;position:static}
+.smx .mxid{all:unset;cursor:pointer;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--f-mono);font-size:.64rem;font-weight:600;color:var(--ink-2);padding:2px 0;display:inline-block;line-height:16px;width:16px;text-align:left}
+.smx .mxid:hover,.smx .mxid:focus-visible{color:var(--accent);outline:1px solid var(--accent)}
+.smx td.c{width:16px;min-width:16px;height:24px;border-radius:2px;background:var(--surface-3);cursor:pointer}
+.smx td.c.p{background:color-mix(in oklab,var(--eje) var(--p),var(--surface-3))}
+.smx td.c.ok{background:var(--good)}
+.smx td.c.na{background:transparent;cursor:default;outline:1px dashed var(--line);outline-offset:-3px}
+.smx td.c:not(.na):hover{outline:2px solid var(--ink);outline-offset:-1px}
+.smx .tot{position:sticky;right:0;z-index:2;background:var(--surface);padding:2px 8px;border-left:1px solid var(--line);font-size:.78rem;text-align:left;min-width:92px}
+.smx td.tot .tb{display:block;height:6px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-bottom:2px}
+.smx td.tot .tb i{display:block;height:100%;width:var(--w);background:var(--good)}
 .kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .kpic{border:1.5px solid var(--line);background:var(--surface);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0}
 .kpic:hover{border-color:var(--ink-2)}
@@ -684,7 +702,8 @@ function vResumen(){
   h+=`</div></section>`;
   h+=`<section class="panel stack"><h2>Estado de estructuras por sector</h2><div class="stack" style="gap:10px">${secs().map(s=>{const r=P.sec[s.id];return `<div class="stkrow"><span class="chip"><span class="dot" style="--c:${secColor(s.id)}"></span>${esc(s.nombre)}</span><div class="stk" data-tip="${esc(s.nombre)}\n${r.cnt.ter} terminadas · ${r.cnt.eje} en ejecución · ${r.cnt.sin} sin iniciar">${stkSeg(r.cnt,r.n)}</div><span class="num small" style="text-align:right">${r.n}</span></div>`;}).join("")}</div>
     <h2 style="margin-top:6px">Por contratista</h2>${contrHtml()}</section></div>`;
-  h+=`<section class="panel stack"><div class="spread"><h2>Avance por tramo de tendido</h2><span class="small muted">Promedio por estructura. Toca un tramo para verlo en el pictograma.</span></div>${tramosChart()}</section>`;
+  {const F=S.dashF;const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
+  h+=`<section class="panel stack" style="gap:10px"><div class="spread"><h2>Detalle por estructura</h2><span class="small muted">${esc(amb)}${F.contr?" · contratista "+esc(F.contr):""} · usa los filtros de "Indicadores de avance"</span></div>${estMatrix()}</section>`;}
   h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en terreno</h2><button class="btn small ghost" data-csv="1">Descargar CSV</button></div>${feedHtml(allHist((k,d)=>sc==="total"||d.sector===sc).filter(x=>!x.imp).slice(0,10))}</section>`;
   return h+`</div>`;
 }
@@ -746,10 +765,36 @@ function contrHtml(){
   const rows=[...m].sort((a,b)=>b[1].n-a[1].n);
   return `<div class="stack" style="gap:8px">${rows.map(([k,x])=>`<div class="trk" style="grid-template-columns:110px 1fr 50px" data-tip="${esc(k)}\n${x.n} estructuras · ${x.ter} terminadas\nAvance promedio ${fmtP(x.t/x.n,1)}"><span class="small"><b>${esc(k)}</b><br><span class="muted">${x.n} estr.</span></span><span class="tb"><i style="--w:${clamp(x.t/x.n,0,100)}%"></i></span><span class="tv">${fmtP(x.t/x.n)}</span></div>`).join("")}</div>`;
 }
-function tramosChart(){
-  const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){if(!e.tt)continue;if(!m.has(e.tt))m.set(e.tt,{n:0,t:0,ter:0,secs:new Set()});const x=m.get(e.tt);const st=S.P.sec[s.id].byE[e.id];x.n++;x.t+=totE(st);if(estado(st)==="ter")x.ter++;x.secs.add(s.nombre);}
-  const rows=[...m].sort((a,b)=>ttNum(a[0])-ttNum(b[0]));if(!rows.length)return `<p class="muted">Sin tramos.</p>`;
-  return `<div style="overflow-x:auto"><div style="min-width:${rows.length*40}px"><div class="cols">${rows.map(([k,x])=>{const v=x.t/x.n;return `<button class="col" data-gott="${esc(k)}" aria-pressed="${S.map.tt===k}" data-tip="${esc(k)} (${[...x.secs].join(", ")})\n${x.n} estructuras · ${x.ter} terminadas\nAvance promedio ${fmtP(v,1)}"><span class="cv">${Math.round(v)}</span><span class="cb" style="--h:${clamp(v,0,100)}%"></span></button>`;}).join("")}</div><div class="colx">${rows.map(([k])=>`<span>T${ttNum(k)}</span>`).join("")}</div></div></div>`;
+/* --- Matriz de avance por estructura (responde a los filtros de "Indicadores de avance") --- */
+const MX_ROWS=[{k:"acc",t:"Camino de acceso"},{k:"pat",t:"Malla puesta a tierra"},{k:"fun",t:"Fundación"},{k:"mon",t:"Montaje"},{k:"tto",t:"Tendido en torre"},{k:"vano",t:"Vano tendido (al siguiente)"}];
+function mxVal(s,e,st,next,k){const kk=kE(s.id,e.id);
+  if(k==="acc")return cur(kk,"acc");
+  if(k==="pat"){const ps=s.id==="cruce"?patas(e.id):[];return ps.length?ps.reduce((x,p)=>x+cur(kP(s.id,e.id,p.pata),"cr_pat"),0)/ps.length:cur(kk,"pat");}
+  if(k==="vano"){if(!next)return null;const v=vanoBetween(s.id,e.id,next.id);return v?(S.P.sec[s.id].byV[v.key]||0):null;}
+  return st[k];}
+function estMatrix(){
+  const F=S.dashF;const cols=[];
+  for(const s of scopeSecs()){const all=estr(s.id);all.forEach((e,i)=>{if(F.contr&&e.contr!==F.contr)return;cols.push({s,e,st:S.P.sec[s.id].byE[e.id],next:all[i+1]});});}
+  if(!cols.length)return `<p class="muted">No hay estructuras con esos filtros.</p>`;
+  /* encabezados agrupados: sector y tramo de tendido */
+  const grp=(keyf)=>{const out=[];for(const c of cols){const k=keyf(c);const last=out[out.length-1];if(last&&last.k===k)last.n++;else out.push({k,n:1,c});}return out;};
+  const gSec=grp(c=>c.s.id),gTT=grp(c=>c.s.id+"|"+(c.e.tt||""));
+  const rows=MX_ROWS.map(r=>{let n=0,ok=0,sum=0;const cells=cols.map(c=>{const v=mxVal(c.s,c.e,c.st,c.next,r.k);if(v!=null){n++;sum+=v;if(v>=99.95)ok++;}return v;});return {r,cells,n,ok,avg:n?sum/n:0};});
+  let h=`<div class="legend"><span><i class="sw" style="--c:var(--good)"></i>Terminado (100%)</span><span><i class="sw" style="--c:color-mix(in oklab,var(--eje) 60%,var(--surface-3))"></i>En ejecución (más intenso = más avance)</span><span><i class="sw" style="--c:var(--surface-3)"></i>Sin iniciar</span><span class="muted">Toca una celda o el N° para abrir la estructura.</span></div>`;
+  h+=`<div class="smx-wrap"><table class="smx"><thead>`;
+  h+=`<tr><th class="rh"></th>${gSec.map(g=>`<th class="gh gs" colspan="${g.n}" style="--c:${secColor(g.k)}">${esc(g.c.s.nombre)}</th>`).join("")}<th class="tot"></th></tr>`;
+  h+=`<tr><th class="rh"></th>${gTT.map(g=>`<th class="gh" colspan="${g.n}">${esc(g.n>=3?(g.c.e.tt||""):(g.c.e.tt||"").replace("Tramo ","T"))}</th>`).join("")}<th class="tot"></th></tr>`;
+  h+=`<tr class="ids"><th class="rh lbl" style="vertical-align:bottom">Indicador</th>${cols.map(c=>`<th><button class="mxid" data-open="${c.s.id}|${esc(c.e.id)}" title="${esc(c.e.id)}">${esc(c.e.id)}</button></th>`).join("")}<th class="tot lbl" style="vertical-align:bottom">Listas</th></tr></thead><tbody>`;
+  for(const R of rows){
+    h+=`<tr><th class="rh">${esc(R.r.t)}<small>${R.ok}/${R.n} al 100% · ${fmtP(R.avg)}</small></th>`;
+    R.cells.forEach((v,i)=>{const c=cols[i];
+      if(v==null){h+=`<td class="c na"></td>`;return;}
+      const cls=v>=99.95?"ok":v>0?"p":"";
+      h+=`<td class="c ${cls}" style="--p:${Math.max(25,Math.round(v))}%" data-open="${c.s.id}|${esc(c.e.id)}" data-tip="${esc(`Estructura ${c.e.id} · ${c.e.tt||""}\n${R.r.t}: ${fmtP(v)}`)}"></td>`;});
+    const pc=R.n?R.ok/R.n*100:0;
+    h+=`<td class="tot"><span class="tb"><i style="--w:${pc}%"></i></span><b class="num">${R.ok}</b><span class="muted">/${R.n}</span></td></tr>`;}
+  h+=`</tbody></table></div>`;
+  return h;
 }
 function feedHtml(list){
   if(!list.length)return `<p class="muted">Aún no hay avances registrados en terreno. Usa <b>Registrar avance</b> o toca una estructura en el pictograma.</p>`;
@@ -1345,7 +1390,7 @@ document.addEventListener("keydown",ev=>{const t=ev.target;if((ev.key==="Enter"|
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&S.drw){if(S.drw.edit){S.drw.edit=null;render();}else closeDrawer();}});
 document.addEventListener("submit",ev=>{ev.preventDefault();if(ev.target.id==="f-login")doLogin();else if(ev.target.id==="f-pass")doSetPass();});
 document.addEventListener("click",ev=>{
-  const b=ev.target.closest("button,[data-close],g[data-ose]");if(!b)return;const ds=b.dataset;const r=S.reg;
+  const b=ev.target.closest("button,[data-close],g[data-ose],td[data-open]");if(!b)return;const ds=b.dataset;const r=S.reg;
   if(ds.close){closeDrawer();return;}
   if(ds.forgot){doForgot();return;}
   if(ds.logout){sb&&sb.auth.signOut();return;}
