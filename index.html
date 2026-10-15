@@ -727,26 +727,38 @@ async function doSetPass(){
 /* ===================== Modelos SVG (esquemas sin escala) ===================== */
 const f1=n=>(Math.round(n*10)/10).toString();
 let CLIPN=0;
-/* Torre de celosía en elevación. Puntos de amarre por lado: [0]=crucetas inferiores (circuito 2), [1]=superiores (circuito 1); cúspide = OPGW */
+/* Torre de doble circuito en disposición vertical, en elevación: circuito 1 a la izquierda y circuito 2 a la derecha,
+   cada uno con sus tres fases en altura; OPGW en la cúspide. Nivel k: 0 = inferior (fase A), 1 = media (B), 2 = superior (C).
+   arms.L/R[k] = amarre del conductor (bajo la cadena); arms.LT/RT[k] = punta de la cruceta */
+const LVL=[0.64,0.76,0.88],ARM_F=[0.92,1,0.85];
 function latticeGeom(cx,gy,H,wb,wt,panels,anc,o){o=o||{};
-  const yW=gy-H*0.72,yH=gy-H,yC=yH+H*0.05,tc=wt*0.75;const P=(x,y)=>f1(x)+" "+f1(y);const s=[];
+  const yW=gy-H*0.58,yT=gy-H*0.93,yH=gy-H;const P=(x,y)=>f1(x)+" "+f1(y);const s=[];
   const lx=y=>cx-(wb-(wb-wt)*(gy-y)/(gy-yW)),rx=y=>cx+(wb-(wb-wt)*(gy-y)/(gy-yW));
+  /* cuerpo troncocónico con diagonales en X */
   s.push(`M${P(cx-wb,gy)}L${P(cx-wt,yW)}M${P(cx+wb,gy)}L${P(cx+wt,yW)}`);
   for(let i=0;i<panels;i++){const y0=gy-(gy-yW)*i/panels,y1=gy-(gy-yW)*(i+1)/panels;s.push(`M${P(lx(y0),y0)}L${P(rx(y1),y1)}M${P(rx(y0),y0)}L${P(lx(y1),y1)}M${P(lx(y1),y1)}L${P(rx(y1),y1)}`);}
-  s.push(`M${P(cx-wt,yW)}L${P(cx-tc,yC)}L${P(cx,yH)}L${P(cx+tc,yC)}L${P(cx+wt,yW)}M${P(cx-wt,yW)}L${P(cx+tc,yC)}M${P(cx+wt,yW)}L${P(cx-tc,yC)}`);
-  /* o.noIns: las cadenas de aisladores se dibujan aparte (vestido); o.armK: largo de cruceta en múltiplos de wt */
-  const arms={L:[],R:[],LT:[],RT:[]};const ins=Math.max(3.5,H*0.05);const ak=o.armK||(anc?3.2:2.7);
-  [0.80,0.90].forEach(f=>{const y=gy-H*f;const half=wt*(f<0.85?0.95:0.85);const L=half+wt*ak;
-    s.push(`M${P(cx-L,y)}L${P(cx+L,y)}M${P(cx-half,y+H*0.035)}L${P(cx-L,y)}M${P(cx+half,y+H*0.035)}L${P(cx+L,y)}`);
+  /* fuste recto donde se apoyan las crucetas, con diagonales entre niveles, y cúspide del OPGW */
+  const ys=[yW,...LVL.map(f=>gy-H*f),yT];
+  s.push(`M${P(cx-wt,yW)}V${f1(yT)}M${P(cx+wt,yW)}V${f1(yT)}`);
+  for(let i=0;i<ys.length-1;i++)s.push(`M${P(cx-wt,ys[i])}L${P(cx+wt,ys[i+1])}M${P(cx+wt,ys[i])}L${P(cx-wt,ys[i+1])}`);
+  s.push(`M${P(cx-wt,yT)}H${f1(cx+wt)}M${P(cx-wt,yT)}L${P(cx,yH)}L${P(cx+wt,yT)}`);
+  /* crucetas: cordón horizontal y diagonal inferior hasta la punta; la media es la más larga (torre tipo barril).
+     o.noIns: las cadenas de aisladores se dibujan aparte (vestido); o.armK: largo de cruceta en múltiplos de wt */
+  const arms={L:[],R:[],LT:[],RT:[]};const ins=Math.max(3.5,H*0.05);const ak=o.armK||(anc?2.9:2.6);const ad=H*0.035;
+  LVL.forEach((f,k)=>{const y=gy-H*f;const L=wt*(1+ak*ARM_F[k]);
+    s.push(`M${P(cx-L,y)}L${P(cx+L,y)}M${P(cx-wt,y+ad)}L${P(cx-L,y)}M${P(cx+wt,y+ad)}L${P(cx+L,y)}`);
     if(!o.noIns)s.push(`M${P(cx-L,y)}L${P(cx-L,y+ins)}M${P(cx+L,y)}L${P(cx+L,y+ins)}`);
     arms.L.push({x:cx-L,y:y+ins});arms.R.push({x:cx+L,y:y+ins});arms.LT.push({x:cx-L,y});arms.RT.push({x:cx+L,y});});
-  return {d:s.join(""),arms,peak:{x:cx,y:yH},reach:Math.max(wb,wt*(ak+1.6)),ins};
+  return {d:s.join(""),arms,peak:{x:cx,y:yH},reach:Math.max(wb,wt*(1+ak)+2),ins};
 }
-/* Torre simplificada para perfiles largos */
-function glyphD(cx,gy,h,b,anc){const t=b*0.32,yW=gy-h*0.74,yC=gy-h*0.93,yH=gy-h,a1=gy-h*0.84,a2=gy-h*0.91,L1=t+b*(anc?1.15:0.95),L2=t+b*(anc?1.0:0.8);
-  let d=`M${f1(cx-b)} ${f1(gy)}L${f1(cx-t)} ${f1(yW)}L${f1(cx-t*0.8)} ${f1(yC)}L${f1(cx)} ${f1(yH)}L${f1(cx+t*0.8)} ${f1(yC)}L${f1(cx+t)} ${f1(yW)}L${f1(cx+b)} ${f1(gy)}M${f1(cx-L1)} ${f1(a1)}H${f1(cx+L1)}M${f1(cx-L2)} ${f1(a2)}H${f1(cx+L2)}`;
-  if(b>=2.4){const ym=gy-h*0.37,wm=b-(b-t)*0.5;d+=`M${f1(cx-b)} ${f1(gy)}L${f1(cx+wm)} ${f1(ym)}M${f1(cx+b)} ${f1(gy)}L${f1(cx-wm)} ${f1(ym)}M${f1(cx-wm)} ${f1(ym)}L${f1(cx+t)} ${f1(yW)}M${f1(cx+wm)} ${f1(ym)}L${f1(cx-t)} ${f1(yW)}`;}
-  return {d,arm:{L:{x:cx-L1,y:a1},R:{x:cx+L1,y:a1}},arm2:{L:{x:cx-L2,y:a2},R:{x:cx+L2,y:a2}}};}
+/* Torre simplificada para perfiles largos: cuerpo, cúspide y tres crucetas por lado. arm0/arm/arm2 = nivel inferior/medio/superior */
+function glyphD(cx,gy,h,b,anc){const t=b*0.32,yW=gy-h*0.6,yT=gy-h*0.93,yH=gy-h;
+  const lv=LVL.map((f,k)=>({y:gy-h*f,L:t+b*(anc?1.05:0.9)*ARM_F[k]}));
+  let d=`M${f1(cx-b)} ${f1(gy)}L${f1(cx-t)} ${f1(yW)}V${f1(yT)}L${f1(cx)} ${f1(yH)}L${f1(cx+t)} ${f1(yT)}V${f1(yW)}L${f1(cx+b)} ${f1(gy)}`;
+  for(const a of lv)d+=`M${f1(cx-a.L)} ${f1(a.y)}H${f1(cx+a.L)}`;
+  if(b>=2.4){const ym=gy-h*0.3,wm=b-(b-t)*0.5;d+=`M${f1(cx-b)} ${f1(gy)}L${f1(cx+wm)} ${f1(ym)}M${f1(cx+b)} ${f1(gy)}L${f1(cx-wm)} ${f1(ym)}M${f1(cx-wm)} ${f1(ym)}L${f1(cx+t)} ${f1(yW)}M${f1(cx+wm)} ${f1(ym)}L${f1(cx-t)} ${f1(yW)}`;}
+  const at=k=>({L:{x:cx-lv[k].L,y:lv[k].y},R:{x:cx+lv[k].L,y:lv[k].y}});
+  return {d,arm0:at(0),arm:at(1),arm2:at(2)};}
 /* Acero montado: trazo fantasma completo + trazo sólido recortado desde el suelo según el % de montaje */
 function steelDraw(d,cx,gy,top,reach,p,sw){const st=sw?` style="stroke-width:${sw}"`:"";
   if(p>=99.95)return `<path class="steel"${st} d="${d}"/>`;
@@ -778,6 +790,13 @@ function footModel(cx,gy,w,d,type,p){
   return (p<99.95?gh:"")+clipUp(sol,cx-w/2-2,gy-up-3,w+4,d+up+3,p);
 }
 const catD=(a,b,sag)=>`M${f1(a.x)} ${f1(a.y)}Q${f1((a.x+b.x)/2)} ${f1(Math.max(a.y,b.y)+sag*2)} ${f1(b.x)} ${f1(b.y)}`;
+/* La misma catenaria partida en su punto medio: [mitad que sale de a, mitad que llega a b (trazada desde b)] */
+function catHalves(a,b,sag){const c={x:(a.x+b.x)/2,y:Math.max(a.y,b.y)+sag*2},m={x:(a.x+2*c.x+b.x)/4,y:(a.y+2*c.y+b.y)/4};
+  const q=p0=>`M${f1(p0.x)} ${f1(p0.y)}Q${f1((p0.x+c.x)/2)} ${f1((p0.y+c.y)/2)} ${f1(m.x)} ${f1(m.y)}`;
+  return [q(a),q(b)];}
+/* % de tendido de una fase de un circuito en un vano (k: 0 inferior = A, 1 media = B, 2 superior = C) */
+const FASE_K=["A","B","C"];
+function phPct(key,circ,k){const a=condActs().find(x=>x.circ===circ&&x.fase===FASE_K[k]);return a?cur(key,a.id):0;}
 /* Conductor: punteado = por tender; tramo sólido = avance de tendido */
 function wireDraw(d,p,cls){return `<path class="wire none ${cls||""}" d="${d}"/>`+(p>0?`<path class="wire ${cls||""}" pathLength="100"${p<99.95?` stroke-dasharray="${f1(p)} 100"`:""} d="${d}"/>`:"");}
 function mLegend(items){
@@ -792,7 +811,9 @@ function mLegend(items){
     pat:ic(26,12,`<path class="wire patw" d="M1 3H25"/><path class="steel" d="M3 3v7M23 3v7"/>`),
     ins:ic(10,18,`<path class="steel" d="M1 2H9M5 2V15M3.2 6h3.6M3.2 9h3.6M3.2 12h3.6"/><circle cx="5" cy="15.5" r="1.5" style="fill:var(--steel)"/>`),
     road:ic(26,8,`<path d="M1 4H25" style="stroke:var(--ink-2);stroke-width:2.6"/>`),
-    pafm:ic(34,8,IND.map((m,i)=>`<rect x="${f1(1+i*8.2)}" y="1" width="6" height="6" style="fill:${m.c};stroke:${m.c};stroke-width:.8"/>`).join(""))};
+    pafm:ic(34,8,IND.map((m,i)=>`<rect x="${f1(1+i*8.2)}" y="1" width="6" height="6" style="fill:${m.c};stroke:${m.c};stroke-width:.8"/>`).join("")),
+    circ:ic(40,24,`<path class="steel" d="${glyphD(20,23,22,4.5,false).d}"/><text x="1" y="11" style="font:600 8px var(--f-mono);fill:var(--ink)">C1</text><text x="39" y="11" text-anchor="end" style="font:600 8px var(--f-mono);fill:var(--ink)">C2</text>`),
+    half:ic(30,12,`<path class="wire none" d="${catD({x:1,y:2},{x:29,y:2},4)}"/><path class="wire" d="${catHalves({x:1,y:2},{x:29,y:2},4)[1]}"/>`)};
   return `<div class="mlegend">${items.map(([k,t])=>`<span>${I[k]}${t}</span>`).join("")}<span class="muted">Esquema sin escala</span></div>`;}
 
 /* ---------- Pictograma de la línea: láminas de perfil modeladas ---------- */
@@ -821,10 +842,10 @@ function sheetRow(row,o){
     es.forEach((e,i)=>{const anc=/ancl/i.test(e.tipo||"");cols.push({e,x:x0+i*sp,anc,sp,h:D?(anc?132:120):(anc?60:50),b:D?Math.min(anc?12:10,sp*(anc?0.27:0.22)):Math.min(7,sp*(anc?0.42:0.33))});});}
   /* geometría: en detalle las cadenas de aisladores se dibujan aparte (suspensión = vertical, anclaje = de tensión) */
   for(const c of cols){c.st=r.byE[c.e.id];c.top=gy-c.h;
-    if(D||cr){const G=latticeGeom(c.x,gy,c.h,c.b,c.b*0.3,c.big?8:(D?6:4),c.anc,D?{noIns:true,armK:c.big?3.4:(c.anc?3.6:3.4)}:null);
+    if(D||cr){const G=latticeGeom(c.x,gy,c.h,c.b,c.b*0.3,c.big?8:(D?6:4),c.anc,D?{noIns:true}:null);
       c.d=G.d;c.reach=G.reach;c.peak=G.peak;c.ins=G.ins;
       if(D){c.str=[];for(const sd of ["L","R"]){const sx=sd==="L"?-1:1;G.arms[sd+"T"].forEach(tip=>{c.str.push({tip,sx,att:c.anc?{x:tip.x+sx*G.ins*0.8,y:tip.y+G.ins*0.3}:{x:tip.x,y:tip.y+G.ins}});});}
-        c.aL=c.str.filter(q=>q.sx<0).map(q=>q.att);c.aR=c.str.filter(q=>q.sx>0).map(q=>q.att);c.reach=Math.max(c.reach,c.aR[0].x-c.x+2,c.aR[1].x-c.x+2);}
+        c.aL=c.str.filter(q=>q.sx<0).map(q=>q.att);c.aR=c.str.filter(q=>q.sx>0).map(q=>q.att);c.reach=Math.max(c.reach,...c.aR.map(a=>a.x-c.x+2));}
       else{c.aL=G.arms.L;c.aR=G.arms.R;}}
     else{const G=glyphD(c.x,gy,c.h,c.b,c.anc);c.d=G.d;c.reach=c.b*1.6;c.peak={x:c.x,y:c.top};c.aL=[G.arm.L,G.arm.L];c.aR=[G.arm.R,G.arm.R];}}
   const idx=new Map(cols.map((c,i)=>[c.e.id,i]));const c0=cols[0],cN=cols[cols.length-1];
@@ -840,24 +861,33 @@ function sheetRow(row,o){
   const selId=S.drw&&!S.drw.se&&S.drw.sec===s.id?S.drw.id:null;const sc=selId!=null?cols[idx.get(selId)]:null;
   if(sc)g+=`<rect x="${f1(sc.x-sc.sp/2)}" y="${f1(sc.top-10)}" width="${f1(sc.sp)}" height="${f1(gy-sc.top+EB+(D?(cr?50:36):(cr?48:38)))}" style="fill:var(--accent-soft);fill-opacity:.8"/>`;
   /* terreno, canal y tramos */
-  const xs=vPrev?6:Math.max(4,c0.x-Math.max(30,c0.reach+14)),xe=vNext?W-6:Math.min(W-4,cN.x+Math.max(30,cN.reach+14));
+  const xs=vPrev?c0.x-c0.sp/2:Math.max(4,c0.x-Math.max(30,c0.reach+14)),xe=vNext?cN.x+cN.sp/2:Math.min(W-4,cN.x+Math.max(30,cN.reach+14));
   g+=`<rect class="earth" x="${f1(xs)}" y="${gy}" width="${f1(xe-xs)}" height="${EB}"/><line class="gl" x1="${f1(xs)}" x2="${f1(xe)}" y1="${gy}" y2="${gy}"/>`;
   const c2=cols.find(c=>c.e.id==="2C"),c3=cols.find(c=>c.e.id==="3C");
   if(c2&&c3&&c3.x>c2.x){const wx=c2.x+c2.reach+12,wx2=c3.x-c3.reach-12;g+=`<rect class="water" x="${f1(wx)}" y="${gy-1}" width="${f1(wx2-wx)}" height="${EB+2}"/><text class="cap" x="${f1((wx+wx2)/2)}" y="${gy+(D?27:13)}" text-anchor="middle" style="font-size:11px">Canal de Chacao</text>`;
     const v=vanoBetween(s.id,"2C","3C");if(D&&v)g+=`<text class="tx" x="${f1((c2.x+c3.x)/2)}" y="${gy-12}" text-anchor="middle" style="font-size:10.5px">Vano de cruce 2C–3C · C1 ${fmtP(circPct(v.key,"1"))} · C2 ${fmtP(circPct(v.key,"2"))} · OPGW ${fmtP(cur(v.key,"tv_opg"))}</text>`;}
   if(!cr){let ptt=null;for(const c of cols){if(c.e.tt&&c.e.tt!==ptt){if(ptt!==null)g+=`<line x1="${f1(c.x-c.sp/2)}" x2="${f1(c.x-c.sp/2)}" y1="28" y2="${gy}" style="stroke:var(--line-2);stroke-width:.8;stroke-dasharray:3 3"/>`;g+=`<text class="cap" x="${f1(c.x-c.sp/2+4)}" y="${D?36:40}" style="font-size:10px">${esc(c.e.tt)}</text>`;ptt=c.e.tt;}}}
-  /* vanos: en detalle OPGW (cúspide), circuito 1 (cruceta superior) y circuito 2 (cruceta inferior); en compacta un trazo por vano */
+  /* vanos. Detalle: OPGW de cúspide a cúspide y, por fase, la catenaria partida en dos: la mitad que sale del lado
+     derecho de una torre es el circuito 2 y la que llega al lado izquierdo de la siguiente es el circuito 1.
+     Compacta: un trazo por vano. side: "both" | "out" (solo la mitad que sale de A) | "in" (solo la que llega a B) */
   const sag=L=>L*(L>200?0.14:0.08);
-  const wires=(A,B,v)=>D?[[A.peak,B.peak,cur(v.key,"tv_opg"),"og"],[A.aR[1],B.aL[1],circPct(v.key,"1")],[A.aR[0],B.aL[0],circPct(v.key,"2")]]:[[A.aR[1],B.aL[1],r.byV[v.key]||0]];
-  for(const v of vIn){let ia=idx.get(v.a),ib=idx.get(v.b);if(ia>ib){const t=ia;ia=ib;ib=t;}const A=cols[ia],B=cols[ib],sg=sag(B.x-A.x);
-    g+=`<g${ib-ia>1?` class="back"`:""}>${wires(A,B,v).map(([a,b,p,cl])=>wireDraw(catD(a,b,sg),p,cl)).join("")}</g>`;}
-  /* continuidad con la lámina anterior / siguiente */
-  const sgS=sag(cols.length>1?cols[1].x-c0.x:46);
-  if(vNext){for(const [a,,p,cl] of wires(cN,cN,vNext)){const m=a.x+(W-6-a.x)*0.5;g+=wireDraw(`M${f1(a.x)} ${f1(a.y)}Q${f1(m)} ${f1(a.y+sgS*1.8)} ${W-6} ${f1(a.y+sgS)}`,p,cl);}
-    g+=`<text class="tx" x="${W-6}" y="${D?52:gy-76}" text-anchor="end" style="font-size:9.5px">sigue en ${esc(next.id)} →</text>`;}
-  if(vPrev){for(const [,b,p,cl] of wires(c0,c0,vPrev)){const m=6+(b.x-6)*0.5;g+=wireDraw(`M6 ${f1(b.y+sgS)}Q${f1(m)} ${f1(b.y+sgS*1.8)} ${f1(b.x)} ${f1(b.y)}`,p,cl);}
-    g+=`<text class="tx" x="6" y="${D?52:gy-76}" style="font-size:9.5px">← viene de ${esc(prev.id)}</text>`;}
-  if(D){const lab=(p,t)=>`<text class="tx" x="${f1(p.x-5)}" y="${f1(p.y-2.5)}" text-anchor="end" style="font-size:9px">${t}</text>`;g+=lab(c0.peak,"OPGW")+lab(c0.aL[1],"C1")+lab(c0.aL[0],"C2");}
+  const span=(A,B,v,sg,side)=>{
+    if(!D){const p=r.byV[v.key]||0;const [h0,h1]=catHalves(A.aR[1],B.aL[1],sg);return side==="out"?wireDraw(h0,p):side==="in"?wireDraw(h1,p):wireDraw(catD(A.aR[1],B.aL[1],sg),p);}
+    const pO=cur(v.key,"tv_opg");const [o0,o1]=catHalves(A.peak,B.peak,sg);
+    let w=side==="out"?wireDraw(o0,pO,"og"):side==="in"?wireDraw(o1,pO,"og"):wireDraw(catD(A.peak,B.peak,sg),pO,"og");
+    for(let k=0;k<3;k++){const [h2,h1]=catHalves(A.aR[k],B.aL[k],sg);if(side!=="in")w+=wireDraw(h2,phPct(v.key,"2",k));if(side!=="out")w+=wireDraw(h1,phPct(v.key,"1",k));}
+    return w;};
+  for(const v of vIn){let ia=idx.get(v.a),ib=idx.get(v.b);if(ia>ib){const t=ia;ia=ib;ib=t;}const A=cols[ia],B=cols[ib];
+    g+=`<g${ib-ia>1?` class="back"`:""}>${span(A,B,v,sag(B.x-A.x),"both")}</g>`;}
+  /* continuidad con la lámina anterior / siguiente: el vano se corta en su punto medio (línea de calce) */
+  const calce=(x,txt,izq)=>`<line x1="${f1(x)}" x2="${f1(x)}" y1="44" y2="${gy+EB}" style="stroke:var(--ink-2);stroke-width:.8;stroke-dasharray:9 3 2 3"/><text class="tx" x="${f1(izq?x-4:x+4)}" y="52" text-anchor="${izq?"end":"start"}" style="font-size:9.5px">${txt}</text>`;
+  const shift=(c,dx)=>({peak:{x:c.peak.x+dx,y:c.peak.y},aL:c.aL.map(a=>({x:a.x+dx,y:a.y})),aR:c.aR.map(a=>({x:a.x+dx,y:a.y}))});
+  if(vNext)g+=span(cN,shift(cN,cN.sp),vNext,sag(cN.sp),"out")+calce(cN.x+cN.sp/2,`sigue en ${esc(next.id)} →`,true);
+  if(vPrev)g+=span(shift(c0,-c0.sp),c0,vPrev,sag(c0.sp),"in")+calce(c0.x-c0.sp/2,`← viene de ${esc(prev.id)}`,false);
+  /* designación de cables en los márgenes: circuito 1 a la izquierda, circuito 2 a la derecha; S/M/I = fase superior, media, inferior */
+  if(D){const tl=(x,y,t,a,b)=>`<text class="tx${b?" b":""}" x="${f1(x)}" y="${f1(y)}" text-anchor="${a}" dominant-baseline="middle" style="font-size:9px">${t}</text>`;const PH=["I","M","S"];
+    g+=tl(8,c0.peak.y,"OPGW","start")+tl(8,c0.aL[1].y,"C1","start",1)+c0.aL.map((a,k)=>tl(30,a.y,PH[k],"middle")).join("");
+    g+=tl(W-8,cN.aR[1].y,"C2","end",1)+cN.aR.map((a,k)=>tl(W-30,a.y,PH[k],"middle")).join("");}
   /* estructuras */
   for(const c of cols){const e=c.e,st=c.st,k=kE(s.id,e.id);let t="";
     if(D){const P4=pafmVals(s.id,e,st),pt=patVal(s.id,e),tv=cur(k,"tt_ves"),te=cur(k,"tt_eng"),tp=cur(k,"tt_pue");
@@ -885,7 +915,7 @@ function sheetRow(row,o){
       if(cr)t+=`<text class="tx b" x="${f1(c.x)}" y="${gy+32}" text-anchor="middle" style="font-size:12px">${esc(e.id)}</text><text class="tx" x="${f1(c.x)}" y="${gy+46}" text-anchor="middle" style="font-size:10px">F ${fmtP(fp)} · M ${fmtP(st.mon)}</text>`;
       else t+=`<text class="tx${c.anc?" b":""}" transform="translate(${f1(c.x)} ${gy+fh+6}) rotate(90)" dominant-baseline="middle" style="font-size:10px">${esc(e.id)}</text>`;}
     const vs=vanosOf(s.id,e.id).filter(v=>v.a===e.id);
-    const tip=`${s.nombre} · Estructura ${e.id}${e.torre&&e.torre!==e.id?" ("+e.torre+")":""}${e.tipo?" · "+e.tipo:""}${e.tt||e.contr?"\n"+[e.tt,e.contr].filter(Boolean).join(" · "):""}\nPerturbación ${fmtP(cur(k,"per"))} · Camino ${fmtP(cur(k,"acc"))} · Malla PAT ${fmtP(patVal(s.id,e))}\nFundación ${fmtP(st.fun)}${st.fg?" ("+grupoById(st.fg).nombre+")":""} · Montaje ${fmtP(st.mon)} · Tendido en torre ${fmtP(st.tto)}${vs.map(v=>`\nVano ${v.label}: C1 ${fmtP(circPct(v.key,"1"))} · C2 ${fmtP(circPct(v.key,"2"))} · OPGW ${fmtP(cur(v.key,"tv_opg"))}`).join("")}\nToca para ver el detalle y registrar avance`;
+    const tip=`${s.nombre} · Estructura ${e.id}${e.torre&&e.torre!==e.id?" ("+e.torre+")":""}${e.tipo?" · "+e.tipo:""}${e.tt||e.contr?"\n"+[e.tt,e.contr].filter(Boolean).join(" · "):""}\nPerturbación ${fmtP(cur(k,"per"))} · Camino ${fmtP(cur(k,"acc"))} · Malla PAT ${fmtP(patVal(s.id,e))}\nFundación ${fmtP(st.fun)}${st.fg?" ("+grupoById(st.fg).nombre+")":""} · Montaje ${fmtP(st.mon)} · Tendido en torre ${fmtP(st.tto)}${vs.map(v=>{const f=c=>[2,1,0].map(k=>fmtP(phPct(v.key,c,k))).join(" / ");return `\nVano ${v.label} · OPGW ${fmtP(cur(v.key,"tv_opg"))}\nC1 sup/med/inf: ${f("1")}\nC2 sup/med/inf: ${f("2")}`;}).join("")}\nToca para ver el detalle y registrar avance`;
     t+=`<rect class="hit" x="${f1(c.x-c.sp/2)}" y="${f1(c.top-8)}" width="${f1(c.sp)}" height="${f1(gy-c.top+EB+(D?(cr?50:34):(cr?48:38)))}" data-open="${s.id}|${esc(e.id)}" data-tip="${esc(tip)}" role="button" tabindex="0" aria-label="${esc("Estructura "+e.id)}"/>`;
     g+=!o.filt||o.match(e)?t:`<g class="dim">${t}</g>`;}
   const Hh=D?gy+EB+(cr?46:30):gy+(cr?54:44);
@@ -912,7 +942,7 @@ function stageModelSvg(list){
 function kpiIcon(kind,p){let g="";
   if(kind==="fun")g=`<rect class="earth" x="2" y="22" width="88" height="38"/><line class="gl" x1="2" x2="90" y1="22" y2="22"/>`+footDraw(46,10,46,44,p);
   else if(kind==="mon"){const G=latticeGeom(46,58,52,14,4,3,false);g=`<line class="gl" x1="6" x2="86" y1="58" y2="58"/>`+steelDraw(G.d,46,58,6,G.reach,p,1);}
-  else if(kind==="ten"){const A=glyphD(12,56,46,6,false),B=glyphD(80,56,46,6,false);g=`<line class="gl" x1="2" x2="90" y1="56" y2="56"/><path class="steel" d="${A.d}"/><path class="steel" d="${B.d}"/>`+wireDraw(catD(A.arm.R,B.arm.L,6),p)+wireDraw(catD(A.arm2.R,B.arm2.L,6),p);}
+  else if(kind==="ten"){const A=glyphD(12,56,46,6,false),B=glyphD(80,56,46,6,false);g=`<line class="gl" x1="2" x2="90" y1="56" y2="56"/><path class="steel" d="${A.d}"/><path class="steel" d="${B.d}"/>`+[A.arm0,A.arm,A.arm2].map((a,k)=>wireDraw(catD(a.R,[B.arm0,B.arm,B.arm2][k].L,5),p)).join("");}
   else if(kind==="acc"){const rd="M30 60L43 6H49L62 60Z";g=`<path d="M2 60L30 60M62 60L90 60" style="stroke:var(--ink-2);stroke-width:1;fill:none"/><path class="padg" d="${rd}"/>`+clipUp(`<path d="${rd}" style="fill:var(--steel)"/><path d="M46 58V8" style="stroke:var(--surface);stroke-width:1.2;stroke-dasharray:4 4"/>`,28,6,36,54,p)+`<path d="${rd}" style="fill:none;stroke:var(--ink-2);stroke-width:.8"/>`;}
   else if(kind==="pat"){let d="";for(let i=0;i<=4;i++){d+=`M${22+i*12} 6V54M22 ${6+i*12}H70`;}let rods="";for(const [x,y] of [[22,6],[70,6],[22,54],[70,54],[46,30]])rods+=`<circle cx="${x}" cy="${y}" r="2.4"/>`;
     g=`<path class="ghost" d="${d}"/><g style="fill:none;stroke:var(--line-2)">${rods}</g>`+clipUp(`<path d="${d}" style="stroke:var(--steel);stroke-width:1.1;fill:none"/><g style="fill:var(--steel)">${rods}</g>`,16,2,60,56,p);}
@@ -930,7 +960,8 @@ function crossingSvg(){
   const SP=[["1CA","2C"],["1CB","2C"],["2C","3C"],["3C","4CB"],["3C","4CA"]];const spanTxt=[];
   for(const [a,b] of SP){if(!geo[a]||!geo[b])continue;const v=vanoBetween("cruce",a,b);if(!v)continue;const A=geo[a],B=geo[b];const L=Math.abs(T[b].x-T[a].x);const sag=L>300?70:14;
     const back=(T[a].back||T[b].back)?"back":"";const pO=cur(v.key,"tv_opg"),p1=circPct(v.key,"1"),p2=circPct(v.key,"2");
-    g+=`<g class="${back}">`+wireDraw(catD(A.peak,B.peak,sag),pO,"og")+wireDraw(catD(A.arms.R[1],B.arms.L[1],sag),p1)+wireDraw(catD(A.arms.R[0],B.arms.L[0],sag),p2)+`</g>`;
+    /* por fase: la mitad que sale del lado derecho de A es el circuito 2; la que llega al lado izquierdo de B, el circuito 1 */
+    g+=`<g class="${back}">`+wireDraw(catD(A.peak,B.peak,sag),pO,"og")+[0,1,2].map(k=>{const [h2,h1]=catHalves(A.arms.R[k],B.arms.L[k],sag);return wireDraw(h2,phPct(v.key,"2",k))+wireDraw(h1,phPct(v.key,"1",k));}).join("")+`</g>`;
     spanTxt.push({v,a,b,pO,p1,p2,tot:r.byV[v.key]||0});}
   for(const id of Object.keys(T)){const e=byId[id];if(!e||!geo[id])continue;const t=T[id];const st=r.byE[id];const big=!t.anc;const G=geo[id];const wb=big?30:16;
     g+=`<g class="${t.back?"back":""}">`+footModel(t.x-wb,gy,big?20:13,big?26:17,"cr",st.fun)+footModel(t.x+wb,gy,big?20:13,big?26:17,"cr",st.fun)+steelDraw(G.d,t.x,gy,gy-t.h,G.reach,st.mon,big?1.3:1.1)+`</g>`;
@@ -1094,7 +1125,7 @@ function feedHtml(list){
 }
 
 /* ---------- Pictograma de la línea ---------- */
-const LEG_DET=[["ghost","Torre por montar"],["steel","Acero montado (sube con el % de montaje)"],["fg","Fundación por construir"],["fz","Zapata con pedestal"],["fp","Pila"],["fm","Ancla helicoidal, cabezal metálico"],["fh","Ancla helicoidal, cabezal de hormigón"],["pat","Malla de puesta a tierra"],["road","Camino de acceso y plataforma"],["ins","Cadena de aisladores y grapa"],["wire","Cable tendido"],["part","Cable en tendido"],["none","Por tender"],["pafm","Marcas P · A · F · M"]];
+const LEG_DET=[["circ","Circuito 1 a la izquierda y circuito 2 a la derecha; fases superior, media e inferior"],["half","Medio vano: el lado de cada torre es su circuito"],["ghost","Torre por montar"],["steel","Acero montado (sube con el % de montaje)"],["fg","Fundación por construir"],["fz","Zapata con pedestal"],["fp","Pila"],["fm","Ancla helicoidal, cabezal metálico"],["fh","Ancla helicoidal, cabezal de hormigón"],["pat","Malla de puesta a tierra"],["road","Camino de acceso y plataforma"],["ins","Cadena de aisladores y grapa"],["wire","Cable tendido"],["part","Cable en tendido"],["none","Por tender"],["pafm","Marcas P · A · F · M"]];
 const LEG_COMP=[["ghost","Torre por montar"],["steel","Acero montado"],["conc","Fundación hormigonada"],["wire","Vano tendido"],["part","Vano en tendido"],["none","Por tender"]];
 function vLinea(){
   const M=S.map;if(M.sec!=="total"&&!secById(M.sec))M.sec="total";
@@ -1114,7 +1145,7 @@ function vLinea(){
    ${M.sec!=="total"||M.tt||filt?`<button class="btn small ghost" data-mclear="1">Quitar filtros</button>`:""}</div>
   ${filt?`<p class="small" style="margin:0">${nMatch?`<b class="num">${nMatch}</b> ${nMatch===1?"estructura coincide":"estructuras coinciden"}. Se muestran sus láminas y el resto queda atenuado.`:"Ninguna estructura coincide con los filtros."}</p>`:""}
   ${mLegend(det?LEG_DET:LEG_COMP)}
-  <p class="small muted">${det?"Cada lámina muestra hasta 24 estructuras en elevación: fundación según su tipo, malla de puesta a tierra, acero montado, cadenas de aisladores y, por vano, OPGW, circuito 1 y circuito 2. Bajo el N° van las marcas P · A · F · M: perturbación, acceso, fundación y montaje (lleno = 100 %, tenue = en ejecución). En negrita, las torres de anclaje.":"Toda la línea en pocas láminas. Torre ancha = anclaje, delgada = suspensión; un trazo por vano."} Toca una torre para ver su detalle y registrar avance.</p>
+  <p class="small muted">${det?"Cada lámina muestra hasta 24 estructuras en elevación: fundación según su tipo, malla de puesta a tierra, acero montado y cadenas de aisladores. Cada torre lleva el circuito 1 a la izquierda y el circuito 2 a la derecha, con sus fases superior, media e inferior, y el OPGW en la cúspide. En cada vano, la mitad que sale del lado derecho de una torre muestra el tendido del circuito 2 y la mitad que llega al lado izquierdo de la torre siguiente, el del circuito 1. Bajo el N° van las marcas P · A · F · M: perturbación, acceso, fundación y montaje (lleno = 100 %, tenue = en ejecución). En negrita, las torres de anclaje. Entre láminas, el vano se corta en su punto medio (línea de calce).":"Toda la línea en pocas láminas. Torre ancha = anclaje, delgada = suspensión; un trazo por vano con el avance total de tendido."} Toca una torre para ver su detalle y registrar avance.</p>
   <div class="mdl-wrap">${lineSheets({secs:secList,tt:M.tt,detail:det,filt,match})}</div></section>`;
   h+=`<section class="panel stack"><div class="spread"><h2>Torre tipo por sector</h2><span class="small muted">Avance medio de cada etapa${M.sec==="total"?"":" en "+esc(secById(M.sec).nombre)}. Toca una etapa para ver sus actividades.</span></div>
    <div class="mdl-wrap">${stageModelSvg(secList)}</div>
