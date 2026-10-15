@@ -174,8 +174,9 @@ button.hb:focus-visible{outline:2px solid var(--accent)}
 .mdl .ldr{stroke:var(--ink-2);stroke-width:.7;fill:none}
 .mdl-wrap{overflow-x:auto}
 .mlegend{display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--ink-2);align-items:center}
-.mlegend span{display:inline-flex;align-items:center;gap:6px}
+.mlegend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .mlegend svg{flex:none}
+.mlegend .muted{margin-left:auto}
 .hero2{display:flex;flex-direction:column;gap:14px}
 .htop{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .hfig .big{font-family:var(--f-disp);font-weight:700;font-size:clamp(3rem,7vw,4.4rem);line-height:.9;letter-spacing:-.02em}
@@ -779,9 +780,12 @@ function footDraw(cx,gy,w,h,p){const pw=w*0.38,ph=h*0.55,fh=h-ph;
 const catD=(a,b,sag)=>`M${f1(a.x)} ${f1(a.y)}Q${f1((a.x+b.x)/2)} ${f1(Math.max(a.y,b.y)+sag*2)} ${f1(b.x)} ${f1(b.y)}`;
 /* Conductor: punteado = por tender; tramo sólido = avance de tendido */
 function wireDraw(d,p,cls){return `<path class="wire none ${cls||""}" d="${d}"/>`+(p>0?`<path class="wire ${cls||""}" pathLength="100"${p<99.95?` stroke-dasharray="${f1(p)} 100"`:""} d="${d}"/>`:"");}
-function mLegend(items){const w=(c)=>`<svg class="mdl" width="26" height="12" viewBox="0 0 26 12" aria-hidden="true">${c}</svg>`;const G=glyphD(8,19,18,5,false).d;
-  const I={ghost:`<svg class="mdl" width="16" height="20" viewBox="0 0 16 20" aria-hidden="true"><path class="ghost" d="${G}"/></svg>`,steel:`<svg class="mdl" width="16" height="20" viewBox="0 0 16 20" aria-hidden="true"><path class="steel" d="${G}"/></svg>`,
-    conc:`<svg class="mdl" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect class="conc" x="1" y="1" width="16" height="10"/></svg>`,wire:w(`<path class="wire" d="M1 2Q13 12 25 2"/>`),none:w(`<path class="wire none" d="M1 2Q13 12 25 2"/>`),
+function mLegend(items){
+  /* tamaño fijo en línea: la clase .mdl estira los dibujos al 100% del ancho y aquí no corresponde */
+  const ic=(w,h,c)=>`<svg class="mdl" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:inline-block;width:${w}px;height:${h}px;flex:none" aria-hidden="true">${c}</svg>`;
+  const w=(c)=>ic(26,12,c);const G=glyphD(8,19,18,5,false).d;
+  const I={ghost:ic(16,20,`<path class="ghost" d="${G}"/>`),steel:ic(16,20,`<path class="steel" d="${G}"/>`),
+    conc:ic(18,12,`<rect class="conc" x="1" y="1" width="16" height="10"/>`),wire:w(`<path class="wire" d="M1 2Q13 12 25 2"/>`),none:w(`<path class="wire none" d="M1 2Q13 12 25 2"/>`),
     part:w(`<path class="wire none" d="M1 2Q13 12 25 2"/><path class="wire" pathLength="100" stroke-dasharray="50 100" d="M1 2Q13 12 25 2"/>`)};
   return `<div class="mlegend">${items.map(([k,t])=>`<span>${I[k]}${t}</span>`).join("")}<span class="muted">Esquema sin escala</span></div>`;}
 
@@ -805,13 +809,17 @@ function lineModelSvg(){
   for(const c of cols)c.G=glyphD(c.x,gy,c.h,c.b,c.anc);
   for(let i=0;i<cols.length-1;i++){const a=cols[i],b=cols[i+1];if(a.s.id!==b.s.id)continue;const v=vanoBetween(a.s.id,a.e.id,b.e.id);if(!v)continue;
     const p=a.r.byV[v.key]||0;const L=b.x-a.x;g+=wireDraw(catD(a.G.arm.R,b.G.arm.L,L*(L>100?0.12:0.07)),p);}
+  let lastLbl=-1e9;
   for(const c of cols){const fp=c.st.fun,fw=Math.max(3,c.b*2.1),fh=single?7:5;
     g+=steelDraw(c.G.d,c.x,gy,gy-c.h,c.b*1.6,c.st.mon,single?1.1:0.9);
     g+=`<rect x="${f1(c.x-fw/2)}" y="${gy+2}" width="${f1(fw)}" height="${fh}" class="${fp>=99.95?"conc":fp>0?"concp":"padg"}"/>`;
-    if(single&&(c.anc||c.s.id==="cruce"))g+=`<text class="tx" x="${f1(c.x)}" y="${gy+(fh+14)}" text-anchor="middle" style="font-size:${c.s.id==="cruce"?11:8.5}px">${esc(c.e.id)}</text>`;
+    if(single){
+      /* N° de estructura: horizontal en el cruce; vertical en el resto, sin encimarse (mín. 11 unidades entre rótulos) */
+      if(c.s.id==="cruce")g+=`<text class="tx" x="${f1(c.x)}" y="${gy+(fh+14)}" text-anchor="middle" style="font-size:11px">${esc(c.e.id)}</text>`;
+      else if((c.sp>=11||c.anc)&&c.x-lastLbl>=11){lastLbl=c.x;g+=`<text class="tx${c.anc?" b":""}" transform="translate(${f1(c.x)} ${gy+fh+5}) rotate(90)" dominant-baseline="middle" style="font-size:8.5px">${esc(c.e.id)}</text>`;}}
     const tip=`${c.s.nombre} · Estructura ${c.e.id} (${c.e.tipo||""})\n${c.e.tt||""}${c.e.contr?" · "+c.e.contr:""}\nFundación ${fmtP(c.st.fun)} · Montaje ${fmtP(c.st.mon)} · Tendido torre ${fmtP(c.st.tto)}`;
     g+=`<rect class="hit" x="${f1(c.x-c.sp/2)}" y="${f1(gy-c.h-6)}" width="${f1(c.sp)}" height="${f1(c.h+16)}" data-open="${c.s.id}|${esc(c.e.id)}" data-tip="${esc(tip)}"/>`;}
-  const by=gy+(single?40:30);
+  const by=gy+(single?(list[0].id==="cruce"?40:48):30);
   for(const sp of seps){g+=`<path class="brk" style="stroke:${secColor(sp.s.id)}" d="M${f1(sp.x0-5)} ${by-6}V${by}H${f1(sp.x1+5)}V${by-6}"/><text class="cap" x="${f1((sp.x0+sp.x1)/2)}" y="${by+fs+5}" text-anchor="middle" style="font-size:${fs}px">${esc(sp.s.nombre)}<tspan dx="8" style="font-family:var(--f-disp);font-weight:700;fill:var(--ink);letter-spacing:0;font-size:${fs+3}px">${fmtP(sp.pct,1)}</tspan></text>`;}
   const Hh=by+fs+14;
   return `<svg class="mdl" viewBox="0 0 ${f1(W)} ${f1(Hh)}" style="min-width:${Math.min(1000,Math.round(W*0.6))}px" role="img" aria-label="Perfil de la línea con el avance de cada torre">${g}</svg>`;
