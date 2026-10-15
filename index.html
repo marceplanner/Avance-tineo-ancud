@@ -789,40 +789,57 @@ function mLegend(items){
     part:w(`<path class="wire none" d="M1 2Q13 12 25 2"/><path class="wire" pathLength="100" stroke-dasharray="50 100" d="M1 2Q13 12 25 2"/>`)};
   return `<div class="mlegend">${items.map(([k,t])=>`<span>${I[k]}${t}</span>`).join("")}<span class="muted">Esquema sin escala</span></div>`;}
 
-/* Perfil de la línea: cada torre en su orden, con montaje, fundación y vanos */
+/* Perfil de la línea en láminas: cada sector en filas de ~60 estructuras a escala legible (el cruce en una fila propia) */
+const ROW_MAX=66;
 function lineModelSvg(){
-  const list=scopeSecs();const single=list.length===1;const gy=150;const cols=[],seps=[];let x=26;
-  for(const s of list){const es=estr(s.id);const r=S.P.sec[s.id];const cr=s.id==="cruce";
-    const sp=cr?(single?95:15):(single?(es.length>100?7:15):6);const x0=x;
-    es.forEach((e,i)=>{if(i>0){x+=sp;if(cr&&es[i-1].id==="2C"&&e.id==="3C")x+=single?180:64;}
-      const anc=/ancl/i.test(e.tipo||"");const big=cr&&(e.id==="2C"||e.id==="3C");const k=single&&cr?1.55:1;
-      const h=(big?92:cr?44:anc?36:30)*k;const b=Math.max(1.6,Math.min(single?(cr?14:6):2.6,sp*(anc?0.42:0.34)))*(big?1.6:1);
-      cols.push({s,e,st:r.byE[e.id],x,h,b,anc,sp,r});});
-    seps.push({s,x0,x1:x,pct:r.pct});x+=single?0:30;}
-  if(!cols.length)return `<p class="muted small">Sin estructuras cargadas.</p>`;
-  const W=x+26,fs=single?11:14;let g="";
-  const xs=cols[0].x-14,xe=cols[cols.length-1].x+14;
-  g+=`<rect class="earth" x="${f1(xs)}" y="${gy}" width="${f1(xe-xs)}" height="14"/><line class="gl" x1="${f1(xs)}" x2="${f1(xe)}" y1="${gy}" y2="${gy}"/>`;
+  const rows=[];
+  for(const s of scopeSecs()){const es=estr(s.id);if(!es.length)continue;
+    if(s.id==="cruce"){rows.push({s,es,all:es,start:0,part:0,parts:1});continue;}
+    const nr=Math.max(1,Math.ceil(es.length/ROW_MAX));const per=Math.ceil(es.length/nr);
+    for(let i=0;i<nr;i++)rows.push({s,es:es.slice(i*per,(i+1)*per),all:es,start:i*per,part:i,parts:nr});}
+  if(!rows.length)return `<p class="muted small">Sin estructuras cargadas.</p>`;
+  return `<div style="min-width:900px;display:flex;flex-direction:column;gap:2px">${rows.map(profileRow).join("")}</div>`;
+}
+function profileRow(row){
+  const {s,es,all,start}=row;const r=S.P.sec[s.id];const cr=s.id==="cruce";const W=1200;const gy=cr?214:132;let g="";
+  /* posiciones */
+  const cols=[];
+  if(cr){const sp=118,canal=250,span=sp*(es.length-1)+canal;let x=(W-span)/2;
+    es.forEach((e,i)=>{if(i>0){x+=sp;if(es[i-1].id==="2C"&&e.id==="3C")x+=canal;}const big=e.id==="2C"||e.id==="3C";
+      cols.push({e,x,h:big?176:84,b:big?17:9,anc:!big,big,sp:big?90:70});});}
+  else{const sp=Math.min(24,(W-90)/Math.max(1,es.length-1));const x0=(W-sp*(es.length-1))/2;
+    es.forEach((e,i)=>{const anc=/ancl/i.test(e.tipo||"");cols.push({e,x:x0+i*sp,h:anc?60:50,b:Math.min(7,sp*(anc?0.42:0.33)),anc,sp});});}
+  for(const c of cols){c.st=r.byE[c.e.id];
+    if(cr){const G=latticeGeom(c.x,gy,c.h,c.b,c.b*0.3,c.big?7:4,c.anc);c.d=G.d;c.aR=G.arms.R[1];c.aL=G.arms.L[1];c.reach=G.reach;}
+    else{const G=glyphD(c.x,gy,c.h,c.b,c.anc);c.d=G.d;c.aR=G.arm.R;c.aL=G.arm.L;c.reach=c.b*1.6;}}
+  /* encabezado de la fila */
+  const ids=es[0].id+(es.length>1?" – "+es[es.length-1].id:"");let mon=0,vt=0,vn=0;for(const c of cols)if(c.st.mon>=99.95)mon++;
+  for(let i=0;i<cols.length-1;i++){const v=vanoBetween(s.id,cols[i].e.id,cols[i+1].e.id);if(v){vn++;if((r.byV[v.key]||0)>=99.95)vt++;}}
+  g+=`<rect x="14" y="10" width="10" height="10" style="fill:${secColor(s.id)}"/><text class="cap" x="30" y="19" style="font-size:12px;fill:var(--ink)">${esc(s.nombre)}<tspan dx="10" style="font-family:var(--f-mono);font-weight:500;letter-spacing:0;text-transform:none;fill:var(--ink-2)">estructuras ${esc(ids)}${row.parts>1?` · lámina ${row.part+1} de ${row.parts}`:""}</tspan></text>`;
+  g+=`<text class="tx" x="${W-14}" y="19" text-anchor="end" style="font-size:11px">${mon} de ${cols.length} montadas · ${vt} de ${vn} vanos tendidos${row.part===row.parts-1?` · sector ${fmtP(r.pct,1)}`:""}</text>`;
+  /* terreno, canal y tramos */
+  const xs=cols[0].x-30,xe=cols[cols.length-1].x+30;
+  g+=`<rect class="earth" x="${f1(xs)}" y="${gy}" width="${f1(xe-xs)}" height="16"/><line class="gl" x1="${f1(xs)}" x2="${f1(xe)}" y1="${gy}" y2="${gy}"/>`;
   const c2=cols.find(c=>c.e.id==="2C"),c3=cols.find(c=>c.e.id==="3C");
-  if(c2&&c3){const wx=c2.x+c2.b+5,wx2=c3.x-c3.b-5;g+=`<rect class="water" x="${f1(wx)}" y="${gy-1}" width="${f1(wx2-wx)}" height="16"/><text class="cap" x="${f1((wx+wx2)/2)}" y="${gy+11}" text-anchor="middle" style="font-size:${single?10:9}px">Canal de Chacao</text>`;}
-  if(single&&list[0].id!=="cruce"){let pt=null;for(const c of cols){if(c.e.tt&&c.e.tt!==pt){if(pt!==null)g+=`<line x1="${f1(c.x-c.sp/2)}" x2="${f1(c.x-c.sp/2)}" y1="34" y2="${gy}" style="stroke:var(--line-2);stroke-width:.8;stroke-dasharray:3 3"/>`;g+=`<text class="cap" x="${f1(c.x-c.sp/2+3)}" y="40" style="font-size:9px">T${ttNum(c.e.tt)}</text>`;pt=c.e.tt;}}}
-  for(const c of cols)c.G=glyphD(c.x,gy,c.h,c.b,c.anc);
-  for(let i=0;i<cols.length-1;i++){const a=cols[i],b=cols[i+1];if(a.s.id!==b.s.id)continue;const v=vanoBetween(a.s.id,a.e.id,b.e.id);if(!v)continue;
-    const p=a.r.byV[v.key]||0;const L=b.x-a.x;g+=wireDraw(catD(a.G.arm.R,b.G.arm.L,L*(L>100?0.12:0.07)),p);}
-  let lastLbl=-1e9;
-  for(const c of cols){const fp=c.st.fun,fw=Math.max(3,c.b*2.1),fh=single?7:5;
-    g+=steelDraw(c.G.d,c.x,gy,gy-c.h,c.b*1.6,c.st.mon,single?1.1:0.9);
-    g+=`<rect x="${f1(c.x-fw/2)}" y="${gy+2}" width="${f1(fw)}" height="${fh}" class="${fp>=99.95?"conc":fp>0?"concp":"padg"}"/>`;
-    if(single){
-      /* N° de estructura: horizontal en el cruce; vertical en el resto, sin encimarse (mín. 11 unidades entre rótulos) */
-      if(c.s.id==="cruce")g+=`<text class="tx" x="${f1(c.x)}" y="${gy+(fh+14)}" text-anchor="middle" style="font-size:11px">${esc(c.e.id)}</text>`;
-      else if((c.sp>=11||c.anc)&&c.x-lastLbl>=11){lastLbl=c.x;g+=`<text class="tx${c.anc?" b":""}" transform="translate(${f1(c.x)} ${gy+fh+5}) rotate(90)" dominant-baseline="middle" style="font-size:8.5px">${esc(c.e.id)}</text>`;}}
-    const tip=`${c.s.nombre} · Estructura ${c.e.id} (${c.e.tipo||""})\n${c.e.tt||""}${c.e.contr?" · "+c.e.contr:""}\nFundación ${fmtP(c.st.fun)} · Montaje ${fmtP(c.st.mon)} · Tendido torre ${fmtP(c.st.tto)}`;
-    g+=`<rect class="hit" x="${f1(c.x-c.sp/2)}" y="${f1(gy-c.h-6)}" width="${f1(c.sp)}" height="${f1(c.h+16)}" data-open="${c.s.id}|${esc(c.e.id)}" data-tip="${esc(tip)}"/>`;}
-  const by=gy+(single?(list[0].id==="cruce"?40:48):30);
-  for(const sp of seps){g+=`<path class="brk" style="stroke:${secColor(sp.s.id)}" d="M${f1(sp.x0-5)} ${by-6}V${by}H${f1(sp.x1+5)}V${by-6}"/><text class="cap" x="${f1((sp.x0+sp.x1)/2)}" y="${by+fs+5}" text-anchor="middle" style="font-size:${fs}px">${esc(sp.s.nombre)}<tspan dx="8" style="font-family:var(--f-disp);font-weight:700;fill:var(--ink);letter-spacing:0;font-size:${fs+3}px">${fmtP(sp.pct,1)}</tspan></text>`;}
-  const Hh=by+fs+14;
-  return `<svg class="mdl" viewBox="0 0 ${f1(W)} ${f1(Hh)}" style="min-width:${Math.min(1000,Math.round(W*0.6))}px" role="img" aria-label="Perfil de la línea con el avance de cada torre">${g}</svg>`;
+  if(c2&&c3){const wx=c2.x+c2.b+14,wx2=c3.x-c3.b-14;g+=`<rect class="water" x="${f1(wx)}" y="${gy-1}" width="${f1(wx2-wx)}" height="18"/><text class="cap" x="${f1((wx+wx2)/2)}" y="${gy+13}" text-anchor="middle" style="font-size:11px">Canal de Chacao</text>`;}
+  if(!cr){let pt=null;for(const c of cols){if(c.e.tt&&c.e.tt!==pt){if(pt!==null)g+=`<line x1="${f1(c.x-c.sp/2)}" x2="${f1(c.x-c.sp/2)}" y1="30" y2="${gy}" style="stroke:var(--line-2);stroke-width:.8;stroke-dasharray:3 3"/>`;g+=`<text class="cap" x="${f1(c.x-c.sp/2+4)}" y="40" style="font-size:10px">${esc(c.e.tt)}</text>`;pt=c.e.tt;}}}
+  /* vanos de la fila y continuidad con la lámina anterior / siguiente */
+  for(let i=0;i<cols.length-1;i++){const a=cols[i],b=cols[i+1];const v=vanoBetween(s.id,a.e.id,b.e.id);if(!v)continue;const L=b.x-a.x;
+    g+=wireDraw(catD(a.aR,b.aL,L*(L>200?0.14:0.08)),r.byV[v.key]||0);}
+  const prev=all[start-1],next=all[start+es.length];
+  if(next&&!cr){const a=cols[cols.length-1];const v=vanoBetween(s.id,a.e.id,next.id);if(v){g+=wireDraw(`M${f1(a.aR.x)} ${f1(a.aR.y)}Q${f1(a.aR.x+12)} ${f1(a.aR.y+3)} ${f1(W-8)} ${f1(a.aR.y+2)}`,r.byV[v.key]||0);g+=`<text class="tx" x="${W-8}" y="${gy-76}" text-anchor="end" style="font-size:9.5px">sigue → ${esc(next.id)}</text>`;}}
+  if(prev&&!cr){const b=cols[0];const v=vanoBetween(s.id,prev.id,b.e.id);if(v){g+=wireDraw(`M8 ${f1(b.aL.y+2)}Q${f1(b.aL.x-12)} ${f1(b.aL.y+3)} ${f1(b.aL.x)} ${f1(b.aL.y)}`,r.byV[v.key]||0);g+=`<text class="tx" x="8" y="${gy-76}" style="font-size:9.5px">← viene de ${esc(prev.id)}</text>`;}}
+  /* torres, fundaciones, rótulos y zona sensible */
+  for(const c of cols){const fp=c.st.fun,fw=Math.max(5,c.b*2.2),fh=cr?12:8;
+    g+=steelDraw(c.d,c.x,gy,gy-c.h,c.reach,c.st.mon,cr?1.3:1.1);
+    if(cr)for(const sx of [-1,1])g+=`<rect x="${f1(c.x+sx*c.b-6)}" y="${gy+2}" width="12" height="${fh}" class="${fp>=99.95?"conc":fp>0?"concp":"padg"}"/>`;
+    else g+=`<rect x="${f1(c.x-fw/2)}" y="${gy+2}" width="${f1(fw)}" height="${fh}" class="${fp>=99.95?"conc":fp>0?"concp":"padg"}"/>`;
+    if(cr)g+=`<text class="tx b" x="${f1(c.x)}" y="${gy+32}" text-anchor="middle" style="font-size:12px">${esc(c.e.id)}</text><text class="tx" x="${f1(c.x)}" y="${gy+46}" text-anchor="middle" style="font-size:10px">F ${fmtP(fp)} · M ${fmtP(c.st.mon)}</text>`;
+    else g+=`<text class="tx${c.anc?" b":""}" transform="translate(${f1(c.x)} ${gy+fh+6}) rotate(90)" dominant-baseline="middle" style="font-size:10px">${esc(c.e.id)}</text>`;
+    const tip=`${s.nombre} · Estructura ${c.e.id} (${c.e.tipo||""})\n${c.e.tt||""}${c.e.contr?" · "+c.e.contr:""}\nFundación ${fmtP(c.st.fun)} · Montaje ${fmtP(c.st.mon)} · Tendido torre ${fmtP(c.st.tto)}`;
+    g+=`<rect class="hit" x="${f1(c.x-c.sp/2)}" y="${f1(gy-c.h-8)}" width="${f1(c.sp)}" height="${f1(c.h+fh+40)}" data-open="${s.id}|${esc(c.e.id)}" data-tip="${esc(tip)}" role="button" tabindex="-1"/>`;}
+  const Hh=gy+(cr?54:44);
+  return `<svg class="mdl" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc("Perfil "+s.nombre+" "+ids)}" style="border-bottom:1px solid var(--line)">${g}</svg>`;
 }
 /* Torre modelo por sector: terreno, fundaciones, montaje y conductores según el % de cada etapa */
 function stageModelSvg(){
@@ -839,7 +856,7 @@ function stageModelSvg(){
     g+=wireDraw(catD(G.peak,{x:ox+8,y:G.peak.y+8},3),st.ten,"og");
     const lab=(et,y,name,v,lx)=>`<g class="lnk ${S.dashEt===et?"on":""}" data-dashet="${et}" role="button" tabindex="0" aria-label="${esc(name+" "+fmtP(v,1))}" data-tip="${esc(name+": "+fmtP(v,1)+"\nToca para ver sus actividades")}"><line class="ldr" x1="${f1(lx)}" y1="${f1(y-4)}" x2="${ox+152}" y2="${f1(y-4)}"/><circle cx="${f1(lx)}" cy="${f1(y-4)}" r="1.6" style="fill:var(--ink-2)"/><text class="cap n" x="${ox+156}" y="${f1(y-8)}" style="font-size:9.5px">${esc(name)}</text><text class="big v" x="${ox+156}" y="${f1(y+9)}" style="font-size:16px">${fmtP(v,1)}</text></g>`;
     g+=lab("ten",G.arms.R[1].y,"Tendido",st.ten,cx+64)+lab("mon",gy-H*0.42,"Montaje",st.mon,cx+16)+lab("pre",gy-12,"Obras preliminares",st.pre,cx+62)+lab("fun",gy+28,"Fundaciones",st.fun,cx+35);});
-  return `<svg class="mdl" viewBox="0 0 ${W} ${gy+44}" style="min-width:${list.length*230}px" role="img" aria-label="Avance por etapa en torre modelo">${g}</svg>`;
+  return `<svg class="mdl" viewBox="0 0 ${W} ${gy+44}" style="min-width:${list.length*260}px;max-width:${list.length*400}px;margin:0 auto" role="img" aria-label="Avance por etapa en torre modelo">${g}</svg>`;
 }
 /* Íconos modelados de los indicadores (relleno = % terminado) */
 function kpiIcon(kind,p){let g="";
@@ -907,12 +924,12 @@ function vResumen(){
    <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span><span class="d">${r.cnt.ter}/${r.n} estructuras · ${r.vdone}/${r.nv} vanos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
    ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)"><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras</span><span class="d muted">Pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
   h+=kpiSection();
-  h+=`<div class="grid2"><section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Torre tipo por sector. Toca una etapa para ver sus actividades.</span></div>
+  h+=`<section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Torre tipo por sector. Toca una etapa para ver sus actividades.</span></div>
    <div class="mdl-wrap">${stageModelSvg()}</div>
    <p class="small muted">Pesos: ${etapas().map(e=>`${esc(e.nombre)} ${fmtP(num(e.peso,0))}`).join(" · ")} (tendido: torre ${tenSplit().t} % / vano ${tenSplit().v} %).</p>
    ${S.dashEt?`<div class="stack" style="gap:6px"><div class="spread"><h3>${esc((etapaById(S.dashEt)||{}).nombre||"")} · actividades</h3><button class="btn small ghost" data-dashet="${S.dashEt}">Cerrar</button></div>${drillHtml(S.dashEt)}</div>`:""}</section>`;
-  h+=`<section class="panel stack"><h2>Estado de estructuras</h2>${estadoTable()}<p class="small muted">Terminada = montaje al 100 %. En ejecución = cualquier avance registrado.</p>
-    <h2 style="margin-top:6px">Por contratista</h2>${contrTable()}</section></div>`;
+  h+=`<div class="grid2"><section class="panel stack"><h2>Estado de estructuras</h2>${estadoTable()}<p class="small muted">Terminada = montaje al 100 %. En ejecución = cualquier avance registrado.</p></section>
+    <section class="panel stack"><h2>Por contratista</h2>${contrTable()}</section></div>`;
   {const F=S.dashF;const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
   h+=`<section class="panel stack" style="gap:10px"><div class="spread"><h2>Detalle por estructura</h2><span class="small muted">${esc(amb)}${F.contr?" · contratista "+esc(F.contr):""} · usa los filtros de "Indicadores de avance"</span></div>${estMatrix()}</section>`;}
   h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en terreno</h2><button class="btn small ghost" data-csv="1">Descargar CSV</button></div>${feedHtml(allHist((k,d)=>sc==="total"||d.sector===sc).filter(x=>!x.imp).slice(0,10))}</section>`;
