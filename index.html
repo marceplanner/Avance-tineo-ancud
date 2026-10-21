@@ -649,8 +649,11 @@ function calcSec(get,sec){
   for(const e of es){const st=stE(get,sec,e);byE[e.id]=st;acc.pre+=st.pre;acc.fun+=st.fun;acc.mon+=st.mon;acc.tto+=st.tto;cnt[estado(st)]++;
     const k=kE(sec,e.id);if(get(k,"per")>=100)ind.per++;if(get(k,"acc")>=100)ind.acc++;if(st.fun>=99.95)ind.fun++;if(st.mon>=99.95)ind.mon++;}
   const n=es.length||1;const vs=vanos(sec);const byV={};let vs2=0,vdone=0;
-  for(const v of vs){const p=gPct(get,v.key,"tva");byV[v.key]=p;vs2+=p;if(p>=99.95)vdone++;}
-  const T=acc.tto/n,V=vs.length?vs2/vs.length:0;const sp=tenSplit();
+  /* Tendido por vano medido por distancia: cada vano pesa según su longitud (actualización de terreno).
+     Un vano sin longitud (cruce) pesa como el promedio de los que sí la tienen; si ninguno la tiene, todos pesan igual */
+  const known=vs.filter(v=>v.len!=null);const wDef=known.length?known.reduce((x,v)=>x+v.len,0)/known.length:1;let WV=0;
+  for(const v of vs){const p=gPct(get,v.key,"tva");byV[v.key]=p;const w=v.len!=null?v.len:wDef;WV+=w;vs2+=w*p;if(p>=99.95)vdone++;}
+  const T=acc.tto/n,V=WV?vs2/WV:0;const sp=tenSplit();
   const stg={pre:acc.pre/n,fun:acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+(vs.length?sp.v*V:0))/(sp.t+(vs.length?sp.v:0)),tenT:T,tenV:V};
   let W=0,P=0;for(const et of etapas()){const w=num(et.peso,0);W+=w;P+=w*(stg[et.id]||0);}
   return {stg,pct:W?P/W:0,cnt,byE,byV,ind,n:es.length,nv:vs.length,vdone,has:es.length>0};
@@ -1076,15 +1079,16 @@ function vResumen(){
 const cls3=(c,p)=>{c.n++;if(p>=99.95)c.ter++;else if(p>0)c.eje++;else c.sin++;};
 const cnt0=()=>({n:0,ter:0,eje:0,sin:0});
 function kpiData(){
-  const F=S.dashF;const P=S.P;const out={fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,opgw:0,mL:0,m1:0,m2:0};
+  const F=S.dashF;const P=S.P;const out={fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,opgw:0,mL:0,m1:0,m2:0,mP:0};
   for(const s of scopeSecs()){const r=P.sec[s.id];
     for(const e of estr(s.id)){if(F.contr&&e.contr!==F.contr)continue;if(F.tt&&e.tt!==F.tt)continue;
       const st=r.byE[e.id];const k=kE(s.id,e.id);
       cls3(out.fun,st.fun);cls3(out.mon,st.mon);cls3(out.acc,cur(k,"acc"));cls3(out.pat,patVal(s.id,e));}
     for(const v of vanos(s.id)){const eb=estById(s.id,v.b)||{};if(F.contr&&eb.contr!==F.contr)continue;if(F.tt&&v.tt!==F.tt)continue;
-      cls3(out.ten,r.byV[v.key]||0);if(v.len!=null){out.mL+=v.len;out.m1+=v.len*circPct(v.key,"1")/100;out.m2+=v.len*circPct(v.key,"2")/100;}if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
+      cls3(out.ten,r.byV[v.key]||0);if(v.len!=null){out.mL+=v.len;out.mP+=v.len*(r.byV[v.key]||0)/100;out.m1+=v.len*circPct(v.key,"1")/100;out.m2+=v.len*circPct(v.key,"2")/100;}if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
   return out;}
-function kpiCard(titulo,c,unidad,layer,nota,kind){const pct=c.n?c.ter/c.n*100:0;
+/* pctOver: % propio de la tarjeta (tendido: avance medido por distancia en vez de vanos terminados / total) */
+function kpiCard(titulo,c,unidad,layer,nota,kind,pctOver){const pct=pctOver!=null?pctOver:c.n?c.ter/c.n*100:0;
   return `<button class="kpic" data-kpi="${layer}" data-tip="${esc(`${titulo}\n${c.ter} terminadas · ${c.eje} en ejecución · ${c.sin} faltantes (de ${c.n})\nToca para verlo en el pictograma`)}">
   <span class="kh"><span class="lbl">${esc(titulo)}</span><span class="kp ${pct>=99.95?"ok":""}">${fmtP(pct)}</span></span>
   <span class="kbody"><svg class="mdl kicon" viewBox="0 0 92 62" aria-hidden="true">${kpiIcon(kind,pct)}</svg><span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span class="kv"><b class="num">${c.ter}</b><span class="of num">/ ${c.n}</span></span><span class="small" style="color:var(--ink-2)">${esc(unidad)}</span></span></span>
@@ -1105,7 +1109,7 @@ function kpiSection(){
   ${kpiCard("Mallas de puesta a tierra",K.pat,"mallas instaladas","pre",S.dash==="cruce"||S.dash==="total"?"En el cruce se toma la malla PAT de las patas.":"","pat")}
   ${kpiCard("Fundaciones",K.fun,"fundaciones hormigonadas","fun",S.dash==="cruce"||S.dash==="total"?"En el cruce se mide por pata (promedio de las 4).":"","fun")}
   ${kpiCard("Montaje de estructuras",K.mon,"estructuras montadas","mon","","mon")}
-  ${kpiCard("Tendido",K.ten,"vanos tendidos","ten",`Circuito 1: <b>${K.c1}</b>/${K.ten.n} · Circuito 2: <b>${K.c2}</b>/${K.ten.n} · OPGW: <b>${K.opgw}</b>/${K.ten.n} vanos${K.mL?`<br>Conductor tendido: C1 <b>${fmtKm(K.m1)}</b> · C2 <b>${fmtKm(K.m2)}</b> de ${fmtKm(K.mL)}`:""}`,"ten")}
+  ${kpiCard("Tendido",K.ten,"vanos tendidos","ten",`Circuito 1: <b>${K.c1}</b>/${K.ten.n} · Circuito 2: <b>${K.c2}</b>/${K.ten.n} · OPGW: <b>${K.opgw}</b>/${K.ten.n} vanos${K.mL?`<br>Conductor tendido: C1 <b>${fmtKm(K.m1)}</b> · C2 <b>${fmtKm(K.m2)}</b> de ${fmtKm(K.mL)}<br>El % de la tarjeta es el avance medido por distancia.`:""}`,"ten",K.mL?K.mP/K.mL*100:null)}
   </div></section>`;
   return h;}
 function stkSeg(c,n){if(!n)return "";const seg=k=>c[k]?`<i class="${k}" style="width:${c[k]/n*100}%">${c[k]/n>.06?c[k]:""}</i>`:"";return seg("ter")+seg("eje")+seg("sin");}
@@ -1118,7 +1122,7 @@ function drillHtml(et,list){
     else if(et==="fun"){if(s.id==="cruce"){const kp=[];for(const e of es)for(const p of patas(e.id))kp.push(kP(s.id,e.id,p.pata));for(const a of actsG("cr"))rows.push({t:pre()+a.nombre+" (patas)",v:avgAct(kp,a.id),c:s.id});}
       else for(const g of FUNG){const eg=es.filter(e=>(r.byE[e.id].fg||e.fund)===g);if(!eg.length)continue;rows.push({t:pre()+grupoById(g).nombre+" ("+eg.length+")",v:eg.reduce((x,e)=>x+r.byE[e.id].fun,0)/eg.length,c:s.id});}}
     else if(et==="ten"){rows.push({t:pre()+"En torre (promedio)",v:r.stg.tenT,c:s.id});for(const a of actsG("tto"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
-      const vs=vanos(s.id);rows.push({t:pre()+"Por vano ("+vs.length+" vanos)",v:r.stg.tenV,c:s.id});for(const a of actsG("tva"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.map(v=>v.key),a.id),c:s.id});}
+      const vs=vanos(s.id);rows.push({t:pre()+"Por vano ("+vs.length+" vanos, medido por distancia)",v:r.stg.tenV,c:s.id});for(const a of actsG("tva"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.map(v=>v.key),a.id),c:s.id});}
   }
   if(!rows.length)return `<p class="muted small">Sin actividades.</p>`;
   return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Actividad</th><th class="r">Avance</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.t)}</td><td class="r num">${x.v>=99.95?"<b>100 %</b>":fmtP(x.v,1)}</td></tr>`).join("")}</tbody></table></div>`;
@@ -1126,33 +1130,35 @@ function drillHtml(et,list){
 /* Tendido en metros reales: longitud de cada vano (actualización de terreno) × avance registrado de cada cable en ese vano.
    Conductor C1 / C2 = longitud × promedio de sus tres fases; OPGW = longitud × avance del OPGW. Responde al ámbito y al contratista */
 function tendMetros(){
-  const F=S.dashF;const T={n:0,nl:0,L:0,c1:0,c2:0,og:0,nt:0,mt:0};const bySec=[];const grp=new Map();const sin=[];
-  for(const s of scopeSecs()){const r=S.P.sec[s.id];const x={s,n:0,nl:0,L:0,c1:0,c2:0,og:0,nt:0,mt:0};
+  const F=S.dashF;const z=()=>({n:0,L:0,eq:0,c1:0,c2:0,og:0,nb:0,mb:0,nt:0,mt:0});const T=z();const bySec=[];const grp=new Map();const sin=[];
+  for(const s of scopeSecs()){const r=S.P.sec[s.id];const x=Object.assign(z(),{s});
     for(const v of vanos(s.id)){const eb=estById(s.id,v.b)||{};if(F.contr&&eb.contr!==F.contr)continue;x.n++;
-      const q={v,p1:circPct(v.key,"1"),p2:circPct(v.key,"2"),po:cur(v.key,"tv_opg"),full:(r.byV[v.key]||0)>=99.95};
+      const q={v,p1:circPct(v.key,"1"),p2:circPct(v.key,"2"),po:cur(v.key,"tv_opg"),pv:r.byV[v.key]||0};q.both=q.p1>=99.95&&q.p2>=99.95;
       const gk=s.id+"|"+(v.tt||"");if(!grp.has(gk))grp.set(gk,{s,tt:v.tt||"Sin tramo",vs:[]});grp.get(gk).vs.push(q);
-      if(v.len==null){sin.push(v.label);continue;}const L=v.len;x.nl++;x.L+=L;
-      x.c1+=L*q.p1/100;x.c2+=L*q.p2/100;x.og+=L*q.po/100;if(q.full){x.nt++;x.mt+=L;}}
+      if(v.len==null){sin.push(v.label);continue;}const L=v.len;x.L+=L;x.eq+=L*q.pv/100;
+      x.c1+=L*q.p1/100;x.c2+=L*q.p2/100;x.og+=L*q.po/100;if(q.both){x.nb++;x.mb+=L;}if(q.pv>=99.95){x.nt++;x.mt+=L;}}
     if(x.n){bySec.push(x);for(const k in T)T[k]+=x[k];}}
-  /* tramos de tendido con avance, y dentro de cada uno los tramos continuos con los dos circuitos tendidos */
-  const many=scopeSecs().length>1;const tram=[],sinAv=[];
-  for(const g of grp.values()){let L=0,c1=0,c2=0,og=0,any=false,run=null;const runs=[];
-    for(const q of g.vs){const l=q.v.len||0;L+=l;c1+=l*q.p1/100;c2+=l*q.p2/100;og+=l*q.po/100;if(q.p1+q.p2+q.po>0)any=true;
-      if(q.p1>=99.95&&q.p2>=99.95){if(run&&run.b===q.v.a){run.b=q.v.b;run.m+=l;}else{run={a:q.v.a,b:q.v.b,m:l};runs.push(run);}}else run=null;}
-    const lab=g.tt+(many?" · "+g.s.nombre:"");if(!any){sinAv.push(lab);continue;}
-    const all=g.vs.every(q=>q.p1>=99.95&&q.p2>=99.95&&q.po>=99.95);
-    tram.push({lab,L,c1,c2,og,runs,ini:g.vs[0].v.a,fin:g.vs[g.vs.length-1].v.b,est:all?"Tendido":runs.length?"Conductor tendido en parte":"En tendido"});}
-  const pc=(a,b)=>b?fmtP(a/b*100,1):"—";const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
-  const fig=(t,m,sub)=>`<div><span>${t}</span><b class="num">${fmtM(m)}</b><span>${sub}</span></div>`;
-  const tr=(x,lab,b)=>`<tr><td>${b?`<b>${lab}</b>`:lab}</td><td class="r num">${x.nl} / ${x.n}</td><td class="r num">${fmtM(x.L)}</td><td class="r num"><b>${fmtM(x.c1)}</b></td><td class="r num"><b>${fmtM(x.c2)}</b></td><td class="r num"><b>${fmtM(x.og)}</b></td><td class="r num">${x.nt} · ${fmtM(x.mt)}</td></tr>`;
-  let h=`<section class="panel stack"><div class="spread"><h2>Tendido en metros</h2><span class="small muted">${esc(amb)}${F.contr?" · contratista "+esc(F.contr):""} · longitudes de la actualización de terreno, ${ASB_DOC}</span></div>
-  <div class="tmfig">${fig("Conductor circuito 1",T.c1,`de ${fmtM(T.L)} · ${pc(T.c1,T.L)}`)}${fig("Conductor circuito 2",T.c2,`de ${fmtM(T.L)} · ${pc(T.c2,T.L)}`)}${fig("OPGW",T.og,`de ${fmtM(T.L)} · ${pc(T.og,T.L)}`)}${fig("Vanos terminados",T.mt,`${T.nt} de ${T.n} vanos (incluye flechado y accesorios)`)}</div>
-  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Vanos con longitud</th><th class="r">Longitud</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th class="r">Vanos terminados</th></tr></thead><tbody>
+  /* tramos acotados al avance: solo los tramos continuos de vanos que tienen algún avance de tendido, separados por tramo de tendido */
+  const many=scopeSecs().length>1;const tram=[],sinAv=[];const TT=z();
+  for(const g of grp.values()){const lab=g.tt+(many?" · "+g.s.nombre:"");let run=null;const n0=tram.length;
+    for(const q of g.vs){if(q.pv<=0&&q.p1+q.p2+q.po<=0){run=null;continue;}
+      if(!(run&&run.b===q.v.a)){run=Object.assign(z(),{lab,a:q.v.a,b:q.v.b,sinL:false,okAll:true,okC:true});tram.push(run);}
+      const l=q.v.len||0;run.b=q.v.b;run.n++;run.L+=l;run.eq+=l*q.pv/100;run.c1+=l*q.p1/100;run.c2+=l*q.p2/100;run.og+=l*q.po/100;
+      if(q.both){run.nb++;run.mb+=l;}if(q.v.len==null)run.sinL=true;if(!q.both)run.okC=false;if(!(q.both&&q.po>=99.95))run.okAll=false;}
+    if(tram.length===n0)sinAv.push(lab);}
+  for(const t of tram)for(const k of ["n","L","eq","c1","c2","og","nb","mb"])TT[k]+=t[k];
+  const pc=(a,b)=>b?fmtP(a/b*100,1):"—";
+  const fig=(t,v,sub)=>`<div><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;
+  const tr=(x,lab,b)=>`<tr><td>${b?`<b>${lab}</b>`:lab}</td><td class="r num">${x.L?fmtM(x.L):"sin longitud"}</td><td class="r num"><b>${pc(x.eq,x.L)}</b></td><td class="r num">${fmtM(x.c1)}</td><td class="r num">${fmtM(x.c2)}</td><td class="r num">${fmtM(x.og)}</td><td class="r num"><b>${fmtM(x.mb)}</b> <span class="muted">· ${x.nb} vanos</span></td><td class="r num">${fmtM(x.mt)} <span class="muted">· ${x.nt} vanos</span></td></tr>`;
+  const trT=t=>`<tr><td><b>${esc(t.lab)}</b></td><td class="mono small">${esc(t.a)} – ${esc(t.b)}</td><td class="r num">${t.n}</td><td class="r num">${t.sinL&&!t.L?"sin longitud":fmtM(t.L)}</td><td class="r num"><b>${pc(t.eq,t.L)}</b></td><td class="r num">${fmtM(t.c1)}</td><td class="r num">${fmtM(t.c2)}</td><td class="r num">${fmtM(t.og)}</td><td class="r num"><b>${fmtM(t.mb)}</b></td><td class="small">${t.okAll?"Tendido (conductores y OPGW)":t.okC?"Conductores tendidos":"En tendido"}</td></tr>`;
+  let h=`<section class="panel stack"><h2>Tendido en metros</h2>
+  <div class="tmfig">${fig("Avance del tendido",pc(T.eq,T.L),`medido por distancia en ${fmtKm(T.L)} de vanos`)}${fig("Conductor circuito 1",fmtM(T.c1),`${pc(T.c1,T.L)} de ${fmtM(T.L)}`)}${fig("Conductor circuito 2",fmtM(T.c2),`${pc(T.c2,T.L)} de ${fmtM(T.L)}`)}${fig("OPGW",fmtM(T.og),`${pc(T.og,T.L)} de ${fmtM(T.L)}`)}${fig("Vanos tendidos",fmtM(T.mb),`${T.nb} de ${T.n} vanos con ambos circuitos`)}</div>
+  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Longitud</th><th class="r">Avance tendido</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th class="r">Vanos tendidos</th><th class="r">Vanos terminados</th></tr></thead><tbody>
   ${bySec.map(x=>tr(x,esc(x.s.nombre))).join("")}${bySec.length>1?tr(T,"Total línea",1):""}</tbody></table></div>
   <h3 style="margin:4px 0 0">Tramos con tendido</h3>
-  ${tram.length?`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Tramo de tendido</th><th>Estructuras</th><th class="r">Longitud</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th>Tendido con ambos circuitos</th><th>Estado</th></tr></thead><tbody>
-  ${tram.map(t=>`<tr><td><b>${esc(t.lab)}</b></td><td class="mono small">${esc(t.ini)} – ${esc(t.fin)}</td><td class="r num">${t.L?fmtM(t.L):"sin longitud"}</td><td class="r num">${fmtM(t.c1)}</td><td class="r num">${fmtM(t.c2)}</td><td class="r num">${fmtM(t.og)}</td><td class="small">${t.runs.length?t.runs.map(x=>`<span class="mono">${esc(x.a)}–${esc(x.b)}</span> <b class="num">${x.m?fmtM(x.m):"sin longitud"}</b>`).join("<br>"):"—"}</td><td class="small">${t.est}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted small" style="margin:0">Aún no hay tendido registrado${F.contr?" para este contratista":""}.</p>`}
-  <p class="small muted" style="margin:0">Metros reales = longitud del vano × avance registrado de cada cable en ese vano (conductor: promedio de sus tres fases). "Tendido con ambos circuitos" lista los tramos continuos con las seis fases al 100 %. Vano terminado = piloto, conductores, OPGW, flechado y accesorios al 100 %.${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud en el listado (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
+  ${tram.length?`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Tramo de tendido</th><th>Estructuras con avance</th><th class="r">Vanos</th><th class="r">Longitud</th><th class="r">Avance</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th class="r">Vanos tendidos</th><th>Estado</th></tr></thead><tbody>
+  ${tram.map(trT).join("")}<tr><td><b>Total</b></td><td class="small">${tram.length} ${tram.length===1?"tramo":"tramos"}</td><td class="r num"><b>${TT.n}</b></td><td class="r num"><b>${fmtM(TT.L)}</b></td><td class="r num"><b>${pc(TT.eq,TT.L)}</b></td><td class="r num"><b>${fmtM(TT.c1)}</b></td><td class="r num"><b>${fmtM(TT.c2)}</b></td><td class="r num"><b>${fmtM(TT.og)}</b></td><td class="r num"><b>${fmtM(TT.mb)}</b></td><td></td></tr></tbody></table></div>`:`<p class="muted small" style="margin:0">Aún no hay tendido registrado${F.contr?" para este contratista":""}.</p>`}
+  <p class="small muted" style="margin:0">Avance del tendido = Σ longitud del vano × avance del vano (piloto, conductores, OPGW, flechado y accesorios) ÷ longitud total. Conductor y OPGW = longitud × avance registrado de cada cable (conductor: promedio de sus tres fases). Vanos tendidos = vanos con las seis fases al 100 %; vanos terminados = todo el tendido al 100 %.${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
   return h;}
 /* Avance por etapa en cifras: % de cada etapa por sector y, con varios sectores, la línea ponderada por el peso de cada sector */
 function etapaTable(){
@@ -1160,7 +1166,7 @@ function etapaTable(){
   const lin=et=>list.reduce((x,s)=>x+s.peso*(S.P.sec[s.id].stg[et]||0),0)/WS;const sp=tenSplit();
   let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th><th class="r">Peso</th>${list.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea</th>`:""}</tr></thead><tbody>`;
   for(const e of etapas()){const on=S.dashEt===e.id;
-    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button>${e.id==="ten"?`<span class="small muted"> · torre ${sp.t} % / vano ${sp.v} %</span>`:""}</td><td class="r num">${fmtP(num(e.peso,0))}</td>${list.map(s=>`<td class="r num">${fmtP(S.P.sec[s.id].stg[e.id]||0,1)}</td>`).join("")}${many?`<td class="r num"><b>${fmtP(lin(e.id),1)}</b></td>`:""}</tr>`;}
+    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button>${e.id==="ten"?`<span class="small muted"> · torre ${sp.t} % / vano ${sp.v} %, vanos medidos por distancia</span>`:""}</td><tdclass="r num">${fmtP(num(e.peso,0))}</td>${list.map(s=>`<td class="r num">${fmtP(S.P.sec[s.id].stg[e.id]||0,1)}</td>`).join("")}${many?`<td class="r num"><b>${fmtP(lin(e.id),1)}</b></td>`:""}</tr>`;}
   h+=`<tr><td><b>Avance ponderado</b></td><td class="r num">${fmtP(etapas().reduce((x,e)=>x+num(e.peso,0),0))}</td>${list.map(s=>`<td class="r num"><b>${fmtP(S.P.sec[s.id].pct,1)}</b></td>`).join("")}${many?`<td class="r num"><b>${fmtP(S.P.lineaPct,1)}</b></td>`:""}</tr>`;
   return h+`</tbody></table></div>`;
 }
