@@ -1844,16 +1844,19 @@ const ICO_PIN=`<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true
 /* sinTipo: el mapa solo muestra torres, así que ignora el filtro Torres/Vanos */
 function libMatch(u,sinTipo){const F=S.lib;if(!sinTipo&&F.tipo!=="todo"&&u.t!==F.tipo)return false;if(F.sec!=="total"&&u.s.id!==F.sec)return false;if(F.tt&&u.tt!==F.tt)return false;
   if(F.est==="fpmf"){if(libOk(libEst(u.key,"pmf")))return false;}else if(F.est==="fser"){if(libOk(libEst(u.key,"ser")))return false;}else if(F.est&&libGen(u.key)!==F.est)return false;
-  if(F.pmf){const cs=libCodes(u.key);if(F.pmf==="__con"?!cs.length:F.pmf==="__sin"?cs.length>0:!cs.includes(F.pmf))return false;}
+  if(F.pmf){const cs=libCodes(u.key);
+    if(F.pmf==="__con"?!cs.length:F.pmf==="__sin"?cs.length>0:F.pmf==="__res"?!cs.some(c=>pmfEst(c)==="res"):F.pmf==="__pend"?!cs.some(c=>{const e=pmfEst(c);return e==="pend"||e==="tram";}):!cs.includes(F.pmf))return false;}
   /* busca por N° (acepta "4-5" para el vano 4–5) o por código de PMF */
   const q=F.q.trim().toLowerCase().replace(/–/g,"-");return !q||String(u.lab).toLowerCase().replace(/–/g,"-").includes(q)||libCod(u.key).toLowerCase().includes(q);}
-/* En PMF y servidumbre no se cuentan los elementos donde no aplican */
-function libStats(us){const z=()=>({n:0,apta:0,proc:0,res:0,pend:0,m:0,mT:0});const st={t:z(),v:z(),pmf:{n:0,ok:0},ser:{n:0,ok:0},cod:{n:0,ok:0,res:0,otr:0},n:0,sec:new Map()};
+/* Servidumbre: no se cuentan los elementos donde no aplica. PMF: se cuenta cada permiso una vez (códigos distintos),
+   aunque se repita en varios vanos o torres; también por serie (prefijo del código: PMF, BN, BNUP, MP, PL) */
+function libStats(us){const z=()=>({n:0,apta:0,proc:0,res:0,pend:0,m:0,mT:0}),zc=()=>({n:0,ok:0,res:0,pend:0,tram:0});
+  const st={t:z(),v:z(),ser:{n:0,ok:0},cod:zc(),serie:new Map(),n:0,sec:new Map()};
   for(const u of us){const g=libGen(u.key);if(!st.sec.has(u.s.id))st.sec.set(u.s.id,{s:u.s,t:z(),v:z()});const sb=st.sec.get(u.s.id);
     for(const b of u.t==="torre"?[st.t,sb.t]:[st.v,sb.v]){b.n++;b[g]++;if(u.t==="vano"&&u.v.len!=null){b.mT+=u.v.len;if(g==="apta")b.m+=u.v.len;}}
-    st.n++;const ep=libEst(u.key,"pmf"),es=libEst(u.key,"ser");
-    if(ep!=="na"){st.pmf.n++;if(ep==="lib")st.pmf.ok++;}if(es!=="na"){st.ser.n++;if(es==="lib")st.ser.ok++;}}
-  for(const c of libCodeIdx().keys()){const e=pmfEst(c);st.cod.n++;if(libOk(e))st.cod.ok++;else if(e==="res")st.cod.res++;else st.cod.otr++;}
+    st.n++;const es=libEst(u.key,"ser");if(es!=="na"){st.ser.n++;if(es==="lib")st.ser.ok++;}}
+  for(const c of libCodeIdx().keys()){const e=pmfEst(c),p=(/^[A-Z]+/.exec(c)||["Otros"])[0];if(!st.serie.has(p))st.serie.set(p,zc());
+    for(const x of [st.cod,st.serie.get(p)]){x.n++;if(libOk(e))x.ok++;else if(e==="res")x.res++;else if(e==="tram")x.tram++;else x.pend++;}}
   return st;}
 /* Frentes continuos aptos: torres y vanos aptos sin interrupción (continente e isla) */
 function libFrentes(us){const out=[];for(const sid of ["continente","isla"]){let run=null,pend=null;
@@ -1868,9 +1871,13 @@ function vLiberaciones(){
   const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;const nRes=st.t.res+st.v.res;
   let h=`<div class="stack"><section class="panel stack"><div class="spread"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción con el PMF aprobado (o sin PMF) y la servidumbre liberada.</span></div>
   <p class="small muted" style="margin:0">Estado inicial: planilla de estado PMF al ${fmtD(LIB_SEED_FECHA)} (PMF asociados, estado del PMF y propietarios). Cada código PMF se aprueba por separado y vale para todos los elementos que cubre. Cada cambio posterior se registra aquí y queda en la bitácora.</p>
-  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`)}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`)}${fig("PMF aprobados",`${st.pmf.ok} de ${st.pmf.n}`,"torres y vanos con PMF; no cuentan los que no aplican")}${fig("Códigos PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`${st.cod.res} restringidos · ${st.cod.otr} por confirmar o en trámite`)}${fig("Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,"propietarios; no cuentan los que no aplican")}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
+  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`)}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`)}${fig("PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`PMF distintos, sin repetir · ${st.cod.res} restringidos · ${st.cod.pend+st.cod.tram} por confirmar o en trámite`)}${fig("Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,"propietarios; no cuentan los que no aplican")}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Torres aptas</th><th class="r">Vanos aptos</th><th class="r">Línea apta</th><th class="r">En proceso</th><th class="r">Restringidas</th><th class="r">Pendientes</th></tr></thead><tbody>
   ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>
+  <div class="stack" style="gap:6px"><span class="lbl">PMF por serie · cada PMF se cuenta una vez, aunque cubra varios vanos o torres</span>
+  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Serie</th><th class="r">PMF distintos</th><th class="r">Aprobados</th><th class="r">Restringidos</th><th class="r">Por confirmar</th><th class="r">En trámite</th><th class="r">Aprobado</th></tr></thead><tbody>
+  ${(()=>{const fila=(p,x,tot)=>`<tr><td>${tot?"<b>Total</b>":`<span class="mono">${esc(p)}</span>`}</td><td class="r num">${tot?`<b>${x.n}</b>`:x.n}</td><td class="r num"><b>${x.ok}</b></td><td class="r num">${x.res?(tot?`<button class="linkbtn crit" data-libpmff="__res" data-tip="Ver los elementos con PMF restringido">${x.res}</button>`:`<b class="crit">${x.res}</b>`):"0"}</td><td class="r num">${x.pend?(tot?`<button class="linkbtn" data-libpmff="__pend" data-tip="Ver los elementos con PMF por confirmar o en trámite">${x.pend}</button>`:x.pend):"0"}</td><td class="r num">${x.tram}</td><td class="r num">${pc(x.ok,x.n)}</td></tr>`;
+    return [...st.serie].sort((a,b)=>a[0].localeCompare(b[0])).map(([p,x])=>fila(p,x)).join("")+fila("",st.cod,true);})()}</tbody></table></div></div>
   <div class="stack" style="gap:6px"><span class="lbl">Frentes continuos aptos para construcción</span>${fr.length?`<div class="frentes">${fr.map(r=>`<span>${esc(r.a)} – ${esc(r.b)} <b>${fmtKm(r.m)}</b></span>`).join("")}</div>`:`<span class="small muted">Aún no hay tramos continuos de torres y vanos aptos.</span>`}</div></section>`;
   /* planilla */
   const cidx=libCodeIdx();if(F.pmf&&!F.pmf.startsWith("__")&&!cidx.has(F.pmf))F.pmf="";
@@ -1881,7 +1888,7 @@ function vLiberaciones(){
    <div class="field"><label for="lib-sec">Sector</label><select id="lib-sec"><option value="total">Todos</option>${secs().map(s=>`<option value="${s.id}" ${F.sec===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
    <div class="field"><label for="lib-tt">Tramo de tendido</label><select id="lib-tt"><option value="">Todos</option>${tts.map(t=>`<option ${F.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
    <div class="field"><label for="lib-est">Estado</label><select id="lib-est"><option value="">Todos</option>${[["apta","Apta para construcción"],["proc","En proceso"],["res","Restringida"],["pend","Pendiente"],["fpmf","Falta PMF"],["fser","Falta servidumbre"]].map(([k,t])=>`<option value="${k}" ${F.est===k?"selected":""}>${t}</option>`).join("")}</select></div>
-   <div class="field"><label for="lib-pmf">PMF</label><select id="lib-pmf"><option value="">Todos</option><option value="__con" ${F.pmf==="__con"?"selected":""}>Con PMF asociado</option><option value="__sin" ${F.pmf==="__sin"?"selected":""}>Sin PMF</option>${[...grupos].map(([p,cs])=>`<optgroup label="${esc(p)}">${cs.map(c=>`<option value="${esc(c)}" ${F.pmf===c?"selected":""}>${esc(c)} · ${estTxt("pmf",pmfEst(c)).toLowerCase()} (${cidx.get(c).length})</option>`).join("")}</optgroup>`).join("")}</select></div>
+   <div class="field"><label for="lib-pmf">PMF</label><select id="lib-pmf"><option value="">Todos</option><option value="__con" ${F.pmf==="__con"?"selected":""}>Con PMF asociado</option><option value="__res" ${F.pmf==="__res"?"selected":""}>Con PMF restringido</option><option value="__pend" ${F.pmf==="__pend"?"selected":""}>Con PMF por confirmar o en trámite</option><option value="__sin" ${F.pmf==="__sin"?"selected":""}>Sin PMF</option>${[...grupos].map(([p,cs])=>`<optgroup label="${esc(p)}">${cs.map(c=>`<option value="${esc(c)}" ${F.pmf===c?"selected":""}>${esc(c)} · ${estTxt("pmf",pmfEst(c)).toLowerCase()} (${cidx.get(c).length})</option>`).join("")}</optgroup>`).join("")}</select></div>
    <div class="field"><label for="lib-q">Buscar N°</label><input id="lib-q" type="search" value="${esc(F.q)}" placeholder="Ej.: 172A" autocomplete="off"></div>
    ${filt?`<button class="btn small ghost" data-libclear="1">Quitar filtros</button>`:""}</div>`;
   /* PMF elegido en el filtro: su estado, los elementos que cubre, su bitácora y la actualización */
@@ -2417,6 +2424,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="lib-nota-save"){libSaveNota();return;}
   if(b.id==="lib-b-apply"){libBulkApply();return;}
   if(ds.libtipo){S.lib.tipo=ds.libtipo;render();return;}
+  if(ds.libpmff){S.lib.pmf=ds.libpmff;if(S.pmfEd&&S.pmfEd.src==="bar")S.pmfEd=null;render();const t=document.getElementById("lib-tbl");if(t)t.scrollIntoView({behavior:"smooth",block:"center"});return;}
   if(ds.libclear){Object.assign(S.lib,{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:""});if(S.pmfEd&&S.pmfEd.src==="bar")S.pmfEd=null;render();return;}
   if(ds.libselclear){S.lib.sel=new Set();render();return;}
   if(ds.libck){const k=ds.libck;if(S.lib.sel.has(k))S.lib.sel.delete(k);else S.lib.sel.add(k);render();return;}
