@@ -471,6 +471,21 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .lpop-o span{display:block;font-size:.72rem;color:var(--muted)}
 .lpop-a{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 .lpop-a a.btn{text-decoration:none;color:var(--ink)}
+.lpop-c{margin-top:-3px}
+.pcods{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.pcods i{font-style:normal;font-family:var(--f-mono);font-size:.74rem;line-height:1.35;padding:1px 6px;border-radius:2px;border:1px solid var(--line-2);color:var(--ink-2);background:var(--surface)}
+.pcods.sm i{font-size:.68rem;padding:0 5px}
+.pcods i.ok{border-color:color-mix(in oklab,var(--lib-ok) 55%,transparent);background:color-mix(in oklab,var(--lib-ok) 14%,var(--surface));color:color-mix(in oklab,var(--lib-ok) 72%,var(--ink))}
+.pcods i.rs{border-color:var(--lib-res);background:color-mix(in oklab,var(--lib-res) 14%,var(--surface));color:var(--lib-res);font-weight:600}
+.lrow{display:flex;flex-direction:column;gap:0}
+.ltab td.pmf{white-space:normal;min-width:150px;max-width:230px}
+.lse{position:relative;display:block;width:14px;height:14px}
+.lse i{position:absolute;left:1px;top:1px;width:12px;height:12px;background:#14212b;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.lse b{position:absolute;left:17px;top:-1px;font:600 12px/16px var(--f-disp);letter-spacing:.04em;color:#fff;white-space:nowrap;text-transform:uppercase;text-shadow:0 0 2px #000,0 0 3px #000,0 1px 3px #000;pointer-events:none}
+.libmap.osm .lse b{color:#14212b;text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff}
+.lsln{display:inline-block;width:22px;height:4px;background:#1f9d48;box-shadow:0 0 0 1.5px #0b1216;border-radius:1px;flex:none}
+.lsln.cx{height:0;background:none;box-shadow:none;border-top:2px dashed var(--ink-2)}
+.libtip{font:500 12px var(--f-body);padding:4px 8px;border-radius:3px}
 .gtip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;padding:7px 10px;border-radius:4px;z-index:40;max-width:260px;white-space:pre-line;display:none;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;font-size:.92rem;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .toast.err{background:var(--crit-ink);color:#fff}
@@ -1678,28 +1693,102 @@ function vEstructuras(){
 /* Se guardan con la misma función segura de los avances (registrar_avance), en documentos "lib__…" de la tabla avance:
    act.pmf / act.ser = estado vigente {est, fecha, ref, obs}; hist = bitácora (cambios de estado y observaciones).
    Una torre o vano queda apto para construcción con PMF y servidumbre liberados o "no aplica". */
-const LIB_VARS=[{id:"pmf",t:"PMF"},{id:"ser",t:"Servidumbre"}];
-const LIB_EST={pend:{t:"Pendiente",c:"var(--lib-pend)",p:0},tram:{t:"En trámite",c:"var(--lib-tram)",p:50},lib:{t:"Liberado",c:"var(--lib-ok)",p:100},na:{t:"No aplica",c:"var(--lib-na)",p:100},res:{t:"Con restricción",c:"var(--lib-res)",p:25}};
+const LIB_VARS=[{id:"pmf",t:"PMF",h:"PMF"},{id:"ser",t:"Servidumbre",h:"Servidumbre (propietarios)"}];
+const LIB_EST={pend:{t:"Pendiente",c:"var(--lib-pend)",p:0},tram:{t:"En trámite",c:"var(--lib-tram)",p:50},lib:{t:"Liberado",c:"var(--lib-ok)",p:100},na:{t:"No aplica",c:"var(--lib-na)",p:100},res:{t:"Restringido",c:"var(--lib-res)",p:25}};
 const LIB_ORD=["pend","tram","lib","na","res"];
-const LIB_GEN={apta:{t:"Apta para construcción",c:"var(--lib-ok)",h:"#1f9d48"},proc:{t:"En proceso",c:"var(--lib-tram)",h:"#e8a317"},res:{t:"Con restricción",c:"var(--lib-res)",h:"#d63b2f"},pend:{t:"Pendiente",c:"var(--lib-pend)",h:"#97a3ac"}};
+const LIB_GEN={apta:{t:"Apta para construcción",c:"var(--lib-ok)",h:"#1f9d48"},proc:{t:"En proceso",c:"var(--lib-tram)",h:"#e8a317"},res:{t:"Restringida",c:"var(--lib-res)",h:"#d63b2f"},pend:{t:"Pendiente",c:"var(--lib-pend)",h:"#97a3ac"}};
+/* En el PMF el estado liberado se lee "Aprobado"; en la servidumbre, "Liberado" */
+const estTxt=(vid,e)=>e==="lib"?(vid==="pmf"?"Aprobado":vid==="ser"?"Liberado":"Liberado / aprobado"):(LIB_EST[e]||LIB_EST.pend).t;
 const kLibE=(sec,id)=>"lib__"+sec+"__"+safeId(id);
 const kLibV=(sec,a,b)=>"lib__"+sec+"__V__"+safeId(a)+"__"+safeId(b);
+/* Estado inicial: planilla "estado PMF" al 22-10-2026 (PMF asociados, estado del PMF y propietarios = servidumbre).
+   Por elemento: id | servidumbre (L liberado, R restringido) | PMF (A aprobado, R restringido, N no aplica) | PMF asociados | PMF de referencia.
+   id = N° de torre o "a-b" para el vano. En el cruce, "1CA/1CB-2C" se aplica a 1CA-2C y 1CB-2C, y "3C-4CB" también a 3C-4CA.
+   Es la línea base: un registro de la app con fecha igual o posterior la reemplaza, y la planilla queda en la bitácora. */
+const LIB_SEED_FECHA="2026-10-22",LIB_SEED_SRC="Planilla estado PMF 22-10-2026";
+const LIB_SEED_TXT="1|R|N;1-2|R|N;2|R|N;2-3|R|N;3|R|N;3-4|R|N;4|R|N;4-5|R|A|PMF1|PMF1;5|R|N;5-6|R|N;6|R|N;6-7|R|A|PMF1|PMF1;7|R|N;7-8|R|A|PMF1|PMF1;8|R|N;8-9|R|A|PMF1|PMF1;9|R|N;9-10|R|N;10|R|N;10-11|R|N;11|R|N;11-12|R|N;12|R|N;"+
+"12-13|R|A|PMF2/PMF3|PMF2;13|R|A|PMF3|PMF3;13-14|R|A|PMF3/PMF4/PMF5/PMF6|PMF3;14|R|A|PMF6|PMF6;14-15|R|N;15|L|N;15-16|L|N;16|L|N;16-17|L|N;17|L|N;17-18|L|N;18|L|N;18-19|L|N;19|L|N;19-20|L|A|PMF7;20|L|N;"+
+"20-21|L|A|PMF7/BNUP006;21|L|N;21-22|L|N;22|L|N;22-23|L|N;23|L|N;23-24|L|A|PMF9/BNUP006;24|L|N;24-25|L|N;25|L|N;25-26|L|N;26|L|N;26-27|L|N;27|L|N;27-28|L|A|PMF14|PMF14;28|L|N;28-29|L|N;29|L|N;"+
+"29-30|L|A|PMF14|PMF14;30|L|N;30-31|L|N;31|L|N;31-32|L|A|PMF11/BNUP006|PMF11;32|L|N;32-33|L|N;33|L|N;33-34|L|N;34|L|N;34-35|L|N;35|L|N;35-36|L|N;36|L|N;36-37|L|A|PMF13|PMF13;37|L|N;"+
+"37-38|L|A|PMF13|PMF13;38|L|A|PMF13|PMF13;38-39|L|A|PMF13|PMF13;39|L|N;39-40|L|N;40|L|N;40-41|L|N;41|L|N;41-42|R|N;42|R|N;42-43|R|A|PMF13|PMF13;43|R|A|PMF13|PMF13;43-44|R|A|PMF13/PMF15/PMF29|PMF13;"+
+"44|R|A|PMF15/PMF29|PMF29;44-45|R|A|PMF15/PMF29|PMF29;45|R|N;45-46|R|N;46|R|N;46-47|R|N;47|R|N;47-48|R|N;48|R|N;48-49|R|N;49|R|N;49-50|R|R|PMF16;50|R|N;50-51|R|R|PMF16;51|R|N;"+
+"51-52|R|R|PMF16/PMF18/PMF19/BNUP006|PMF18;52|R|N;52-53|R|N;53|R|N;53-54|R|N;54|R|N;54-55|R|N;55|R|N;55-56|R|A|PMF20/PMF30|PMF20;56|R|N;56-57|R|A|PMF30|PMF30;57|R|A|PMF20/PMF30|PMF20;"+
+"57-58|R|A|PMF20/PMF30|PMF20;58|R|N;58-59|R|R|PMF20/PMF21/PMF22|PMF20;59|R|R|PMF22;59-60|R|A|PMF23|PMF23;60|R|A|PMF23|PMF23;60-61|R|R|PMF23/PMF24/PMF25/PMF26|PMF23;61|R|A|PMF26|PMF26;"+
+"61-62|R|A|PMF26/PMF27|PMF26;62|R|N;62-63|R|A|PMF27/PMF28|PMF27;63|R|N;63-64|R|A|MP029|MP029;64|R|A|MP029|MP029;64-65|R|A|BNUP001/MP026/MP029|MP026;65|R|N;65-66|R|A|BNUP001/MP026|MP026;"+
+"66|R|A|MP026|MP026;66-67|R|A|MP026|MP026;67|R|N;67-68|R|A|BN074|BN074;68|R|N;68-69|R|A|MP026/MP029|MP026;69|R|A|MP026|MP026;69-70|R|A|BNUP001/MP026|MP026;70|R|A|MP026|MP026;70-71|R|A|MP029|MP029;"+
+"71|R|N;71-72|R|N;72|R|N;72-73|R|N;73|R|N;73-74|R|N;74|R|N;74-75|R|A|MP027|MP027;75|R|N;75-76|R|A|MP027|MP027;76|R|A|MP027|MP027;76-77|R|A|MP027|MP027;77|R|N;77-78|R|A|BNUP001/MP027|MP027;78|R|N;"+
+"78-79|R|A|BN075/MP027|BN075;79|R|A|BN075|BN075;79-80|R|A|BN075/BNUP001/BNUP002/MP027/PL015|BN075;80|R|N;80-81|R|A|MP027|MP027;81|R|N;81-82|R|N;82|R|N;82-83|R|N;83|R|N;83-84|R|N;84|R|N;"+
+"84-85|R|A|MP028|MP028;85|R|A|MP028|MP028;85-86|R|A|MP028|MP028;86|R|N;86-87|R|A|BN076/BN077/BNUP001/MP028|BN077;87|R|A|MP028|MP028;87-88|R|N;88|R|N;88-89|R|N;89|R|N;89-90|R|N;90|R|A|MP028|MP028;"+
+"90-91|R|A|MP028/PL016|MP028;91|R|N;91-92|R|N;92|R|N;92-93|R|A|MP028|MP028;93|R|N;93-94|R|N;94|R|N;94-95|R|N;95|R|N;95-96|R|N;96|R|N;96-97|R|N;97|R|N;97-98|R|R|PL017;98|R|N;98-99|R|R|BN078;"+
+"99|R|R|BN078;99-100|R|R|BN078/BN079/BNUP003/MP001|MP001;100|R|A|MP001|MP001;100-101|R|A|BN006/BNUP003/MP001|MP001;101|R|N;101-102|R|N;102|R|N;102-103|R|A|MP001|MP001;103|R|N;"+
+"103-104|R|A|BNUP003/MP001|MP001;104|R|A|MP001|MP001;104-105|R|A|BN007/MP001|BN007;105|R|N;105-106|R|A|BN007|BN007;106|R|A|BN007|BN007;106-107|R|A|BN007/BN008|BN007;107|R|A|BN008|BN008;"+
+"107-108|R|A|BN008|BN008;108|R|N;108-109|R|N;109|R|N;109-110|R|N;110|R|N;110-111|R|R|BN009/BN010/BN012/BNUP003|BN009;111|R|N;111-112|R|R|BN011;112|R|N;112-113|R|N;113|R|N;113-114|R|R|BN011/BN013;"+
+"114|R|R|BN013;114-115|R|R|BN013/BNUP003/MP002/PL003|MP002;115|R|A|PL003|PL003;115-117|R|A|MP002/PL003|MP002;117|R|A|MP002|MP002;117-118|R|A|MP002|MP002;118|R|N;118-119|R|A|MP002|MP002;"+
+"119|R|A|MP002|MP002;119-120|R|A|BNUP003/MP002|MP002;120|R|A|MP002|MP002;120-121|R|R|BN014/MP002|MP002;121|R|R|BN014;121-122|R|R|BN014/PL004;122|R|A|PL004;122-123|R|R|BNUP004/PL004;123|R|N;"+
+"123-124|R|N;124|R|N;124-125|R|N;125|R|N;125-126|R|N;126|R|N;126-127|R|A|BNUP003/MP003;127|R|N;127-128|R|A|MP003/MP011|MP011;128|R|A|MP011|MP011;128-129|R|A|MP003/MP011|MP011;129|R|N;"+
+"129-130|R|A|BNUP003/MP003/MP004|MP004;130|R|A|MP004|MP004;130-131|R|A|MP004|MP004;131|R|N;131-132|R|R|BN016/BNUP003/MP004|MP004;132|R|R|BN016;132-133|R|R|BN016/BN017|BN017;133|R|A|BN017|BN017;"+
+"133-134|R|A|BN017|BN017;134|R|N;134-135|R|A|BN018/MP005|BN018;135|R|A|BN018/MP005|BN018;135-136|R|A|MP005;136|R|A|MP005;136-137|R|R|BN054/MP005;137|R|R|BN054;137-138|R|R|BN054;138|R|R|BN054;"+
+"138-139|R|R|BN054/BN055;139|R|A|BN055;139-140|R|A|BN020/BN055;140|R|A|BN020/BN021;140-141|R|A|BN021;141|R|A|BN021;141-142|R|A|BN021/BNUP003/MP006;142|R|A|MP006;"+
+"142-143|R|A|BN022/BN023/BNUP003/MP006/PL006;143|R|N;143-144|R|A|BN023/BN024/PL008|PL008;144|R|A|BN024;144-145|R|A|BN024/BNUP003/MP006;145|R|A|MP006;145-146|R|A|MP006;146|R|N;146-147|R|N;"+
+"147|R|N;147-148|R|R|BN025;148|R|R|BN025;148-149|R|R|BN025;149|R|N;149-150|R|A|MP012/PL009|MP012;150|R|A|MP012|MP012;150-151|R|A|MP012|MP012;151|R|N;151-152|R|A|MP007|MP007;152|R|A|MP007|MP007;"+
+"152-153|R|A|MP007|MP007;153|R|A|MP007|MP007;153-154|R|A|BN026/BNUP003/MP007|MP007;154|R|N;154-155|R|A|BN026/BN027|BN027;155|R|N;155-156|R|A|BN028/MP012|BN028;156|R|A|BN028/MP012|BN028;"+
+"156-157|R|A|BN028/MP012/PL010|BN028;157|R|N;157-158|R|N;158|R|N;158-159|R|R|BN029;159|R|R|BN029;159-160|R|R|BN029;160|R|R|BN029;160-161|R|R|BN029/BNUP003;161|R|N;161-162|R|R|BN030;162|R|N;"+
+"162-163|R|A|BN031/BNUP003/MP008|MP008;163|R|N;163-164|R|A|BN032/BNUP003/MP008/MP012/MP013|MP008;164|R|A|BN032;164-165|R|A|BN032;165|R|A|BN032;165-166|R|R|BN032/BN033/MP009|MP009;"+
+"166|R|A|MP009|MP009;166-167|R|A|MP009|MP009;167|R|A|MP009|MP009;167-168|R|A|BN034|BN034;168|R|A|BN034/MP009|BN034;168-169|R|R|BN034/BN035/MP009|BN034;169|R|A|MP009|MP009;169-170|R|A|MP009|MP009;"+
+"170|R|A|MP009|MP009;170-171|R|A|MP009|MP009;171|R|A|MP009|MP009;171-172|R|A|MP009|MP009;172|R|N;172-172A|R|A|BNUP003/MP009/MP010|MP009;172A|R|A|MP010|MP010;172A-173|R|N;173|R|N;"+
+"173-174|R|A|MP010/PL011|MP010;174|R|A|MP010/PL011|MP010;174-175|R|R|BN036/BN037/BN038/MP010/PL011|MP010;175|R|R|BN038;175-176|R|R|BN038/BN039/BN040/BN041;176|R|R|BN041;176-177|R|R|BN041;"+
+"177|R|R|BN041;177-178|R|R|BN041/BN042|BN042;178|R|A|BN042|BN042;178-179|R|A|BN001/BN042/BN043|BN001;179|R|N;179-180|R|A|BN001|BN001;180|R|A|BN001|BN001;"+
+"1CA|L|A|BN001|BN001;1CB|L|A|BN001|BN001;1CA-2C|L|A|BN001/BN002|BN001;1CB-2C|L|A|BN001/BN002|BN001;2C|L|A|BN002/PL001;2C-3C|L|N;3C|L|A|BN003;3C-4CA|L|N;3C-4CB|L|N;4CA|L|A|BN004;4CB|L|A|BN004;"+
+"181|L|A|BN005;181-182|L|N;182|L|A|BN005;182-183|L|A|BN005/BN058/BN059;183|L|A|BN058/BN059;183-184|L|A|BN059/MP014;184|L|N;184-185|L|N;185|L|N;185-186|L|A|MP014;186|L|A|MP014;"+
+"186-187|L|A|BN044/MP014/MP023/PL012;187|L|N;187-188|L|A|BN045/BN046/BN047/MP014/MP023/PL013;188|L|A|PL013;188-189|L|N;189|L|N;189-190|L|N;190|L|N;190-191|L|N;191|L|N;"+
+"191-192|L|A|BN061/MP015/MP024/PL014;192|L|A|MP024/PL014;192-193|L|A|BN048;193|L|A|BN048;193-194|L|A|BN048/MP016/MP024;194|L|N;194-195|L|A|MP016;195|L|N;195-196|L|N;196|L|N;"+
+"196-197|L|A|BNUP005/MP016;197|L|N;197-198|L|N;198|L|N;198-199|L|A|BN062/MP016;199|L|N;199-200|L|A|BN062/BN063/BN079/BNUP005;200|L|A|BN079;200-201|L|A|BN079;201|L|N;201-202|L|N;202|L|N;"+
+"202-203|L|N;203|L|N;203-204|L|A|MP017;204|R|A|MP017;204-206|R|A|BN064/BNUP005/MP017;206|R|A|BN064;206-207|R|N;207|R|N;207-208|R|N;208|R|N;208-209|R|A|BN049/MP017;209|R|A|MP017;"+
+"209-210|R|A|BN049/BN080/MP017;210|R|A|BN080;210-211|R|A|BN080;211|R|A|BN080;211-212|R|A|BN080;212|R|N;212-213|R|A|BN056/BN057;213|R|A|BN057;213-214|R|A|BN057;214|R|N;"+
+"214-215|R|A|BN065/BN081/BNUP005;215|R|A|BN065;215-216|R|A|BN065;216|L|N;216-217|R|A|BN066/BNUP005/MP018;217|R|N;217-218|R|A|BN051/BNUP005/MP018/MP019;218|R|A|MP019;218-219|R|A|MP019;"+
+"219|R|A|MP019;219-219A|R|A|MP019;219A|L|N;219A-220|L|A|MP019;220|L|A|MP019;220-221|L|A|MP019/MP020;221|L|N;221-222|L|A|BN082/MP021;222|L|A|BN082;222-223|L|A|BN082;223|L|N;223-224|L|A|MP021;"+
+"224|L|N;224-225|L|N;225|L|N;225-226|L|N;226|L|N;226-227|L|N;227|L|N;227-228|L|A|MP022;228|L|N;228-229|L|A|MP022;229|R|A|MP022;229-230|R|A|MP022/MP025;230|R|A|MP022/MP025;"+
+"230-231|R|A|BN067/BNUP005/MP022/MP025;231|L|A|BN067;231-232|L|A|BN067;232|L|N;232-233|L|A|BN068/BN069;233|L|A|BN069;233-234|L|A|BN069;234|L|N;234-235|L|A|BN069/BN070/BN071;235|L|N;235-236|L|N;"+
+"236|L|N;236-237|L|A|BN071/BN072;237|L|N;237-238|L|N;238|R|N;238-239|L|A|BN073/BNUP005;239|L|N;239-240|L|N;240|L|N;240-241|L|A|BN073;241|L|N;241-242|L|N;242|L|N;242-243|L|N;243|L|N;243-244|L|N;"+
+"244|L|N;244-245|L|N;245|L|N";
+/* Notas "Obs:" de la planilla, en la fila donde aparecen (inicio de tramo) */
+const LIB_OBS_POST="Solicitar resolución aprobatoria de la solicitud de postergación.",LIB_OBS_CORTA26="Año de corta 2026.";
+const LIB_SEED_OBS={"86":"Año de corta 2025, por tanto PMF no se encuentra vigente. Consultar si existe resolución que… (texto cortado en la planilla)","87-88":"Año de corta 2025, por tanto PMF no se encuentra vigente. Consultar si existe resolución que… (texto cortado en la planilla)",
+  "108":LIB_OBS_POST,"117":LIB_OBS_POST,"131":LIB_OBS_POST,"133-134":LIB_OBS_CORTA26,"144":LIB_OBS_CORTA26,"151":"Año corta 2: 2026 en base a resolución aprobatoria de postergación 60/2026.","152-153":LIB_OBS_POST,"163":LIB_OBS_POST,
+  "173":LIB_OBS_CORTA26,"174":LIB_OBS_POST,"174-175":LIB_OBS_POST,"1CA-2C":"Año de corta 2024, por tanto PMF no se encuentra vigente. Consultar si existe resolución que… (texto cortado en la planilla)","1CB-2C":"Año de corta 2024, por tanto PMF no se encuentra vigente. Consultar si existe resolución que… (texto cortado en la planilla)"};
+/* PMF marcados en rojo (restringidos) en la planilla; el resto de los asociados a un elemento restringido va en neutro */
+const LIB_RCOD=new Set("PMF16 PMF22 PMF25 PL017 BN011 BN012 BN013 BN014 BN016 BN025 BN029 BN030 BN033 BN035 BN036 BN038 BN041 BN054 BN078 BNUP004".split(" "));
+let LIB_SEED=null;
+function libSeedMap(){if(LIB_SEED)return LIB_SEED;const m=new Map();
+  for(const x of LIB_SEED_TXT.split(";")){const [id,s,p,cod,ref]=x.split("|");
+    m.set(id,{ser:{est:s==="L"?"lib":"res",fecha:LIB_SEED_FECHA,pn:LIB_SEED_SRC,imp:true,ts:0},
+      pmf:{est:p==="A"?"lib":p==="R"?"res":"na",fecha:LIB_SEED_FECHA,cod:(cod||"").split("/").filter(Boolean).join(" / "),ref:ref||"",obs:LIB_SEED_OBS[id]||"",pn:LIB_SEED_SRC,imp:true,ts:0}});}
+  return LIB_SEED=m;}
 /* Torres y vanos en el orden de la línea: cada torre seguida de su vano adelante */
-function libUnits(){const c=gc();if(c.m.libU)return c.m.libU;const out=[];
-  for(const s of secs())for(const e of estr(s.id)){out.push({t:"torre",s,e,key:kLibE(s.id,e.id),lab:e.id,tt:e.tt||""});
-    for(const v of vanosOf(s.id,e.id))if(v.a===e.id)out.push({t:"vano",s,v,key:kLibV(s.id,v.a,v.b),lab:v.label,tt:v.tt||e.tt||""});}
+function libUnits(){const c=gc();if(c.m.libU)return c.m.libU;const out=[];const sm=libSeedMap();
+  for(const s of secs())for(const e of estr(s.id)){out.push({t:"torre",s,e,key:kLibE(s.id,e.id),lab:e.id,tt:e.tt||"",seed:sm.get(String(e.id))||null});
+    for(const v of vanosOf(s.id,e.id))if(v.a===e.id)out.push({t:"vano",s,v,key:kLibV(s.id,v.a,v.b),lab:v.label,tt:v.tt||e.tt||"",seed:sm.get(v.a+"-"+v.b)||null});}
   out.forEach((u,i)=>{u.i=i;});c.m.libU=out;c.m.libK=new Map(out.map(u=>[u.key,u]));return out;}
 const libUnit=k=>{libUnits();return gc().m.libK.get(k)||null;};
-const libAct=(k,vid)=>{const d=S.av.get(k);return (d&&d.act&&d.act[vid])||null;};
+/* Estado vigente: el más reciente entre el registro de la app y la planilla base (a igual fecha manda la app) */
+const libAct=(k,vid)=>{const d=S.av.get(k);const r=(d&&d.act&&d.act[vid])||null;const u=libUnit(k);const s=u&&u.seed&&u.seed[vid];if(!s)return r;if(!r)return s;return (r.fecha||"")>=(s.fecha||"")?r:s;};
 const libEst=(k,vid)=>{const x=libAct(k,vid);return x&&LIB_EST[x.est]?x.est:"pend";};
 const libOk=e=>e==="lib"||e==="na";
 function libGen(k){const p=libEst(k,"pmf"),s=libEst(k,"ser");if(libOk(p)&&libOk(s))return "apta";if(p==="res"||s==="res")return "res";if(p!=="pend"||s!=="pend")return "proc";return "pend";}
-function libHist(k){const d=S.av.get(k);return Object.entries((d&&d.hist)||{}).filter(([,h])=>h&&h.a).map(([hid,h])=>Object.assign({hid},h)).sort((a,b)=>(b.ts||0)-(a.ts||0));}
+/* PMF asociados: los del registro vigente, o los de la planilla si el registro no los trae */
+function libCod(k){const x=libAct(k,"pmf");if(x&&typeof x.cod==="string")return x.cod;const u=libUnit(k);return (u&&u.seed&&u.seed.pmf.cod)||"";}
+function codHtml(k,sm){const c=libCod(k);if(!c)return "";const e=libEst(k,"pmf");
+  return `<span class="pcods${sm?" sm":""}">${c.split("/").map(s=>s.trim()).filter(Boolean).map(s=>`<i class="${e==="lib"?"ok":e==="res"&&LIB_RCOD.has(s)?"rs":""}"${e==="res"&&LIB_RCOD.has(s)?' title="PMF restringido"':""}>${esc(s)}</i>`).join("")}</span>`;}
+function libHist(k){const d=S.av.get(k);const out=Object.entries((d&&d.hist)||{}).filter(([,h])=>h&&h.a).map(([hid,h])=>Object.assign({hid},h));
+  const u=libUnit(k);if(u&&u.seed)for(const vid of ["pmf","ser"])out.push(Object.assign({hid:"base_"+vid,a:vid,base:true},u.seed[vid]));
+  return out.sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")||(b.ts||0)-(a.ts||0));}
 const libLast=k=>libHist(k).find(h=>h.obs&&String(h.obs).trim())||null;
+/* Fecha vigente posterior a "fecha" en alguna de las variables (el nuevo registro quedaría solo en la bitácora) */
+function libNewer(k,vids,fecha){let m=null;for(const v of vids){const x=libAct(k,v);if(x&&x.fecha&&x.fecha>fecha&&(!m||x.fecha>m))m=x.fecha;}return m;}
 function libLL(id){const x=asbGet(id);if(!x||x.E==null)return null;if(!x.ll)x.ll=utmToLL(x.E,x.N);return x.ll;}
 function libMid(v){const a=libLL(v.a),b=libLL(v.b);return a&&b?[(a[0]+b[0])/2,(a[1]+b[1])/2]:null;}
 const gmaps=p=>"https://www.google.com/maps/search/?api=1&query="+p[0].toFixed(6)+","+p[1].toFixed(6);
-const lchip=e=>{const x=LIB_EST[e]||LIB_EST.pend;return `<span class="lst${e==="na"?" na":""}" style="--c:${x.c}">${x.t}</span>`;};
+const lchip=(e,vid)=>{const x=LIB_EST[e]||LIB_EST.pend;return `<span class="lst${e==="na"?" na":""}" style="--c:${x.c}">${estTxt(vid,e)}</span>`;};
 const lgen=g=>`<span class="lgen" style="--c:${LIB_GEN[g].c}">${LIB_GEN[g].t}</span>`;
 const trunc=(s,n)=>{s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s;};
 const pad2=n=>String(n).padStart(2,"0");
@@ -1708,7 +1797,8 @@ const ICO_PIN=`<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true
 /* sinTipo: el mapa solo muestra torres, así que ignora el filtro Torres/Vanos */
 function libMatch(u,sinTipo){const F=S.lib;if(!sinTipo&&F.tipo!=="todo"&&u.t!==F.tipo)return false;if(F.sec!=="total"&&u.s.id!==F.sec)return false;if(F.tt&&u.tt!==F.tt)return false;
   if(F.est==="fpmf"){if(libOk(libEst(u.key,"pmf")))return false;}else if(F.est==="fser"){if(libOk(libEst(u.key,"ser")))return false;}else if(F.est&&libGen(u.key)!==F.est)return false;
-  const q=F.q.trim().toLowerCase();return !q||String(u.lab).toLowerCase().includes(q);}
+  /* busca por N° (acepta "4-5" para el vano 4–5) o por código de PMF */
+  const q=F.q.trim().toLowerCase().replace(/–/g,"-");return !q||String(u.lab).toLowerCase().replace(/–/g,"-").includes(q)||libCod(u.key).toLowerCase().includes(q);}
 function libStats(us){const z=()=>({n:0,apta:0,proc:0,res:0,pend:0,m:0,mT:0});const st={t:z(),v:z(),pmf:0,ser:0,n:0,sec:new Map()};
   for(const u of us){const g=libGen(u.key);if(!st.sec.has(u.s.id))st.sec.set(u.s.id,{s:u.s,t:z(),v:z()});const sb=st.sec.get(u.s.id);
     for(const b of u.t==="torre"?[st.t,sb.t]:[st.v,sb.v]){b.n++;b[g]++;if(u.t==="vano"&&u.v.len!=null){b.mT+=u.v.len;if(g==="apta")b.m+=u.v.len;}}
@@ -1725,9 +1815,10 @@ function vLiberaciones(){
   const tts=[...new Set(all.filter(u=>F.sec==="total"||u.s.id===F.sec).map(u=>u.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));if(F.tt&&!tts.includes(F.tt))F.tt="";
   const rows=all.filter(u=>libMatch(u));const pc=(a,b)=>b?fmtP(a/b*100):"—";const B=F.bulk;if(!B.fecha)B.fecha=today();
   const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;const nRes=st.t.res+st.v.res;
-  let h=`<div class="stack"><section class="panel stack"><div class="spread"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción cuando el PMF y la servidumbre están liberados o no aplican.</span></div>
-  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.proc} en proceso`)}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`)}${fig("PMF liberado",`${st.pmf} de ${st.n}`,"torres y vanos, incluye «no aplica»")}${fig("Servidumbre liberada",`${st.ser} de ${st.n}`,"torres y vanos, incluye «no aplica»")}${fig("Con restricción",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
-  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Torres aptas</th><th class="r">Vanos aptos</th><th class="r">Línea apta</th><th class="r">En proceso</th><th class="r">Con restricción</th><th class="r">Pendientes</th></tr></thead><tbody>
+  let h=`<div class="stack"><section class="panel stack"><div class="spread"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción con el PMF aprobado (o sin PMF) y la servidumbre liberada.</span></div>
+  <p class="small muted" style="margin:0">Estado inicial: planilla de estado PMF al ${fmtD(LIB_SEED_FECHA)} (PMF asociados, estado del PMF y propietarios). Cada cambio posterior se registra aquí y queda en la bitácora.</p>
+  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`)}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`)}${fig("PMF aprobado o sin PMF",`${st.pmf} de ${st.n}`,"torres y vanos")}${fig("Servidumbre liberada",`${st.ser} de ${st.n}`,"torres y vanos (propietarios)")}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
+  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Torres aptas</th><th class="r">Vanos aptos</th><th class="r">Línea apta</th><th class="r">En proceso</th><th class="r">Restringidas</th><th class="r">Pendientes</th></tr></thead><tbody>
   ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>
   <div class="stack" style="gap:6px"><span class="lbl">Frentes continuos aptos para construcción</span>${fr.length?`<div class="frentes">${fr.map(r=>`<span>${esc(r.a)} – ${esc(r.b)} <b>${fmtKm(r.m)}</b></span>`).join("")}</div>`:`<span class="small muted">Aún no hay tramos continuos de torres y vanos aptos.</span>`}</div></section>`;
   /* planilla */
@@ -1736,28 +1827,28 @@ function vLiberaciones(){
   <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Ver</label><div class="seg" role="group" aria-label="Elementos">${[["todo","Todo"],["torre","Torres"],["vano","Vanos"]].map(([k,t])=>`<button data-libtipo="${k}" aria-pressed="${F.tipo===k}">${t}</button>`).join("")}</div></div>
    <div class="field"><label for="lib-sec">Sector</label><select id="lib-sec"><option value="total">Todos</option>${secs().map(s=>`<option value="${s.id}" ${F.sec===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
    <div class="field"><label for="lib-tt">Tramo de tendido</label><select id="lib-tt"><option value="">Todos</option>${tts.map(t=>`<option ${F.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
-   <div class="field"><label for="lib-est">Estado</label><select id="lib-est"><option value="">Todos</option>${[["apta","Apta para construcción"],["proc","En proceso"],["res","Con restricción"],["pend","Pendiente"],["fpmf","Falta PMF"],["fser","Falta servidumbre"]].map(([k,t])=>`<option value="${k}" ${F.est===k?"selected":""}>${t}</option>`).join("")}</select></div>
-   <div class="field"><label for="lib-q">Buscar N°</label><input id="lib-q" type="search" value="${esc(F.q)}" placeholder="Ej.: 172A" autocomplete="off"></div>
+   <div class="field"><label for="lib-est">Estado</label><select id="lib-est"><option value="">Todos</option>${[["apta","Apta para construcción"],["proc","En proceso"],["res","Restringida"],["pend","Pendiente"],["fpmf","Falta PMF"],["fser","Falta servidumbre"]].map(([k,t])=>`<option value="${k}" ${F.est===k?"selected":""}>${t}</option>`).join("")}</select></div>
+   <div class="field"><label for="lib-q">Buscar N° o PMF</label><input id="lib-q" type="search" value="${esc(F.q)}" placeholder="Ej.: 172A o PMF16" autocomplete="off"></div>
    ${filt?`<button class="btn small ghost" data-libclear="1">Quitar filtros</button>`:""}</div>`;
   if(S.canWrite&&F.sel.size)h+=`<div class="libbulk"><b>${F.sel.size} ${F.sel.size===1?"seleccionado":"seleccionados"}</b>
    <div class="field"><label for="lib-b-v">Variable</label><select id="lib-b-v">${[["ser","Servidumbre"],["pmf","PMF"],["ambas","PMF y servidumbre"]].map(([k,t])=>`<option value="${k}" ${B.v===k?"selected":""}>${t}</option>`).join("")}</select></div>
-   <div class="field"><label for="lib-b-est">Nuevo estado</label><select id="lib-b-est">${LIB_ORD.map(k=>`<option value="${k}" ${B.est===k?"selected":""}>${LIB_EST[k].t}</option>`).join("")}</select></div>
+   <div class="field"><label for="lib-b-est">Nuevo estado</label><select id="lib-b-est">${LIB_ORD.map(k=>`<option value="${k}" ${B.est===k?"selected":""}>${estTxt(B.v==="ambas"?"":B.v,k)}</option>`).join("")}</select></div>
    <div class="field" style="max-width:170px"><label for="lib-b-fecha">Fecha</label><input id="lib-b-fecha" type="date" max="${today()}" value="${esc(B.fecha)}"></div>
    <div class="field"><label for="lib-b-ref">Referencia</label><input id="lib-b-ref" type="text" value="${esc(B.ref)}" placeholder="Resolución, escritura, rol…"></div>
    <div class="field" style="flex:2;min-width:220px"><label for="lib-b-obs">Observación</label><input id="lib-b-obs" type="text" value="${esc(B.obs)}" placeholder="Queda en la bitácora de cada elemento"></div>
    <div class="row" style="gap:6px"><button class="btn primary" id="lib-b-apply" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Aplicar a "+F.sel.size}</button><button class="btn small ghost" data-libselclear="1">Quitar selección</button></div></div>`;
   h+=`<p class="small muted" style="margin:0">${rows.length} ${rows.length===1?"elemento":"elementos"}${filt?" con estos filtros":""}. Toca el N° para abrir su ficha y bitácora${S.canWrite?"; marca varios para actualizarlos juntos":""}.</p>
-  <div class="tbl-wrap" id="lib-tbl" data-keep-scroll="1" style="max-height:620px"><table class="ltab"><thead><tr>${S.canWrite?`<th class="ck"><button class="ckb" data-libckall="1" role="checkbox" aria-checked="${allSel?"true":someSel?"mixed":"false"}" aria-label="Seleccionar todo lo filtrado"></button></th>`:""}<th>Elemento</th><th>Sector · tramo</th><th>PMF</th><th>Servidumbre</th><th>Estado</th><th>Última observación</th><th><span class="sr">Mapa</span></th></tr></thead><tbody>`;
+  <div class="tbl-wrap" id="lib-tbl" data-keep-scroll="1" style="max-height:620px"><table class="ltab"><thead><tr>${S.canWrite?`<th class="ck"><button class="ckb" data-libckall="1" role="checkbox" aria-checked="${allSel?"true":someSel?"mixed":"false"}" aria-label="Seleccionar todo lo filtrado"></button></th>`:""}<th>Elemento</th><th>Sector · tramo</th><th>PMF</th><th>Servidumbre<small style="display:block;font-size:.66rem;text-transform:none;letter-spacing:0;font-weight:500">propietarios</small></th><th>Estado</th><th>Última observación</th><th><span class="sr">Mapa</span></th></tr></thead><tbody>`;
   for(const u of rows){const g=libGen(u.key),p=libAct(u.key,"pmf"),s=libAct(u.key,"ser"),o=libLast(u.key),T=u.t==="torre";const ll=T?libLL(u.e.id):libMid(u.v);
-    h+=`<tr class="${u.t}">${S.canWrite?`<td class="ck"><button class="ckb" data-libck="${esc(u.key)}" role="checkbox" aria-checked="${F.sel.has(u.key)}" aria-label="${esc("Seleccionar "+u.lab)}"></button></td>`:""}<td class="el" style="--c:${LIB_GEN[g].c}"><button class="linkbtn" data-libopen="${esc(u.key)}">${T?"":"Vano "}${esc(u.lab)}</button><small>${T?esc([vertice(u.e.id),u.e.tipo].filter(Boolean).join(" · ")):(u.v.len!=null?fmtM(u.v.len):"sin longitud")}</small></td><td>${esc(u.s.nombre)}${u.tt?`<small>${esc(u.tt)}</small>`:""}</td><td>${lchip(libEst(u.key,"pmf"))}${p?`<small>${fmtD(p.fecha)}</small>`:""}</td><td>${lchip(libEst(u.key,"ser"))}${s?`<small>${fmtD(s.fecha)}</small>`:""}</td><td>${lgen(g)}</td><td class="lobs">${o?`${esc(trunc(o.obs,90))}<small>${fmtD(o.fecha)}${o.pn?" · "+esc(o.pn):""}</small>`:`<span class="muted">—</span>`}</td><td class="r">${ll&&!LM.failed?`<button class="ibtn" data-libloc="${esc(u.key)}" aria-label="${esc("Ver "+u.lab+" en el mapa")}" data-tip="Ver en el mapa">${ICO_PIN}</button>`:""}</td></tr>`;}
+    h+=`<tr class="${u.t}">${S.canWrite?`<td class="ck"><button class="ckb" data-libck="${esc(u.key)}" role="checkbox" aria-checked="${F.sel.has(u.key)}" aria-label="${esc("Seleccionar "+u.lab)}"></button></td>`:""}<td class="el" style="--c:${LIB_GEN[g].c}"><button class="linkbtn" data-libopen="${esc(u.key)}">${T?"":"Vano "}${esc(u.lab)}</button><small>${T?esc([vertice(u.e.id),u.e.tipo].filter(Boolean).join(" · ")):(u.v.len!=null?fmtM(u.v.len):"sin longitud")}</small></td><td>${esc(u.s.nombre)}${u.tt?`<small>${esc(u.tt)}</small>`:""}</td><td class="pmf">${lchip(libEst(u.key,"pmf"),"pmf")}${codHtml(u.key,true)}${p?`<small>${fmtD(p.fecha)}</small>`:""}</td><td>${lchip(libEst(u.key,"ser"),"ser")}${s?`<small>${fmtD(s.fecha)}</small>`:""}</td><td>${lgen(g)}</td><td class="lobs">${o?`${esc(trunc(o.obs,90))}<small>${fmtD(o.fecha)}${o.pn?" · "+esc(o.pn):""}</small>`:`<span class="muted">—</span>`}</td><td class="r">${ll&&!LM.failed?`<button class="ibtn" data-libloc="${esc(u.key)}" aria-label="${esc("Ver "+u.lab+" en el mapa")}" data-tip="Ver en el mapa">${ICO_PIN}</button>`:""}</td></tr>`;}
   if(!rows.length)h+=`<tr><td colspan="8" class="muted">No hay elementos con esos filtros.</td></tr>`;
   h+=`</tbody></table></div></section>`;
   /* mapa */
   const cnt={apta:0,proc:0,res:0,pend:0};const sinXY=[];for(const u of all)if(u.t==="torre"){if(libLL(u.e.id))cnt[libGen(u.key)]++;else sinXY.push(u.lab);}
   h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Mapa de liberaciones</h2><div class="row" style="gap:6px"><div class="seg" role="group" aria-label="Fondo del mapa">${[["sat","Satélite"],["osm","Mapa"]].map(([k,t])=>`<button data-libbase="${k}" aria-pressed="${F.base===k}">${t}</button>`).join("")}</div><button class="btn small ghost" data-libfit="1">Ver toda la línea</button><button class="btn small ghost" data-libkml="1">Descargar KML (Google Earth)</button></div></div>
-  <div class="legend">${Object.entries(LIB_GEN).map(([g,x])=>`<span><i class="lsym" style="--g:${x.h}"></i>${x.t} <b class="num">${cnt[g]}</b></span>`).join("")}<span class="muted"><i class="lsym sq" style="--g:#c8d0d6"></i>anclaje</span><span class="muted"><i class="lsym" style="--g:#c8d0d6"></i>suspensión</span></div>
+  <div class="legend"><span class="lbl">Torres</span>${Object.entries(LIB_GEN).map(([g,x])=>`<span><i class="lsym" style="--g:${x.h}"></i>${x.t} <b class="num">${cnt[g]}</b></span>`).join("")}<span class="muted"><i class="lsym sq" style="--g:#c8d0d6"></i>anclaje</span><span class="muted"><i class="lsym" style="--g:#c8d0d6"></i>suspensión</span><span class="muted"><i class="lsln"></i>vano, con el color de su estado</span><span class="muted"><i class="lsln cx"></i>conexión sin control en la app</span></div>
   ${LM.failed?`<div class="note">No se pudo cargar el mapa (sin conexión o bloqueado por la red). Descarga el KML y ábrelo en Google Earth.</div>`:`<div class="libmap-slot" id="lib-map-slot"></div>`}
-  <p class="small muted" style="margin:0">Torres ubicadas con las coordenadas del listado de estructuras (actualización de terreno, UTM 18S). Los filtros de la planilla atenúan las torres que no cumplen. Toca una torre para ver su estado y abrir su ficha; el N° aparece al acercar el mapa.${sinXY.length?` Sin coordenadas en el listado: ${esc(sinXY.join(", "))}.`:""}</p></section></div>`;
+  <p class="small muted" style="margin:0">Torres y vanos ubicados con las coordenadas del listado de estructuras (actualización de terreno, UTM 18S). La línea entre torres es el vano, coloreado según su liberación. En el fondo satelital se ven las rutas y caminos con su número o nombre, y las localidades. Los filtros de la planilla atenúan lo que no cumple. Toca una torre o un vano para ver su estado y abrir su ficha; el N° de las torres aparece al acercar el mapa.${sinXY.length?` Sin coordenadas en el listado: ${esc(sinXY.join(", "))}; el cruce del canal se dibuja como conexión.`:""}</p></section></div>`;
   return h;}
 /* Ficha de liberación (panel lateral) */
 function openLib(k){if(!libUnit(k))return;tipEl().style.display="none";if(LM.map)LM.map.closePopup();S.drw={lib:true,key:k,ed:null,f:null,nota:""};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
@@ -1768,44 +1859,48 @@ function vDrawerLib(){
     :[["Longitud",u.v.len!=null?fmtM(u.v.len):"Sin longitud"],["Estructuras",u.v.a+" → "+u.v.b],["Tramo de tendido",u.tt||"—"]];
   h+=`<div class="meta">${m.map(([a,b])=>`<div><span>${a}</span>${esc(b)}</div>`).join("")}${ll?`<div><span>Ubicación</span><a class="linkbtn" style="font-family:var(--f-body)" href="${gmaps(ll)}" target="_blank" rel="noopener">Abrir en Google Maps</a></div>`:""}</div>`;
   for(const V of LIB_VARS){const x=libAct(u.key,V.id),e=libEst(u.key,V.id),open=D.ed===V.id;
-    h+=`<div class="agrp"><h3><span>${V.t}</span>${lchip(e)}</h3>`;
-    h+=x?`<span class="small muted">Desde ${fmtD(x.fecha)}${x.ref?" · ref. "+esc(x.ref):""}${x.pn?" · "+esc(x.pn):""}</span>${x.obs?`<span class="small">${esc(x.obs)}</span>`:""}`:`<span class="small muted">Sin registros: se considera pendiente.</span>`;
+    h+=`<div class="agrp"><h3><span>${V.h}</span>${lchip(e,V.id)}</h3>`;
+    if(V.id==="pmf"){const c=codHtml(u.key);h+=c?`<div class="lrow"><span class="lbl">PMF asociados</span>${c}</div>`:`<span class="small muted">${e==="na"?"Sin PMF asociado: no requiere.":"Sin PMF asociado registrado."}</span>`;}
+    h+=x?`<span class="small muted">Desde ${fmtD(x.fecha)}${x.ref?" · "+(V.id==="pmf"?"PMF de referencia ":"ref. ")+esc(x.ref):""}${x.pn?" · "+esc(x.pn):""}</span>${x.obs?`<span class="small">${esc(x.obs)}</span>`:""}`:`<span class="small muted">Sin registros: se considera pendiente.</span>`;
     if(S.canWrite)h+=open?libForm(V,u):`<button class="btn small ghost" data-libed="${V.id}" style="align-self:flex-start;margin-top:6px">Actualizar ${V.t}</button>`;
     h+=`</div>`;}
   const hl=libHist(u.key);
   h+=`<div class="agrp"><h3><span>Bitácora</span><span class="small muted num">${hl.length} ${hl.length===1?"registro":"registros"}</span></h3>`;
   if(S.canWrite)h+=`<div class="libnota"><label class="small" for="lib-nota">Nueva observación</label><textarea id="lib-nota" rows="2" placeholder="Gestión realizada, acuerdos, contactos, próximos pasos…">${esc(D.nota||"")}</textarea><button class="btn small" id="lib-nota-save" ${S.saving?"disabled":""}>Agregar a la bitácora</button></div>`;
-  h+=hl.length?`<div class="feed">${hl.map(x=>{const V=LIB_VARS.find(v=>v.id===x.a);const tit=V?`${V.t}: ${((LIB_EST[x.est]||{}).t||x.est||"").toLowerCase()}`:"Observación";
-    return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w"><div><b>${esc(tit)}</b>${x.ref?` <span class="muted">· ref. ${esc(x.ref)}</span>`:""}</div>${x.obs?`<div class="o" style="color:var(--ink)">${esc(x.obs)}</div>`:""}<div class="o">${esc(x.pn||"")}${x.ts?" · registrado el "+fmtTs(x.ts):""}</div></div><span></span></div>`;}).join("")}</div>`:`<span class="small muted">Aún no hay registros.</span>`;
+  h+=hl.length?`<div class="feed">${hl.map(x=>{const V=LIB_VARS.find(v=>v.id===x.a);const tit=V?`${V.t}: ${estTxt(V.id,x.est).toLowerCase()}`:"Observación";
+    return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w"><div><b>${esc(tit)}</b>${x.a==="pmf"&&x.cod?` <span class="muted">· ${esc(x.cod)}</span>`:""}${x.ref?` <span class="muted">· ref. ${esc(x.ref)}</span>`:""}</div>${x.obs?`<div class="o" style="color:var(--ink)">${esc(x.obs)}</div>`:""}<div class="o">${esc(x.pn||"")}${x.ts?" · registrado el "+fmtTs(x.ts):""}</div></div><span></span></div>`;}).join("")}</div>`:`<span class="small muted">Aún no hay registros.</span>`;
   h+=`</div>`;
   const us=libUnits();const pv=us[u.i-1],nx=us[u.i+1];
   h+=`<div class="row" style="justify-content:space-between">${pv?`<button class="btn small ghost" data-libopen="${esc(pv.key)}">← ${pv.t==="vano"?"Vano ":""}${esc(pv.lab)}</button>`:"<span></span>"}${nx?`<button class="btn small ghost" data-libopen="${esc(nx.key)}">${nx.t==="vano"?"Vano ":""}${esc(nx.lab)} →</button>`:""}</div>`;
   return h+`</div></aside>`;}
-function libForm(V,u){const f=S.drw.f;const nf=newerFecha(u.key,[V.id],f.fecha);
-  return `<div class="qe"><b class="small">Nuevo estado de ${V.t}</b><div class="tabs2 lsel" role="group" aria-label="Estado">${LIB_ORD.map(k=>`<button data-libest="${k}" aria-pressed="${f.est===k}" style="--c:${LIB_EST[k].c}"><i class="ldot"></i>${LIB_EST[k].t}</button>`).join("")}</div>
-  <div class="form-grid"><div class="field"><label for="lib-fecha">Fecha</label><input id="lib-fecha" type="date" max="${today()}" value="${esc(f.fecha)}"></div><div class="field"><label for="lib-ref">Referencia</label><input id="lib-ref" type="text" value="${esc(f.ref)}" placeholder="${V.id==="pmf"?"N° de resolución o del plan":"Escritura, contrato o rol"}"></div></div>
+function libForm(V,u){const f=S.drw.f;const nf=libNewer(u.key,[V.id],f.fecha);
+  return `<div class="qe"><b class="small">Nuevo estado de ${V.h}</b><div class="tabs2 lsel" role="group" aria-label="Estado">${LIB_ORD.map(k=>`<button data-libest="${k}" aria-pressed="${f.est===k}" style="--c:${LIB_EST[k].c}"><i class="ldot"></i>${estTxt(V.id,k)}</button>`).join("")}</div>
+  ${V.id==="pmf"?`<div class="field"><label for="lib-cod">PMF asociados</label><input id="lib-cod" type="text" value="${esc(f.cod||"")}" placeholder="Ej.: PMF2 / PMF3" autocomplete="off"></div>`:""}
+  <div class="form-grid"><div class="field"><label for="lib-fecha">Fecha</label><input id="lib-fecha" type="date" max="${today()}" value="${esc(f.fecha)}"></div><div class="field"><label for="lib-ref">${V.id==="pmf"?"PMF de referencia o resolución":"Referencia"}</label><input id="lib-ref" type="text" value="${esc(f.ref)}" placeholder="${V.id==="pmf"?"Ej.: PMF2, N° de resolución":"Escritura, contrato o rol"}"></div></div>
   <div class="field"><label for="lib-obs">Observación${f.est==="res"?" (obligatoria: describe la restricción)":""}</label><textarea id="lib-obs" rows="2">${esc(f.obs)}</textarea></div>
-  ${nf?`<span class="warnline">Ya hay un registro de ${V.t} con fecha ${fmtD(nf)}. Con una fecha anterior queda en la bitácora, pero no cambia el estado vigente.</span>`:""}
+  ${nf?`<span class="warnline">El estado vigente de ${V.t} tiene fecha ${fmtD(nf)}. Con una fecha anterior el registro queda en la bitácora, pero no cambia el estado vigente.</span>`:""}
   <div class="row" style="gap:6px"><button class="btn primary" id="lib-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar "+V.t}</button><button class="btn small ghost" data-libed="${V.id}">Cancelar</button></div></div>`;}
 /* Guardado: estados y observaciones van al servidor con fecha, autor y hora; el historial no se borra */
 const fechaOk=f=>/^\d{4}-\d{2}-\d{2}$/.test(f||"")&&f<=today();
 function libBase(u){return u.t==="torre"?{sector:u.s.id,kind:"lib",tipo:"torre",unidad:u.e.id}:{sector:u.s.id,kind:"lib",tipo:"vano",unidad:u.v.label,a:u.v.a,b:u.v.b};}
-async function saveLibEntry(u,vids,est,fecha,ref,obs,ts){
+const normCod=s=>String(s||"").split(/[\/,;]+/).map(x=>x.trim().toUpperCase()).filter(Boolean).join(" / ").slice(0,300);
+/* cod: PMF asociados (solo se guarda con el PMF; null = no se informa) */
+async function saveLibEntry(u,vids,est,fecha,ref,obs,ts,cod){
   const rnd=Math.random().toString(36).slice(2,7);const o=String(obs||"").trim().slice(0,800),r=String(ref||"").trim().slice(0,160);const act={},hist={};
   if(!vids.length)hist["h"+ts+"_"+rnd+"_obs"]={a:"obs",pct:0,fecha,obs:o,por:S.me,pn:S.userName,ts};
-  for(const vid of vids){const e={pct:(LIB_EST[est]||LIB_EST.pend).p,est,fecha,ref:r,obs:o,por:S.me,pn:S.userName,ts};act[vid]=e;hist["h"+ts+"_"+rnd+"_"+vid]=Object.assign({a:vid},e);}
+  for(const vid of vids){const e={pct:(LIB_EST[est]||LIB_EST.pend).p,est,fecha,ref:r,obs:o,por:S.me,pn:S.userName,ts};if(vid==="pmf"&&cod!=null)e.cod=normCod(cod);act[vid]=e;hist["h"+ts+"_"+rnd+"_"+vid]=Object.assign({a:vid},e);}
   const base=libBase(u);await withRetry(()=>rpcAvance(u.key,base,act,hist));mergeLocal(u.key,base,act,hist);}
 async function libSaveVar(){
   const D=S.drw;if(!D||!D.lib||!D.ed||!D.f||S.saving)return;const u=libUnit(D.key);if(!u)return;const f=D.f;
-  {const fi=$("#lib-fecha"),ri=$("#lib-ref"),oi=$("#lib-obs");if(fi&&fi.value)f.fecha=fi.value;if(ri)f.ref=ri.value;if(oi)f.obs=oi.value;}
+  {const fi=$("#lib-fecha"),ri=$("#lib-ref"),oi=$("#lib-obs"),ci=$("#lib-cod");if(fi&&fi.value)f.fecha=fi.value;if(ri)f.ref=ri.value;if(oi)f.obs=oi.value;if(ci)f.cod=ci.value;}
   if(!LIB_EST[f.est]){toast("Elige el nuevo estado.",true);return;}
   if(!fechaOk(f.fecha)){toast("Revisa la fecha: no puede ser futura.",true);return;}
   if(f.est==="res"&&!f.obs.trim()){toast("Describe la restricción en la observación, para que quede trazabilidad.",true);return;}
-  const V=LIB_VARS.find(v=>v.id===D.ed);const nf=newerFecha(u.key,[V.id],f.fecha);
+  const V=LIB_VARS.find(v=>v.id===D.ed);const nf=libNewer(u.key,[V.id],f.fecha);
   S.saving=true;render();
-  try{await saveLibEntry(u,[V.id],f.est,f.fecha,f.ref,f.obs,Date.now());D.ed=null;D.f=null;
-    if(nf)toast(`Quedó en la bitácora, pero el estado vigente no cambia: ya hay un registro de ${V.t} con fecha posterior (${fmtD(nf)}).`,true);
-    else toast(`Guardado: ${V.t} «${LIB_EST[f.est].t.toLowerCase()}» en ${T_UN(u)}.`);}
+  try{await saveLibEntry(u,[V.id],f.est,f.fecha,f.ref,f.obs,Date.now(),V.id==="pmf"?(f.cod||""):null);D.ed=null;D.f=null;
+    if(nf)toast(`Quedó en la bitácora, pero el estado vigente no cambia: ya hay un estado de ${V.t} con fecha posterior (${fmtD(nf)}).`,true);
+    else toast(`Guardado: ${V.t} «${estTxt(V.id,f.est).toLowerCase()}» en ${T_UN(u)}.`);}
   catch(err){saveErr(err,0,1);}
   S.saving=false;render();}
 const T_UN=u=>(u.t==="torre"?"la estructura ":"el vano ")+u.lab;
@@ -1822,16 +1917,18 @@ async function libBulkApply(){
   if(!fechaOk(B.fecha)){toast("Revisa la fecha: no puede ser futura.",true);return;}
   if(B.est==="res"&&!B.obs.trim()){toast("Describe la restricción en la observación, para que quede trazabilidad.",true);return;}
   const vids=B.v==="ambas"?["pmf","ser"]:[B.v];const keys=[...L.sel];const ts=Date.now();let ok=0,err=null;
-  const atras=keys.filter(k=>newerFecha(k,vids,B.fecha)).length;
+  const atras=keys.filter(k=>libNewer(k,vids,B.fecha)).length;
   S.saving=true;render();
-  for(const k of keys){const u=libUnit(k);if(!u){L.sel.delete(k);continue;}try{await saveLibEntry(u,vids,B.est,B.fecha,B.ref,B.obs,ts);ok++;L.sel.delete(k);}catch(e){err=e;break;}}
+  for(const k of keys){const u=libUnit(k);if(!u){L.sel.delete(k);continue;}try{await saveLibEntry(u,vids,B.est,B.fecha,B.ref,B.obs,ts,vids.includes("pmf")?libCod(k):null);ok++;L.sel.delete(k);}catch(e){err=e;break;}}
   S.saving=false;
   if(err){saveErr(err,ok,ok+L.sel.size);render();return;}
   const vt=B.v==="ambas"?"PMF y servidumbre":LIB_VARS.find(x=>x.id===B.v).t;
-  toast(`${vt} «${LIB_EST[B.est].t.toLowerCase()}» en ${ok} ${ok===1?"elemento":"elementos"}.${atras?` En ${atras} ya había un registro con fecha posterior: quedó en la bitácora sin cambiar el estado vigente.`:""}`,!!atras);
+  toast(`${vt} «${estTxt(B.v==="ambas"?"":B.v,B.est).toLowerCase()}» en ${ok} ${ok===1?"elemento":"elementos"}.${atras?` En ${atras} ya había un registro con fecha posterior: quedó en la bitácora sin cambiar el estado vigente.`:""}`,!!atras);
   B.obs="";render();}
 /* --- Mapa (Leaflet, se carga solo al abrir la pestaña). El contenedor se reutiliza entre redibujos para no perder la vista --- */
-const LM={el:null,map:null,mk:new Map(),sig:new Map(),base:null,cur:null,hl:null,xy:null,failed:false,waiting:false};
+const LM={el:null,map:null,mk:new Map(),sp:new Map(),sig:new Map(),base:null,cur:null,hl:null,xy:null,failed:false,waiting:false};
+/* Marcos de línea de las subestaciones (listado de estructuras): extremos de la traza */
+const LIB_SE_PTS=[["S/E Tineo",659612,5428234,"1"],["S/E Nueva Ancud",609574,5353883,"245"]];
 let LEAF=null;
 function loadLeaflet(){if(window.L)return Promise.resolve();if(LEAF)return LEAF;const V="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/";
   LEAF=Promise.all([new Promise((ok,ko)=>{const l=document.createElement("link");l.rel="stylesheet";l.href=V+"leaflet.css";l.onload=ok;l.onerror=ko;document.head.appendChild(l);}),
@@ -1849,7 +1946,8 @@ function libMapMount(){
 function libMapInit(){
   const L=window.L;const m=L.map(LM.el,{zoomSnap:0.5,minZoom:7,maxZoom:19});LM.map=m;
   const esri="https://server.arcgisonline.com/ArcGIS/rest/services/";
-  LM.base={sat:L.layerGroup([L.tileLayer(esri+"World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:18,attribution:"Imágenes © Esri, Maxar, Earthstar Geographics"}),L.tileLayer(esri+"Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:18})]),
+  /* satélite con rutas y caminos rotulados (World_Transportation) y localidades, como la vista híbrida de Google */
+  LM.base={sat:L.layerGroup([L.tileLayer(esri+"World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:18,attribution:"Imágenes © Esri, Maxar, Earthstar Geographics · Rutas © Esri, HERE, Garmin"}),L.tileLayer(esri+"Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:18}),L.tileLayer(esri+"Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,maxNativeZoom:18})]),
     osm:L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© colaboradores de OpenStreetMap"})};
   L.control.scale({imperial:false,position:"bottomleft",maxWidth:150}).addTo(m);
   const ctl=(pos,fn)=>{const K=L.Control.extend({options:{position:pos},onAdd:fn});m.addControl(new K());};
@@ -1859,6 +1957,20 @@ function libMapInit(){
   m.on("zoomend",libZoomCls);
   /* el botón "Abrir ficha" de las ventanas del mapa */
   LM.el.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-libopen]");if(b){ev.stopPropagation();ev.preventDefault();openLib(b.dataset.libopen);}});
+  /* la línea: cada vano entre sus dos torres, con borde oscuro para leerse sobre la imagen y color según su liberación */
+  for(const u of libUnits()){if(u.t!=="vano")continue;const a=libLL(u.v.a),b=libLL(u.v.b);if(!a||!b)continue;const g=libGen(u.key),dim=!libMatch(u,true);
+    const cas=L.polyline([a,b],{color:"#0b1216",weight:7,opacity:dim?.2:.6,interactive:false,lineCap:"butt"}).addTo(m);
+    const ln=L.polyline([a,b],{color:LIB_GEN[g].h,weight:3.5,opacity:dim?.35:1,lineCap:"butt"}).addTo(m);
+    ln.bindPopup(()=>libPopup(u),{maxWidth:300,minWidth:220,className:"libpop"});
+    ln.bindTooltip(()=>`Vano ${u.lab}${u.v.len!=null?" · "+fmtM(u.v.len):""} · ${LIB_GEN[libGen(u.key)].t}`,{sticky:true,direction:"top",className:"libtip"});
+    LM.sp.set(u.key,{ln,cas,u});LM.sig.set(u.key,g+(dim?"d":""));}
+  /* conexiones que no son vanos de la app: 180 con 1CA/1CB, 4CA/4CB con 181, el cruce del canal (2C y 3C sin coordenadas) y los marcos de línea de las S/E */
+  const cx=(pts,tip)=>{const l=L.polyline(pts,{color:"#ffffff",weight:2,opacity:.8,dashArray:"6 6",interactive:!!tip}).addTo(m);if(tip)l.bindTooltip(tip,{sticky:true,className:"libtip"});};
+  const P=id=>libLL(id),mid=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2];
+  for(const [x,y] of [["180","1CA"],["180","1CB"],["4CA","181"],["4CB","181"]])if(P(x)&&P(y))cx([P(x),P(y)],`Conexión ${x}–${y}`);
+  if(P("1CA")&&P("1CB")&&P("4CA")&&P("4CB"))cx([mid(P("1CA"),P("1CB")),mid(P("4CA"),P("4CB"))],"Cruce del canal de Chacao (2C y 3C sin coordenadas en el listado)");
+  for(const [n,E,N,t] of LIB_SE_PTS){const p=utmToLL(E,N);if(P(t))cx([p,P(t)],`${n} – ${t}`);
+    L.marker(p,{icon:L.divIcon({className:"lmk-w",html:`<span class="lse"><i></i><b>${esc(n)}</b></span>`,iconSize:[14,14],iconAnchor:[7,7]}),keyboard:false,interactive:false}).addTo(m);}
   for(const u of libUnits()){if(u.t!=="torre")continue;const p=libLL(u.e.id);if(!p)continue;const g=libGen(u.key),dim=!libMatch(u,true);
     const mk=L.marker(p,{icon:libIcon(u,g,dim),keyboard:true,riseOnHover:true,alt:"Estructura "+u.lab});
     mk.bindPopup(()=>libPopup(u),{maxWidth:300,minWidth:220,className:"libpop",autoPanPadding:[30,30]});mk.addTo(m);
@@ -1867,13 +1979,14 @@ function libMapInit(){
 function libIcon(u,g,dim){const anc=u.s.id==="cruce"||/ancl/i.test(u.e.tipo||"");const id=String(u.e.id),n=parseInt(id,10),num=String(n)===id;const es=estr(u.s.id);
   const lc=u.s.id==="cruce"||id===es[0].id||id===es[es.length-1].id||(num&&n%50===0)?"l50":num&&n%10===0?"l10":"";
   return window.L.divIcon({className:"lmk-w",html:`<span class="lmk g-${g}${anc?" sq":""}${dim?" dim":""}"><i></i><b class="${lc}">${esc(id)}</b></span>`,iconSize:[14,14],iconAnchor:[7,7],popupAnchor:[0,-7]});}
-function libPopup(u){const T=u.t==="torre",g=libGen(u.key),o=libLast(u.key),p=T?libLL(u.e.id):libMid(u.v);
+function libPopup(u){const T=u.t==="torre",g=libGen(u.key),o=libLast(u.key),p=T?libLL(u.e.id):libMid(u.v),c=codHtml(u.key,true);
   return `<div class="lpop"><div class="lpop-h"><b>${T?"Estructura":"Vano"} ${esc(u.lab)}</b><span>${esc([u.s.nombre,u.tt,T?u.e.tipo:(u.v.len!=null?fmtM(u.v.len):"")].filter(Boolean).join(" · "))}</span></div>
-  <div class="lpop-r"><span>PMF</span>${lchip(libEst(u.key,"pmf"))}</div><div class="lpop-r"><span>Servidumbre</span>${lchip(libEst(u.key,"ser"))}</div><div>${lgen(g)}</div>
+  <div class="lpop-r"><span>PMF</span>${lchip(libEst(u.key,"pmf"),"pmf")}</div>${c?`<div class="lpop-c">${c}</div>`:""}<div class="lpop-r"><span>Servidumbre</span>${lchip(libEst(u.key,"ser"),"ser")}</div><div>${lgen(g)}</div>
   ${o?`<div class="lpop-o">${esc(trunc(o.obs,140))}<span>${fmtD(o.fecha)}${o.pn?" · "+esc(o.pn):""}</span></div>`:""}
   <div class="lpop-a"><button class="btn small" data-libopen="${esc(u.key)}">Abrir ficha</button>${p?`<a class="btn small ghost" href="${gmaps(p)}" target="_blank" rel="noopener">Google Maps</a>`:""}</div></div>`;}
 function libMapUpdate(){if(!LM.map)return;
   for(const [k,o] of LM.mk){const g=libGen(k),dim=!libMatch(o.u,true),sig=g+(dim?"d":"");if(LM.sig.get(k)!==sig){o.mk.setIcon(libIcon(o.u,g,dim));LM.sig.set(k,sig);}if(o.mk.isPopupOpen())o.mk.getPopup().update();}
+  for(const [k,o] of LM.sp){const g=libGen(k),dim=!libMatch(o.u,true),sig=g+(dim?"d":"");if(LM.sig.get(k)!==sig){o.ln.setStyle({color:LIB_GEN[g].h,opacity:dim?.35:1});o.cas.setStyle({opacity:dim?.2:.6});LM.sig.set(k,sig);}if(o.ln.isPopupOpen())o.ln.getPopup().update();}
   if(LM.cur!==S.lib.base)libSetBase(S.lib.base);}
 function libSetBase(b){if(!LM.map)return;for(const [k,l] of Object.entries(LM.base))if(k!==b&&LM.map.hasLayer(l))LM.map.removeLayer(l);const l=LM.base[b]||LM.base.sat;if(!LM.map.hasLayer(l))l.addTo(LM.map);LM.cur=b;LM.el.classList.toggle("osm",b==="osm");}
 function libFit(){if(!LM.map||!LM.mk.size)return;LM.map.fitBounds(window.L.latLngBounds([...LM.mk.values()].map(o=>o.mk.getLatLng())),{padding:[28,28]});}
@@ -1887,27 +2000,32 @@ function libLocate(k){const u=libUnit(k);if(!u)return;const slot=document.getEle
 /* --- Exportaciones: planilla CSV (con la bitácora completa) y KML para Google Earth --- */
 function descargarLibCSV(){
   const q=v=>{const s=String(v==null?"":v);return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};const f=n=>String(Math.round(n*10)/10).replace(".",",");
-  const L=["CONTROL DE LIBERACIONES al "+fmtD(today()),"Tipo;Elemento;Sector;Tramo;Longitud m;PMF;PMF fecha;PMF referencia;Servidumbre;Servidumbre fecha;Servidumbre referencia;Estado;Última observación;Fecha observación;Autor"];
+  const L=["CONTROL DE LIBERACIONES al "+fmtD(today()),"Tipo;Elemento;Sector;Tramo;Longitud m;PMF;PMF asociados;PMF fecha;PMF de referencia;Servidumbre (propietarios);Servidumbre fecha;Servidumbre referencia;Estado;Última observación;Fecha observación;Autor"];
   for(const u of libUnits()){const p=libAct(u.key,"pmf"),s=libAct(u.key,"ser"),o=libLast(u.key);
-    L.push([u.t==="torre"?"Torre":"Vano",u.lab,u.s.nombre,u.tt,u.t==="vano"&&u.v.len!=null?f(u.v.len):"",LIB_EST[libEst(u.key,"pmf")].t,p?fmtD(p.fecha):"",p&&p.ref||"",LIB_EST[libEst(u.key,"ser")].t,s?fmtD(s.fecha):"",s&&s.ref||"",LIB_GEN[libGen(u.key)].t,o?o.obs:"",o?fmtD(o.fecha):"",o&&o.pn||""].map(q).join(";"));}
-  L.push("");L.push("BITÁCORA");L.push("Fecha;Elemento;Sector;Registro;Estado;Referencia;Observación;Autor;Registrado");
+    L.push([u.t==="torre"?"Torre":"Vano",u.lab,u.s.nombre,u.tt,u.t==="vano"&&u.v.len!=null?f(u.v.len):"",estTxt("pmf",libEst(u.key,"pmf")),libCod(u.key),p?fmtD(p.fecha):"",p&&p.ref||"",estTxt("ser",libEst(u.key,"ser")),s?fmtD(s.fecha):"",s&&s.ref||"",LIB_GEN[libGen(u.key)].t,o?o.obs:"",o?fmtD(o.fecha):"",o&&o.pn||""].map(q).join(";"));}
+  L.push("");L.push("BITÁCORA");L.push("Fecha;Elemento;Sector;Registro;Estado;PMF asociados;Referencia;Observación;Autor;Registrado");
   for(const u of libUnits())for(const x of libHist(u.key).slice().reverse()){const V=LIB_VARS.find(v=>v.id===x.a);
-    L.push([fmtD(x.fecha),(u.t==="vano"?"Vano ":"")+u.lab,u.s.nombre,V?V.t:"Observación",V?(LIB_EST[x.est]||{t:x.est}).t:"",x.ref||"",x.obs||"",x.pn||"",x.ts?fmtTs(x.ts):""].map(q).join(";"));}
+    L.push([fmtD(x.fecha),(u.t==="vano"?"Vano ":"")+u.lab,u.s.nombre,V?V.h:"Observación",V?estTxt(V.id,x.est):"",x.a==="pmf"?(x.cod||""):"",x.ref||"",x.obs||"",x.pn||"",x.ts?fmtTs(x.ts):""].map(q).join(";"));}
   descargar("liberaciones-tineo-ancud-"+today()+".csv","﻿"+L.join("\r\n"),"text/csv;charset=utf-8");toast("Planilla descargada.");}
 function descargarKML(){
   const xe=s=>String(s==null?"":s).replace(/[<>&'"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;","'":"&apos;",'"':"&quot;"}[c]));
   const cd=s=>String(s).replace(/]]>/g,"]]]]><![CDATA[>");const kc=h=>"ff"+h.slice(5,7)+h.slice(3,5)+h.slice(1,3);const us=libUnits();
   let k=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${xe("Liberaciones STN4324 Tineo–Ancud · "+fmtD(today()))}</name><open>1</open>`;
-  for(const [g,x] of Object.entries(LIB_GEN))k+=`<Style id="${g}"><IconStyle><color>${kc(x.h)}</color><scale>0.9</scale><Icon><href>https://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LabelStyle><scale>0.8</scale></LabelStyle></Style>`;
-  for(const s of secs()){const ts=us.filter(u=>u.t==="torre"&&u.s.id===s.id&&libLL(u.e.id));if(!ts.length)continue;k+=`<Folder><name>${xe(s.nombre)}</name>`;
-    for(const u of ts){const p=libLL(u.e.id),g=libGen(u.key),o=libLast(u.key),pm=libAct(u.key,"pmf"),se=libAct(u.key,"ser");
-      const d=`<b>Estructura ${esc(u.lab)}</b> · ${esc([s.nombre,u.tt,u.e.tipo].filter(Boolean).join(" · "))}<br>PMF: <b>${LIB_EST[libEst(u.key,"pmf")].t}</b>${pm?" ("+fmtD(pm.fecha)+(pm.ref?", "+esc(pm.ref):"")+")":""}<br>Servidumbre: <b>${LIB_EST[libEst(u.key,"ser")].t}</b>${se?" ("+fmtD(se.fecha)+(se.ref?", "+esc(se.ref):"")+")":""}<br>Estado: <b>${LIB_GEN[g].t}</b>${o?"<br><i>"+esc(o.obs)+"</i> ("+fmtD(o.fecha)+")":""}`;
+  for(const [g,x] of Object.entries(LIB_GEN))k+=`<Style id="${g}"><IconStyle><color>${kc(x.h)}</color><scale>0.9</scale><Icon><href>https://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LabelStyle><scale>0.8</scale></LabelStyle></Style><Style id="v_${g}"><LineStyle><color>${kc(x.h)}</color><width>4</width></LineStyle></Style>`;
+  const ficha=(u,g)=>{const o=libLast(u.key),pm=libAct(u.key,"pmf"),se=libAct(u.key,"ser"),c=libCod(u.key);
+    return `PMF: <b>${estTxt("pmf",libEst(u.key,"pmf"))}</b>${c?" · "+esc(c):""}${pm?" ("+fmtD(pm.fecha)+(pm.ref?", "+esc(pm.ref):"")+")":""}<br>Servidumbre (propietarios): <b>${estTxt("ser",libEst(u.key,"ser"))}</b>${se?" ("+fmtD(se.fecha)+(se.ref?", "+esc(se.ref):"")+")":""}<br>Estado: <b>${LIB_GEN[g].t}</b>${o?"<br><i>"+esc(o.obs)+"</i> ("+fmtD(o.fecha)+")":""}`;};
+  for(const s of secs()){const ts=us.filter(u=>u.t==="torre"&&u.s.id===s.id&&libLL(u.e.id));if(!ts.length)continue;k+=`<Folder><name>${xe(s.nombre)} · torres</name>`;
+    for(const u of ts){const p=libLL(u.e.id),g=libGen(u.key);
+      const d=`<b>Estructura ${esc(u.lab)}</b> · ${esc([s.nombre,u.tt,u.e.tipo].filter(Boolean).join(" · "))}<br>${ficha(u,g)}`;
       k+=`<Placemark><name>${xe(u.lab)}</name><styleUrl>#${g}</styleUrl><description><![CDATA[${cd(d)}]]></description><Point><coordinates>${p[1].toFixed(7)},${p[0].toFixed(7)},0</coordinates></Point></Placemark>`;}
     k+=`</Folder>`;}
-  k+=`<Folder><name>Traza (referencial)</name><visibility>0</visibility>`;
-  for(const s of secs()){const c=estr(s.id).map(e=>libLL(e.id)).filter(Boolean);if(c.length<2)continue;
-    k+=`<Placemark><name>${xe(s.nombre)}</name><visibility>0</visibility><Style><LineStyle><color>ff1fd2ff</color><width>2</width></LineStyle></Style><LineString><tessellate>1</tessellate><coordinates>${c.map(p=>p[1].toFixed(7)+","+p[0].toFixed(7)+",0").join(" ")}</coordinates></LineString></Placemark>`;}
-  k+=`</Folder></Document></kml>`;
+  /* la línea: un tramo por vano con el color de su estado */
+  for(const s of secs()){const vs=us.filter(u=>u.t==="vano"&&u.s.id===s.id&&libLL(u.v.a)&&libLL(u.v.b));if(!vs.length)continue;k+=`<Folder><name>${xe(s.nombre)} · vanos</name>`;
+    for(const u of vs){const a=libLL(u.v.a),b=libLL(u.v.b),g=libGen(u.key);
+      const d=`<b>Vano ${esc(u.lab)}</b>${u.v.len!=null?" · "+fmtM(u.v.len):""} · ${esc([s.nombre,u.tt].filter(Boolean).join(" · "))}<br>${ficha(u,g)}`;
+      k+=`<Placemark><name>${xe("Vano "+u.lab)}</name><styleUrl>#v_${g}</styleUrl><description><![CDATA[${cd(d)}]]></description><LineString><tessellate>1</tessellate><coordinates>${a[1].toFixed(7)},${a[0].toFixed(7)},0 ${b[1].toFixed(7)},${b[0].toFixed(7)},0</coordinates></LineString></Placemark>`;}
+    k+=`</Folder>`;}
+  k+=`</Document></kml>`;
   descargar("liberaciones-tineo-ancud-"+today()+".kml",k,"application/vnd.google-earth.kml+xml");toast("KML descargado: ábrelo con Google Earth.");}
 
 /* ---------- Configuración (solo administradores) ---------- */
@@ -2162,7 +2280,7 @@ document.addEventListener("click",ev=>{
   if(ds.tab){go(ds.tab);return;}
   /* liberaciones */
   if(ds.libopen){openLib(ds.libopen);return;}
-  if(ds.libed){const D=S.drw;if(!D||!D.lib)return;if(D.ed===ds.libed){D.ed=null;D.f=null;}else{const x=libAct(D.key,ds.libed),e=libEst(D.key,ds.libed);D.ed=ds.libed;D.f={est:e==="pend"?"tram":e==="tram"?"lib":e,fecha:today(),ref:(x&&x.ref)||"",obs:""};}render();return;}
+  if(ds.libed){const D=S.drw;if(!D||!D.lib)return;if(D.ed===ds.libed){D.ed=null;D.f=null;}else{const x=libAct(D.key,ds.libed),e=libEst(D.key,ds.libed);D.ed=ds.libed;D.f={est:e==="pend"?"tram":e==="tram"?"lib":e,fecha:today(),ref:(x&&x.ref)||"",obs:"",cod:ds.libed==="pmf"?libCod(D.key):""};}render();return;}
   if(ds.libest){if(S.drw&&S.drw.f){S.drw.f.est=ds.libest;render();}return;}
   if(b.id==="lib-save"){libSaveVar();return;}
   if(b.id==="lib-nota-save"){libSaveNota();return;}
@@ -2218,7 +2336,7 @@ document.addEventListener("click",ev=>{
 document.addEventListener("input",ev=>{
   const t=ev.target,ds=t.dataset;
   if(t.id==="lib-q"){S.lib.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
-  if(S.drw&&S.drw.lib){const f=S.drw.f;if(f&&t.id==="lib-fecha"){f.fecha=t.value;return;}if(f&&t.id==="lib-ref"){f.ref=t.value;return;}if(f&&t.id==="lib-obs"){f.obs=t.value;return;}if(t.id==="lib-nota"){S.drw.nota=t.value;return;}}
+  if(S.drw&&S.drw.lib){const f=S.drw.f;if(f&&t.id==="lib-fecha"){f.fecha=t.value;return;}if(f&&t.id==="lib-ref"){f.ref=t.value;return;}if(f&&t.id==="lib-obs"){f.obs=t.value;return;}if(f&&t.id==="lib-cod"){f.cod=t.value;return;}if(t.id==="lib-nota"){S.drw.nota=t.value;return;}}
   if(t.id==="lib-b-ref"){S.lib.bulk.ref=t.value;return;}if(t.id==="lib-b-obs"){S.lib.bulk.obs=t.value;return;}if(t.id==="lib-b-fecha"){S.lib.bulk.fecha=t.value;return;}
   if(t.id==="q-pct"){const v=num(t.value,NaN);if(isFinite(v)&&S.drw&&S.drw.edit)S.drw.edit.pct=pctIn(v);return;}
   if(t.id==="q-fecha"){if(S.drw&&S.drw.edit)S.drw.edit.fecha=t.value;return;}
@@ -2249,7 +2367,7 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="lib-sec")return set(()=>{S.lib.sec=t.value;S.lib.tt="";});
   if(t.id==="lib-tt")return set(()=>{S.lib.tt=t.value;});
   if(t.id==="lib-est")return set(()=>{S.lib.est=t.value;});
-  if(t.id==="lib-b-v"){S.lib.bulk.v=t.value;return;}
+  if(t.id==="lib-b-v")return set(()=>{S.lib.bulk.v=t.value;});
   if(t.id==="lib-b-est"){S.lib.bulk.est=t.value;return;}
   if(t.id==="lib-b-fecha"){S.lib.bulk.fecha=t.value;return;}
   if(t.id==="m-tt")return set(()=>{S.map.tt=t.value;});
