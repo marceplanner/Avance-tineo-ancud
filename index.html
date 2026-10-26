@@ -2230,20 +2230,27 @@ const pgDias=(a,b)=>{const x=pgMs(a),y=pgMs(b);return isFinite(x)&&isFinite(y)?M
 /* --- lectura del XML: solo la sección de tareas; de cada tarea, sus campos propios y la línea base 0 --- */
 const xmlUn=s=>String(s||"").replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(amp|lt|gt|quot|apos));/g,(m,d,h,n)=>d?String.fromCharCode(+d):h?String.fromCharCode(parseInt(h,16)):{amp:"&",lt:"<",gt:">",quot:'"',apos:"'"}[n]);
 const xtag=(s,t)=>{const i=s.indexOf("<"+t+">");if(i<0)return "";const j=s.indexOf("</"+t+">",i);return j<0?"":xmlUn(s.slice(i+t.length+2,j));};
+/* «10,69%», «77.00%», «0,001029412» → número (null si viene vacío) */
+const pgPct=v=>{const s=String(v==null?"":v).replace("%","").trim();if(!s)return null;const n=num(s.indexOf(",")>=0?s.replace(/\./g,"").replace(",","."):s,NaN);return isFinite(n)?n:null;};
 const pgHrs=s=>{const m=/PT(\d+)H(\d+)M(\d+(?:\.\d+)?)S/.exec(s||"");return m?Math.round(((+m[1])+(+m[2])/60+(+m[3])/3600)*10)/10:0;};
 function parseMSP(txt){
   const i0=txt.indexOf("<Tasks>"),i1=txt.lastIndexOf("</Tasks>");
   if(!/<Project[\s>]/.test(txt.slice(0,3000))||i0<0||i1<i0)throw new Error("El archivo no es un XML de MS Project. En Project usa Archivo → Guardar como → Formato XML (*.xml).");
   const head=txt.slice(0,i0),dt=(s,t)=>xtag(s,t).slice(0,16);
   const proj={titulo:xtag(head,"Title"),nombre:xtag(head,"Name"),estado:dt(head,"StatusDate"),inicio:dt(head,"StartDate"),fin:dt(head,"FinishDate")};
+  /* campos personalizados: Texto27 = % avance real ponderado, Texto28 = % programado ponderado (línea base), Texto30 = peso de la tarea */
+  const fid=(n,def)=>{const m=new RegExp("<FieldID>(\\d+)</FieldID>\\s*<FieldName>Texto?"+n+"</FieldName>").exec(head);return m?m[1]:def;};
+  const F27=fid(27,"188744013"),F28=fid(28,"188744014"),F30=fid(30,"188744016"),RE_EA=/<ExtendedAttribute>\s*<FieldID>(\d+)<\/FieldID>\s*<Value>([^<]*)<\/Value>/g;
   const T=[];
   for(const blk of txt.slice(i0+7,i1).split("<Task>").slice(1)){
     let cut=blk.length;for(const t of ["<PredecessorLink>","<ExtendedAttribute>","<EnterpriseExtendedAttribute>","<Baseline>","<TimephasedData>","<OutlineCode>"]){const j=blk.indexOf(t);if(j>=0&&j<cut)cut=j;}
     const top=blk.slice(0,cut);if(xtag(top,"IsNull")==="1"||xtag(top,"Active")==="0")continue;
     const o=xtag(top,"OutlineNumber");if(!o)continue;
     const bm=/<Baseline>\s*<Number>0<\/Number>([\s\S]*?)<\/Baseline>/.exec(blk),b=bm?bm[1]:"";
-    T.push({u:+xtag(top,"UID")||0,o,n:xtag(top,"Name").trim(),l:+xtag(top,"OutlineLevel")||0,s:xtag(top,"Summary")==="1"?1:0,m:xtag(top,"Milestone")==="1"?1:0,c:xtag(top,"Critical")==="1"?1:0,
-      S:dt(top,"Start"),F:dt(top,"Finish"),bS:dt(b,"Start"),bF:dt(b,"Finish"),d:pgHrs(xtag(top,"Duration")),bd:pgHrs(xtag(b,"Duration")),w:pgHrs(xtag(top,"Work")),bw:pgHrs(xtag(b,"Work")),p:num(xtag(top,"PercentComplete"),0)});}
+    const ea={};RE_EA.lastIndex=0;let mm;while((mm=RE_EA.exec(blk)))ea[mm[1]]=xmlUn(mm[2]);
+    const t={u:+xtag(top,"UID")||0,o,n:xtag(top,"Name").trim(),l:+xtag(top,"OutlineLevel")||0,s:xtag(top,"Summary")==="1"?1:0,m:xtag(top,"Milestone")==="1"?1:0,c:xtag(top,"Critical")==="1"?1:0,
+      S:dt(top,"Start"),F:dt(top,"Finish"),bS:dt(b,"Start"),bF:dt(b,"Finish"),d:pgHrs(xtag(top,"Duration")),bd:pgHrs(xtag(b,"Duration")),w:pgHrs(xtag(top,"Work")),bw:pgHrs(xtag(b,"Work")),p:num(xtag(top,"PercentComplete"),0)};
+    const r27=pgPct(ea[F27]),p28=pgPct(ea[F28]),wp=pgPct(ea[F30]);if(r27!=null)t.r27=r27;if(p28!=null)t.p28=p28;if(wp!=null)t.wp=wp;T.push(t);}
   if(!T.length)throw new Error("El programa no trae tareas.");
   return {proj,T};}
 /* --- alcance: estructuras y vanos que nombra una tarea --- */
@@ -2389,10 +2396,20 @@ function pgModel(P){const g=gc(),c=PGM.get(P);if(c&&c.g===g)return c.M;
     r.sl=r.soloV?"Vano "+V[0].v.label:E.length===1?"Estructura "+E[0].e.id+pa:sc&&sc.rng?`${onlyV?"Vanos":"Estructuras"} ${sc.rng[0]}–${sc.rng[1]}`+(onlyV?` (${V.length})`:E.length<n0?` · ${E.length} de ${n0} por tipo de fundación`:` (${E.length})`)+pa
       :E.length?`${E.length} estructuras de ${progName(P.contr)}: ${E[0].e.id}–${E[E.length-1].e.id}`+pa:"—";
     if(!E.length&&!V.length){r.why="Sin estructuras de la app en su alcance";r.parts=null;}}
-  const meas=recs.filter(r=>r.parts);
-  const nW=meas.filter(r=>(r.t.bw||r.t.w)>0).length,basis=meas.length&&nW>=0.7*meas.length?"hh":"dur";
-  for(const r of meas)r.w=(basis==="hh"?(r.t.bw||r.t.w):(r.t.bd||r.t.d))||0;
-  const M={P,se,recs,meas,ms,basis,byO,root:T.find(t=>t.l===0)||null,sinEq:recs.length-meas.length};
+  const meas=recs.filter(r=>r.parts),root=T.find(t=>t.l===0)||null;
+  /* peso de cada tarea: el del programa (Texto30) si lo trae; si no, horas-hombre o duración */
+  const leaves=T.filter(t=>t.l>0&&!t.s),obra=leaves.filter(t=>!t.m),nP=obra.filter(t=>t.wp>0).length,nH=obra.filter(t=>(t.bw||t.w)>0).length;
+  const basis=obra.length&&nP>=0.7*obra.length?"peso":obra.length&&nH>=0.7*obra.length?"hh":"dur";
+  const wl=t=>t.m?0:(basis==="peso"?t.wp:basis==="hh"?(t.bw||t.w):(t.bd||t.d))||0;
+  for(const r of meas)r.w=wl(r.t);
+  /* programado (Texto28) y avance real (Texto27) de cada tarea y partida, tal como los calcula el programa. Si no los trae:
+     programado lineal con la línea base a la fecha de estado y real = % completado; las partidas sin el dato, ponderadas */
+  const ref=pgMs(P.estado)||Date.now(),pv=new Map(),rv=new Map(),acc=new Map();
+  for(const t of leaves){const [a,b]=pgLB(t),p=t.p28!=null?t.p28:(pgPlan(a,b,ref)||0),r=t.r27!=null?t.r27:t.p;pv.set(t.o,p);rv.set(t.o,r);const w=wl(t);if(!w)continue;
+    for(let o=pgPar(t.o);o!=null;o=o==="0"?null:pgPar(o)){let x=acc.get(o);if(!x){x=[0,0,0];acc.set(o,x);}x[0]+=w;x[1]+=w*p;x[2]+=w*r;}}
+  for(const t of T)if(t.s||t.l===0){const x=acc.get(t.o);pv.set(t.o,t.p28!=null?t.p28:x&&x[0]?x[1]/x[0]:null);rv.set(t.o,t.r27!=null?t.r27:x&&x[0]?x[2]/x[0]:t.p);}
+  const x0=acc.get("0"),tot={p:root&&pv.get(root.o)!=null?pv.get(root.o):x0&&x0[0]?x0[1]/x0[0]:null,r:root&&rv.get(root.o)!=null?rv.get(root.o):x0&&x0[0]?x0[2]/x0[0]:null};
+  const M={P,se,recs,meas,ms,basis,byO,root,leaves,wl,pv,rv,tot,ref,campos:T.some(t=>t.p28!=null||t.r27!=null),sinEq:recs.length-meas.length};
   PGM.set(P,{g,M});return M;}
 /* --- avance real de una tarea con un lector de avance (cur = hoy; o el de una fecha pasada) --- */
 function pgAvg(get,k,ids){let W=0,P=0;for(const id of ids){const a=actById(id);const w=(a&&num(a.peso,0))||1;W+=w;P+=w*get(k,id);}return W?P/W:0;}
@@ -2418,56 +2435,58 @@ function pgPlan(a,b,t){const x=pgMs(a),y=pgMs(b);if(!isFinite(x)||!isFinite(y))r
 const pgLB=t=>[t.bS||t.S,t.bF||t.F];
 function pgEvalAt(M,get,tm){let W=0,lb=0,vg=0,re=0;for(const r of M.meas){if(!r.w)continue;const v=pgReal(r,get);if(v==null)continue;const [a,b]=pgLB(r.t);W+=r.w;lb+=r.w*(pgPlan(a,b,tm)||0);vg+=r.w*(pgPlan(r.t.S,r.t.F,tm)||0);re+=r.w*v;}
   return W?{lb:lb/W,vig:vg/W,real:re/W}:null;}
-function pgAgg(M,byO,pref){let W=0,lb=0,vg=0,re=0,dc=0,n=0;
-  for(const r of M.meas){if(pref&&pref!=="0"&&r.t.o!==pref&&r.t.o.indexOf(pref+".")!==0)continue;const x=byO.get(r.t.o);if(!x||x.real==null||!r.w)continue;n++;W+=r.w;lb+=r.w*(x.lb||0);vg+=r.w*(x.vig||0);re+=r.w*x.real;dc+=r.w*r.t.p;}
-  return W?{n,W,lb:lb/W,vig:vg/W,real:re/W,decl:dc/W}:null;}
-/* --- estado de hoy y alertas de un programa (se rehace si cambian los registros o el día) --- */
-const PG_AL={prog_desact:"Programa sin actualizar",prog_termino:"Término del programa desplazado",prog_atraso:"Atraso global del programa",fin_vencido:"Tareas con término vencido",inicio_vencido:"Tareas que debieron iniciar y no tienen avance en terreno",bajo_prog:"Avance bajo lo programado",sin_liberacion:"Frentes por iniciar o en ejecución sin liberación",declarado:"El programa declara más avance que terreno",hito_vencido:"Hitos vencidos",hito_desplazado:"Hitos desplazados respecto de la línea base",hito_proximo:"Próximos hitos (30 días)"};
+/* terreno frente al programa en las tareas comparables (todas, o bajo una partida): terreno de la app y real/programado del programa */
+function pgAgg(M,ter,pref){let W=0,te=0,re=0,pr=0,n=0;
+  for(const r of M.meas){if(pref&&pref!=="0"&&r.t.o!==pref&&r.t.o.indexOf(pref+".")!==0)continue;const v=ter.get(r.t.o);if(v==null||!r.w)continue;n++;W+=r.w;te+=r.w*v;re+=r.w*M.rv.get(r.t.o);pr+=r.w*M.pv.get(r.t.o);}
+  return W?{n,ter:te/W,real:re/W,prog:pr/W}:null;}
+/* programado con la línea base (lineal) a una fecha, con los pesos del programa, sobre todas sus tareas */
+function pgPlanAll(M,tm){let W=0,s=0;for(const t of M.leaves){const w=M.wl(t);if(!w)continue;const [a,b]=pgLB(t);W+=w;s+=w*(pgPlan(a,b,tm)||0);}return W?s/W:null;}
+/* --- estado y alertas de un programa: su avance real (Texto27) y su programado (Texto28) a la fecha de estado; lo registrado en
+   terreno en la app sirve para contrastar (se rehace si cambian los registros o el día) --- */
+const PG_AL={prog_desact:"Programa sin actualizar",prog_termino:"Término del programa desplazado",prog_atraso:"Atraso global del programa",fin_vencido:"Tareas con término vencido",inicio_vencido:"Tareas que debieron iniciar y no tienen avance",bajo_prog:"Avance real bajo lo programado",sin_liberacion:"Frentes por iniciar o en ejecución sin liberación",terreno:"El programa y lo registrado en terreno no calzan",hito_vencido:"Hitos vencidos",hito_desplazado:"Hitos desplazados respecto de la línea base",hito_proximo:"Próximos hitos (30 días)"};
 let PGX=new WeakMap();
 function pgNow(P){const M=pgModel(P),c=PGX.get(P);if(c&&c.M===M&&c.av===S.av&&c.d===today())return c.X;
-  const now=Date.now(),byO=new Map();
-  for(const r of M.meas){const [a,b]=pgLB(r.t);byO.set(r.t.o,{real:pgReal(r,cur),lb:pgPlan(a,b,now),vig:pgPlan(r.t.S,r.t.F,now)});}
-  const X={now,byO,agg:pgAgg(M,byO)};X.al=pgAlerts(M,X);PGX.set(P,{M,av:S.av,d:today(),X});return X;}
-function pgAlerts(M,X){const out=[],P=M.P,nm=progName(P.contr),now=X.now,A=X.agg,R=M.root;
+  const ter=new Map();for(const r of M.meas)ter.set(r.t.o,pgReal(r,cur));
+  const X={now:Date.now(),ref:M.ref,ter,agg:pgAgg(M,ter)};X.al=pgAlerts(M,X);PGX.set(P,{M,av:S.av,d:today(),X});return X;}
+function pgAlerts(M,X){const out=[],P=M.P,nm=progName(P.contr),now=X.now,ref=X.ref,R=M.root,T0=M.tot,cor=pgD(P.estado);
   const push=(sev,tipo,titulo,det,t)=>out.push({sev,tipo,titulo,det,contr:P.contr,prog:nm,o:t?t.o:"",n:t?t.n:""});
-  if(P.estado){const dd=Math.floor((now-pgMs(P.estado))/PG_DAY);if(dd>14)push("media","prog_desact",`Programa de ${nm} sin actualizar`,`Fecha de estado ${pgD(P.estado)}, hace ${dd} días. Pide al contratista la actualización.`);}
+  if(P.estado){const dd=Math.floor((now-pgMs(P.estado))/PG_DAY);if(dd>14)push("media","prog_desact",`Programa de ${nm} sin actualizar`,`Fecha de estado ${cor}, hace ${dd} días. Pide al contratista la actualización.`);}
   if(R&&R.bF&&R.F){const dv=pgDias(R.F,R.bF);if(dv>0)push(dv>30?"alta":"media","prog_termino",`Término de ${nm}: ${dv} días después de la línea base`,`Fin vigente ${pgD(R.F)} · línea base ${pgD(R.bF)}.`);}
-  if(A&&A.real-A.lb<-5)push(A.real-A.lb<-15?"alta":"media","prog_atraso",`${nm}: real ${fmtP(A.real,1)} frente a ${fmtP(A.lb,1)} programado (línea base)`,`Desviación ${ppTxt(A.real-A.lb)}${A.lb>0.5?" · índice de cumplimiento "+(A.real/A.lb).toFixed(2).replace(".",","):""} · programa vigente ${fmtP(A.vig,1)}.`);
-  for(const r of M.meas){const x=X.byO.get(r.t.o);if(!x||x.real==null)continue;const t=r.t,S0=pgMs(t.S),F0=pgMs(t.F),crit=t.c?" Ruta crítica.":"";
-    if(x.real<99.95&&F0<=now)push(t.c?"alta":"media","fin_vencido",t.n,`${r.sl}. Debió terminar el ${pgD(t.F)}${t.bF&&t.bF!==t.F?` (línea base ${pgD(t.bF)})`:""}; terreno registra ${fmtP(x.real)} de ${r.ml.toLowerCase()}.${crit}`,t);
-    else if(x.real<=0&&S0<=now)push(t.c?"alta":"media","inicio_vencido",t.n,`${r.sl}. Debió iniciar el ${pgD(t.S)}; sin avance de ${r.ml.toLowerCase()} en terreno.${crit}`,t);
-    else if(S0<now&&now<F0&&x.real<(x.vig||0)-20)push("media","bajo_prog",t.n,`${r.sl}. Terreno ${fmtP(x.real)}; según el programa vigente debería ir en ${fmtP(x.vig)}.`,t);
-    if(t.p-x.real>=25)push("media","declarado",t.n,`${r.sl}. El programa declara ${fmtP(t.p)}; terreno registra ${fmtP(x.real)}.`,t);
+  if(T0.p!=null&&T0.r!=null&&T0.r-T0.p<-5)push(T0.r-T0.p<-15?"alta":"media","prog_atraso",`${nm}: avance real ${fmtP(T0.r,1)} frente a ${fmtP(T0.p,1)} programado`,`Al ${cor}: desviación ${ppTxt(T0.r-T0.p)}${T0.p>0.5?" · índice de cumplimiento "+(T0.r/T0.p).toFixed(2).replace(".",","):""}.`);
+  const mz=new Map(M.meas.map(r=>[r.t.o,r]));
+  /* tareas: atraso según el avance real y el programado del propio programa, a su fecha de estado */
+  for(const t of M.leaves){if(t.m)continue;const p=M.pv.get(t.o),re=M.rv.get(t.o),S0=pgMs(t.S),F0=pgMs(t.F),r=mz.get(t.o),crit=t.c?" Ruta crítica.":"",al=r?r.sl+". ":"";
+    if(re<99.95&&F0<=ref)push(t.c?"alta":"media","fin_vencido",t.n,`${al}Debió terminar el ${pgD(t.F)}${t.bF&&t.bF!==t.F?` (línea base ${pgD(t.bF)})`:""}; avance real ${fmtP(re)} al ${cor}.${crit}`,t);
+    else if(re<=0&&S0<=ref)push(t.c?"alta":"media","inicio_vencido",t.n,`${al}Debió iniciar el ${pgD(t.S)}; sin avance real al ${cor}.${crit}`,t);
+    else if(p!=null&&re<p-20)push("media","bajo_prog",t.n,`${al}Avance real ${fmtP(re)} frente a ${fmtP(p)} programado al ${cor}.${crit}`,t);
+    if(!r)continue;const te=X.ter.get(t.o);
+    if(te!=null&&Math.abs(re-te)>=25)push("media","terreno",t.n,`${r.sl}. El programa informa ${fmtP(re)} de avance real; en terreno se registra ${fmtP(te)} de ${r.ml.toLowerCase()}.`,t);
     /* frentes sin liberación: no cuentan las tareas de liberación ni las de solo replanteo (como en el reporte semanal) */
-    const soloRep=r.parts.every(p=>p.t==="a"&&p.ids.length===1&&REP_NO_OBRA.has(p.ids[0]));
-    if(x.real<99.95&&!soloRep&&!r.parts.some(p=>p.t==="lib")&&((S0>=now&&S0<=now+21*PG_DAY)||(S0<now&&F0>now))){
-      const usaE=r.parts.some(p=>p.on==="e"||p.t==="fs"||p.t==="fun"||p.t==="pat"),usaV=r.parts.some(p=>p.on==="v"||p.t==="tva");let n=0;const bad=[];
+    const soloRep=r.parts.every(q=>q.t==="a"&&q.ids.length===1&&REP_NO_OBRA.has(q.ids[0]));
+    if(re<99.95&&!soloRep&&!r.parts.some(q=>q.t==="lib")&&((S0>=now&&S0<=now+21*PG_DAY)||(S0<now&&F0>now))){
+      const usaE=r.parts.some(q=>q.on==="e"||q.t==="fs"||q.t==="fun"||q.t==="pat"),usaV=r.parts.some(q=>q.on==="v"||q.t==="tva");let n=0;const bad=[];
       if(usaE)for(const y of r.E){const k=kLibE(y.s,y.e.id);if(!libUnit(k))continue;n++;if(libGen(k)!=="apta")bad.push(String(y.e.id));}
       if(usaV)for(const y of r.V){const k=kLibV(y.s,y.v.a,y.v.b);if(!libUnit(k))continue;n++;if(libGen(k)!=="apta")bad.push("vano "+y.v.label);}
       if(bad.length)push(S0-now<=7*PG_DAY?"alta":"media","sin_liberacion",t.n,`${S0>now?"Inicia el "+pgD(t.S):"En ejecución desde el "+pgD(t.S)}: ${bad.length} de ${n} elementos no están aptos para construcción (${listaTxt(bad,8)}).`,t);}}
-  for(const t of M.ms){if(t.p>=100)continue;const F0=pgMs(t.F),dv=pgDias(t.F,t.bF);
-    if(F0<=now)push("alta","hito_vencido",t.n,`Fecha vigente ${pgD(t.F)}${t.bF?` · línea base ${pgD(t.bF)}`:""}; el programa lo declara al ${fmtP(t.p)}. Confirmar si se cumplió.`,t);
+  for(const t of M.ms){const re=M.rv.get(t.o);if(re>=100)continue;const F0=pgMs(t.F),dv=pgDias(t.F,t.bF);
+    if(F0<=ref)push("alta","hito_vencido",t.n,`Fecha vigente ${pgD(t.F)}${t.bF?` · línea base ${pgD(t.bF)}`:""}; al ${cor} el programa lo informa al ${fmtP(re)}. Confirmar si se cumplió.`,t);
     else if(dv!=null&&dv>7)push("media","hito_desplazado",t.n,`${dv} días después de la línea base: vigente ${pgD(t.F)}, línea base ${pgD(t.bF)}.`,t);
     if(F0>now&&F0<=now+30*PG_DAY)push("info","hito_proximo",t.n,`Vence el ${pgD(t.F)}, en ${Math.ceil((F0-now)/PG_DAY)} días.`,t);}
   const ord={alta:0,media:1,info:2};return out.sort((a,b)=>ord[a.sev]-ord[b.sev]);}
-/* --- curva S: programado (línea base y vigente) y real reconstruido semana a semana desde el historial --- */
-let PGT=null,PGC=new WeakMap();
-function pgTimeline(){if(PGT&&PGT.av===S.av)return PGT.ev;const ev=[];
-  for(const [k,d] of S.av){if(!d||d.kind==="lib")continue;for(const h of Object.values(d.hist||{}))if(h&&h.a)ev.push([h.fecha||"",h.ts||0,k,h.a,num(h.pct,0)]);for(const [a,x] of Object.entries(d.act||{}))if(x)ev.push([x.fecha||"",x.ts||0,k,a,num(x.pct,0)]);}
-  ev.sort((p,q)=>p[0]<q[0]?-1:p[0]>q[0]?1:p[1]-q[1]);PGT={av:S.av,ev};return ev;}
-function pgCurve(P){const M=pgModel(P),c=PGC.get(P);if(c&&c.M===M&&c.av===S.av&&c.d===today())return c.C;
-  const X=pgNow(P),rs=M.meas.filter(r=>r.w>0&&X.byO.get(r.t.o)&&X.byO.get(r.t.o).real!=null);let C=null;
-  if(rs.length){let t0=Infinity,t1=-Infinity;for(const r of rs)for(const s of [r.t.bS,r.t.S,r.t.bF,r.t.F]){const v=pgMs(s);if(isFinite(v)){if(v<t0)t0=v;if(v>t1)t1=v;}}
-    const W=rs.reduce((a,r)=>a+r.w,0),d0=new Date(t0);d0.setHours(0,0,0,0);d0.setDate(d0.getDate()-((d0.getDay()+6)%7));
-    const step=(t1-d0.getTime())/PG_DAY>730?14:7,td=today(),ds=[];
+/* --- curva S: programado con la línea base y con las fechas vigentes (pesos del programa, todas sus tareas) y el avance real
+   y el programado (Texto27 / Texto28) de cada revisión cargada, en su fecha de estado --- */
+let PGC=new WeakMap();
+function pgCurve(P){const M=pgModel(P),c=PGC.get(P);if(c&&c.M===M)return c.C;
+  const L=M.leaves.filter(t=>M.wl(t)>0);let C=null;
+  if(L.length){let t0=Infinity,t1=-Infinity;for(const t of L)for(const s of [t.bS,t.S,t.bF,t.F]){const v=pgMs(s);if(isFinite(v)){if(v<t0)t0=v;if(v>t1)t1=v;}}
+    const W=L.reduce((a,t)=>a+M.wl(t),0),d0=new Date(t0);d0.setHours(0,0,0,0);d0.setDate(d0.getDate()-((d0.getDay()+6)%7));
+    const step=(t1-d0.getTime())/PG_DAY>730?14:7,ds=[];
     for(const d=new Date(d0);d.getTime()<=t1+step*PG_DAY;d.setDate(d.getDate()+step))ds.push(ymd(d));
-    if(td>ds[0]&&td<ds[ds.length-1]&&!ds.includes(td)){ds.push(td);ds.sort();}
-    const ev=pgTimeline(),st=new Map(),get=(k,a)=>{const o=st.get(k);return o&&o[a]!=null?o[a]:0;};let ei=0;const pts=[];
-    for(const d of ds){const tm=pgEnd(d);let lb=0,vg=0;for(const r of rs){const [a,b]=pgLB(r.t);lb+=r.w*(pgPlan(a,b,tm)||0);vg+=r.w*(pgPlan(r.t.S,r.t.F,tm)||0);}
-      let re=null;if(d<=td){while(ei<ev.length&&ev[ei][0]<=d){const e=ev[ei++];let o=st.get(e[2]);if(!o){o={};st.set(e[2],o);}o[e[3]]=e[4];}let s=0;for(const r of rs)s+=r.w*(pgReal(r,get)||0);re=s/W;}
-      pts.push({d,lb:lb/W,vig:vg/W,real:re});}
-    C={pts,decl:rs.reduce((a,r)=>a+r.w*r.t.p,0)/W};}
-  PGC.set(P,{M,av:S.av,d:today(),C});return C;}
+    const pts=ds.map(d=>{const tm=pgEnd(d);let lb=0,vg=0;for(const t of L){const w=M.wl(t),[a,b]=pgLB(t);lb+=w*(pgPlan(a,b,tm)||0);vg+=w*(pgPlan(t.S,t.F,tm)||0);}return {d,lb:lb/W,vig:vg/W};});
+    const rv=new Map();for(const v of (P.revs||[]).slice().reverse())if(v.estado&&v.r27!=null)rv.set(String(v.estado).slice(0,10),{d:String(v.estado).slice(0,10),r:v.r27,p:v.p28});
+    if(P.estado&&M.tot.r!=null)rv.set(String(P.estado).slice(0,10),{d:String(P.estado).slice(0,10),r:M.tot.r,p:M.tot.p});
+    C={pts,rev:[...rv.values()].sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)};}
+  PGC.set(P,{M,C});return C;}
 const MESES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 let PGCUR=null;
 function pgChart(P){const C=pgCurve(P);if(!C||C.pts.length<2)return `<p class="muted small" style="margin:0">No hay tareas con fechas para dibujar la curva.</p>`;
@@ -2477,20 +2496,24 @@ function pgChart(P){const C=pgCurve(P);if(!C||C.pts.length<2)return `<p class="m
   const m0=new Date(t0);m0.setDate(1);m0.setHours(0,0,0,0);m0.setMonth(m0.getMonth()+1);const stp=Math.max(1,Math.ceil((t1-m0.getTime())/(30.4*PG_DAY)/8));
   for(const d=new Date(m0);d.getTime()<=t1;d.setMonth(d.getMonth()+stp)){const x=f1(X(d.getTime()));g+=`<line class="bl" x1="${x}" x2="${x}" y1="${H-mb}" y2="${H-mb+4}"/><text class="ax" x="${x}" y="${H-mb+16}" text-anchor="middle">${MESES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}</text>`;}
   const path=f=>{let s="";for(const p of pts){const v=f(p);if(v==null)continue;s+=(s?"L":"M")+f1(X(pgEnd(p.d)))+" "+f1(Y(v));}return s;};
-  g+=`<path class="ln" d="${path(p=>p.lb)}" style="stroke:var(--sv-3);stroke-dasharray:6 4"/><path class="ln" d="${path(p=>p.vig)}" style="stroke:var(--sv-2)"/><path class="ln" d="${path(p=>p.real)}" style="stroke:var(--sv-1)"/>`;
+  g+=`<path class="ln" d="${path(p=>p.lb)}" style="stroke:var(--sv-3);stroke-dasharray:6 4"/><path class="ln" d="${path(p=>p.vig)}" style="stroke:var(--sv-2)"/>`;
   const now=Date.now();if(now>t0&&now<t1){const x=f1(X(now));g+=`<line class="hoy" x1="${x}" x2="${x}" y1="${mt}" y2="${H-mb}"/><text class="ax" x="${f1(X(now)+4)}" y="${mt+10}">hoy</text>`;}
-  const li=pts.map(p=>p.real!=null).lastIndexOf(true),lr=pts[li];
-  if(P.estado){const ts=pgMs(P.estado);if(ts>=t0&&ts<=t1)g+=`<circle cx="${f1(X(ts))}" cy="${f1(Y(C.decl))}" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/>`;}
-  if(lr){const x=X(pgEnd(lr.d)),y=Y(lr.real);g+=`<circle cx="${f1(x)}" cy="${f1(y)}" r="4" style="fill:var(--sv-1);stroke:var(--surface);stroke-width:2"/><text class="lb" x="${f1(x+8)}" y="${f1(y+4)}">Real ${fmtP(lr.real,1)}</text>`;}
-  const key=progKey(P.contr);PGCUR={key,pts,X,W,i:li};
+  /* avance real (Texto27) de cada revisión, unido por una línea; anillo = programado (Texto28) de esa revisión */
+  const rv=C.rev.filter(v=>{const t=pgEnd(v.d);return t>=t0&&t<=t1;});
+  if(rv.length){g+=`<path class="ln" d="${rv.map((v,i)=>(i?"L":"M")+f1(X(pgEnd(v.d)))+" "+f1(Y(v.r))).join("")}" style="stroke:var(--sv-1)"/>`;
+    for(const v of rv){const x=f1(X(pgEnd(v.d)));if(v.p!=null)g+=`<circle cx="${x}" cy="${f1(Y(v.p))}" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/>`;g+=`<circle cx="${x}" cy="${f1(Y(v.r))}" r="4" style="fill:var(--sv-1);stroke:var(--surface);stroke-width:2"/>`;}
+    const u=rv[rv.length-1],ux=X(pgEnd(u.d)),uy=Y(u.r);g+=`<text class="lb" x="${f1(ux+8)}" y="${f1(uy+4)}">Real ${fmtP(u.r,1)}</text>`;}
+  const ult=rv[rv.length-1],td=ult?ult.d:today();let li=0,bd=Infinity;pts.forEach((p,i)=>{const d=Math.abs(pgEnd(p.d)-pgEnd(td));if(d<bd){bd=d;li=i;}});
+  const key=progKey(P.contr);PGCUR={key,pts,rev:C.rev,X,W,i:li};
   g+=`<line id="pg-xh" class="xh" x1="0" x2="0" y1="${mt}" y2="${H-mb}" style="display:none"/><rect class="pgc-hit" x="${ml}" y="${mt}" width="${W-ml-mr}" height="${H-mt-mb}" data-scurve="${esc(key)}" tabindex="0" aria-label="${esc("Curva S de "+progName(P.contr)+": usa las flechas izquierda y derecha para recorrer las semanas")}"/>`;
-  const hoy=pts[li]||pts[0];
-  return `<div class="mlegend"><span><i class="lkey" style="--c:var(--sv-1)"></i>Real en terreno</span><span><i class="lkey" style="--c:var(--sv-2)"></i>Programa vigente</span><span><i class="lkey d" style="--c:var(--sv-3)"></i>Línea base</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/></svg>Declarado en el programa (${pgD(P.estado)}): ${fmtP(C.decl,1)}</span></div>
-  <div class="mdl-wrap"><svg class="pgc" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Curva S de ${progName(P.contr)}: real ${fmtP(hoy.real,1)}, programa vigente ${fmtP(hoy.vig,1)}, línea base ${fmtP(hoy.lb,1)} a la semana del ${fmtD(hoy.d)}`)}">${g}</svg></div>
-  <details><summary class="small" style="cursor:pointer;color:var(--ink-2)">Ver los datos de la curva</summary><div class="tbl-wrap" style="max-height:320px;margin-top:6px"><table class="tec"><thead><tr><th>Semana</th><th class="r">Línea base</th><th class="r">Programa vigente</th><th class="r">Real</th></tr></thead><tbody>${pts.map(p=>`<tr><td class="num">${fmtD(p.d)}</td><td class="r num">${fmtP(p.lb,1)}</td><td class="r num">${fmtP(p.vig,1)}</td><td class="r num">${p.real!=null?fmtP(p.real,1):"—"}</td></tr>`).join("")}</tbody></table></div></details>`;}
+  return `<div class="mlegend"><span><i class="lkey" style="--c:var(--sv-1)"></i>Avance real (Texto27) de cada revisión cargada</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/></svg>Programado (Texto28) de cada revisión</span><span><i class="lkey d" style="--c:var(--sv-3)"></i>Programado con la línea base</span><span><i class="lkey" style="--c:var(--sv-2)"></i>Programado con las fechas vigentes</span></div>
+  <div class="mdl-wrap"><svg class="pgc" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Curva S de ${progName(P.contr)}${ult?`: avance real ${fmtP(ult.r,1)} y programado ${fmtP(ult.p,1)} al ${fmtD(ult.d)}`:""}`)}">${g}</svg></div>
+  <details><summary class="small" style="cursor:pointer;color:var(--ink-2)">Ver los datos de la curva</summary><div class="tbl-wrap" style="max-height:320px;margin-top:6px"><table class="tec"><thead><tr><th>Semana</th><th class="r">Programado línea base</th><th class="r">Programado fechas vigentes</th></tr></thead><tbody>${pts.map(p=>`<tr><td class="num">${fmtD(p.d)}</td><td class="r num">${fmtP(p.lb,1)}</td><td class="r num">${fmtP(p.vig,1)}</td></tr>`).join("")}</tbody></table></div>
+  ${C.rev.length?`<div class="tbl-wrap" style="margin-top:6px"><table class="tec"><thead><tr><th>Fecha de estado</th><th class="r">Programado (Texto28)</th><th class="r">Avance real (Texto27)</th></tr></thead><tbody>${C.rev.map(v=>`<tr><td class="num">${fmtD(v.d)}</td><td class="r num">${fmtP(v.p,1)}</td><td class="r num">${fmtP(v.r,1)}</td></tr>`).join("")}</tbody></table></div>`:""}</details>`;}
 function pgXhShow(i,cx,cy){const C=PGCUR;if(!C||!C.pts[i])return;C.i=i;const p=C.pts[i],xh=document.getElementById("pg-xh");if(!xh)return;const x=C.X(pgEnd(p.d));
   xh.setAttribute("x1",x.toFixed(1));xh.setAttribute("x2",x.toFixed(1));xh.style.display="";
-  const g=tipEl();g.textContent=`Semana del ${fmtD(p.d)}\n${p.real!=null?fmtP(p.real,1)+" · real en terreno\n":""}${fmtP(p.vig,1)} · programa vigente\n${fmtP(p.lb,1)} · línea base`;g.style.display="block";
+  const v=[...C.rev].reverse().find(z=>z.d<=p.d);
+  const g=tipEl();g.textContent=`Semana del ${fmtD(p.d)}\n${fmtP(p.lb,1)} · programado con la línea base\n${fmtP(p.vig,1)} · programado con las fechas vigentes${v?`\n${fmtP(v.r,1)} · avance real al ${fmtD(v.d)}${v.p!=null?` (programado ${fmtP(v.p,1)})`:""}`:""}`;g.style.display="block";
   if(cx==null){const bb=xh.ownerSVGElement.getBoundingClientRect();cx=bb.left+x/C.W*bb.width;cy=bb.top+bb.height*0.3;}
   const w=g.offsetWidth,hh=g.offsetHeight;let tx=cx+14,ty=cy+16;if(tx+w>innerWidth-8)tx=cx-w-12;if(ty+hh>innerHeight-8)ty=cy-hh-12;g.style.left=tx+"px";g.style.top=ty+"px";}
 const pgXhOff=()=>{const xh=document.getElementById("pg-xh");if(xh)xh.style.display="none";tipEl().style.display="none";};
@@ -2512,7 +2535,8 @@ async function pgCargar(){
   try{const R=parseMSP(await decodeBuf(await f.arrayBuffer()));const id=progKey(c),prev=S.prog.get(id),root=R.T.find(t=>t.l===0)||null;
     const rev={archivo:f.name,estado:R.proj.estado,fin:(root&&root.F)||R.proj.fin,finLB:root?root.bF:"",decl:root?root.p:null,fecha:today(),por:S.userName};
     const data={v:1,contr:c,archivo:f.name,titulo:R.proj.titulo||R.proj.nombre||f.name,estado:R.proj.estado,inicio:R.proj.inicio,fin:R.proj.fin,cargado:{fecha:today(),ts:Date.now(),por:S.userName},T:R.T,revs:[rev].concat((prev&&prev.revs)||[]).slice(0,12)};
-    await setConfig(id,data);const M=pgModel(data);S.pg.sel=id;S.pg.pref="";
+    const M=pgModel(data);rev.r27=M.tot.r;rev.p28=M.tot.p;
+    await setConfig(id,data);S.pg.sel=id;S.pg.pref="";
     S.imp={running:false,ok:true,msg:`Programa de ${progName(c)} cargado: ${R.T.length} tareas; ${M.meas.length} se comparan con terreno y ${M.sinEq} quedan sin equivalencia en la app.`};}
   catch(e){S.imp={running:false,ok:false,msg:e&&e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"No se pudo leer el programa.")};}
   render();}
@@ -2524,9 +2548,14 @@ async function pgQuitar(id){const P=S.prog.get(id);if(!P||!S.canAdmin)return;
 /* --- vista --- */
 const PG_EST_C={ok:"var(--lib-ok)",late:"var(--lib-res)",low:"var(--lib-tram)",run:"var(--accent)",fut:"var(--lib-pend)",na:"var(--lib-na)"};
 const pgChip=e=>`<span class="lst" style="--c:${PG_EST_C[e.k]}">${esc(e.t)}</span>`;
-function pgEst(r,x,now){if(!x||x.real==null)return {k:"na",t:"Sin medición"};if(x.real>=99.95)return {k:"ok",t:"Terminada"};
-  const S0=pgMs(r.t.S),F0=pgMs(r.t.F);if(F0<=now)return {k:"late",t:"Término vencido"};if(S0<=now&&x.real<=0)return {k:"late",t:"Inicio vencido"};
-  if(S0<now&&x.real<(x.vig||0)-20)return {k:"low",t:"Bajo lo programado"};if(S0>now)return x.real>0?{k:"run",t:"Adelantada"}:{k:"fut",t:"Por iniciar"};return {k:"run",t:"En plazo"};}
+/* estado de una tarea según su avance real y su programado (los del programa), a la fecha de estado */
+function pgEst(t,p,re,ref){if(re==null)return {k:"na",t:"Sin dato"};if(re>=99.95)return {k:"ok",t:"Terminada"};
+  const S0=pgMs(t.S),F0=pgMs(t.F);if(F0<=ref)return {k:"late",t:"Término vencido"};if(S0<=ref&&re<=0)return {k:"late",t:"Inicio vencido"};
+  if(p!=null&&re<p-20)return {k:"low",t:"Bajo lo programado"};if(S0>ref)return re>0?{k:"run",t:"Adelantada"}:{k:"fut",t:"Por iniciar"};return {k:"run",t:"En plazo"};}
+const pgDev=T=>T.p!=null&&T.r!=null?ppHtml(T.r-T.p):"—";
+const pgIdxTxt=T=>T.p!=null&&T.r!=null&&T.p>0.5?(T.r/T.p).toFixed(2).replace(".",","):"—";
+/* terreno de la app junto al avance real que el programa informa para esas mismas tareas */
+const pgTerTd=A=>A?`${fmtP(A.ter,1)}<small>programa ${fmtP(A.real,1)} · ${nTxt(A.n,"tarea","tareas")}</small>`:"—";
 const PG_SEV={alta:{t:"Alta",c:"var(--lib-res)"},media:{t:"Media",c:"var(--lib-tram)"},info:{t:"Aviso",c:"var(--lib-pend)"}};
 function pgAlertsHtml(al,k,conProg){if(!al.length)return `<p class="muted" style="margin:0">Sin alertas.</p>`;
   let h=`<div class="stack" style="gap:12px">`;
@@ -2543,51 +2572,53 @@ function vProgramas(){
     <div class="field"><label for="pg-file">Programa (XML de MS Project)</label><input id="pg-file" type="file" accept=".xml,text/xml,application/xml"></div><button class="btn" id="pg-load" ${S.imp&&S.imp.running?"disabled":""}>Cargar programa</button></div>
     <p class="small muted" style="margin:0">En MS Project: Archivo → Guardar como → Formato XML. Un programa por contratista: una revisión nueva reemplaza a la anterior y queda en el registro de revisiones. El alcance se cruza con las estructuras que la app asigna a ese contratista.</p>`;}
   if(!ps.length)return h+`<p class="muted" style="margin:0">Aún no hay programas cargados.${S.canAdmin?"":" Un administrador debe cargarlos."}</p></section></div>`;
-  h+=`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista · programa</th><th class="r">Fecha de estado</th><th class="r">Prog. línea base</th><th class="r">Prog. vigente</th><th class="r">Real en terreno</th><th class="r">Declarado</th><th class="r">Real − LB</th><th class="r">Índice</th><th class="r">Término vigente</th><th class="r">Alertas alta / media</th></tr></thead><tbody>
-  ${ps.map(P=>{const k=progKey(P.contr),M=pgModel(P),X=pgNow(P),A=X.agg,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length,nm=X.al.filter(a=>a.sev==="media").length;
-    return `<tr${G.sel===k?` class="on"`:""}><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(k)}">${esc(progName(P.contr))}</button><small>${esc(P.titulo||P.archivo||"")}</small></td><td class="r num">${pgD(P.estado)}</td><td class="r num">${A?fmtP(A.lb,1):"—"}</td><td class="r num">${A?fmtP(A.vig,1):"—"}</td><td class="r num"><b>${A?fmtP(A.real,1):"—"}</b></td><td class="r num">${A?fmtP(A.decl,1):"—"}</td><td class="r num">${A?ppHtml(A.real-A.lb):"—"}</td><td class="r num">${A&&A.lb>0.5?(A.real/A.lb).toFixed(2).replace(".",","):"—"}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"} / ${nm}</td></tr>`;}).join("")}</tbody></table></div>
-  <p class="small muted" style="margin:0">Promedios ponderados de las tareas de cada programa que tienen equivalente en la app. Índice = real ÷ programado según la línea base (1,00 = al día). Toca un contratista para ver su detalle.</p></section>`;
+  h+=`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista · programa</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Índice</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas alta / media</th></tr></thead><tbody>
+  ${ps.map(P=>{const k=progKey(P.contr),M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length,nm=X.al.filter(a=>a.sev==="media").length;
+    return `<tr${G.sel===k?` class="on"`:""}><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(k)}">${esc(progName(P.contr))}</button><small>${esc(P.titulo||P.archivo||"")}</small></td><td class="r num">${pgD(P.estado)}</td><td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgIdxTxt(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"} / ${nm}</td></tr>`;}).join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado = Texto28 y avance real = Texto27 de cada programa, a su fecha de estado, ponderados con los pesos del contratista. Índice = avance real ÷ programado (1,00 = al día). Terreno = lo registrado en la app en las tareas que tienen equivalente, junto al avance real que el programa informa para esas mismas tareas. Toca un contratista para ver su detalle.</p></section>`;
   const P=S.prog.get(G.sel);if(P)h+=pgDetalle(P);
   return h+`</div>`;}
-function pgDetalle(P){const G=S.pg,M=pgModel(P),X=pgNow(P),A=X.agg,R=M.root,k=progKey(P.contr),now=X.now,dv=R?pgDias(R.F,R.bF):null;
+function pgDetalle(P){const G=S.pg,M=pgModel(P),X=pgNow(P),A=X.agg,T0=M.tot,R=M.root,k=progKey(P.contr),now=X.now,ref=X.ref,dv=R?pgDias(R.F,R.bF):null;
   const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;
   let h=`<section class="panel stack"><div class="spread"><div class="stack" style="gap:2px"><h2>${esc(progName(P.contr))} · ${esc(P.titulo||"")}</h2><span class="small muted">${esc(P.archivo||"")} · fecha de estado ${pgD(P.estado)} · cargado el ${pgD(P.cargado&&P.cargado.fecha)}${P.cargado&&P.cargado.por?" por "+esc(P.cargado.por):""}</span></div>${S.canAdmin?`<button class="btn small ghost" data-pgdel="${esc(k)}">Quitar programa</button>`:""}</div>
-  <div class="tmfig">${fig("Programado · línea base",A?fmtP(A.lb,1):"—","a hoy, con las fechas de línea base")}${fig("Programado · vigente",A?fmtP(A.vig,1):"—","a hoy, con las fechas actuales del programa")}${fig("Real en terreno",A?fmtP(A.real,1):"—",A?`${ppTxt(A.real-A.lb)} frente a la línea base`:"sin tareas comparables",A&&A.real-A.lb<-5?"crit":"")}${fig("Declarado en el programa",A?fmtP(A.decl,1):"—",`por el contratista, al ${pgD(P.estado)}`)}${fig("Índice de cumplimiento",A&&A.lb>0.5?(A.real/A.lb).toFixed(2).replace(".",","):"—","real ÷ programado línea base")}${fig("Término vigente",R&&R.F?pgD(R.F):"—",dv?`${dv>0?"+":""}${dv} días vs línea base (${pgD(R.bF)})`:R&&R.bF?`línea base ${pgD(R.bF)}`:"",dv>0?"crit":"")}</div>
-  <p class="small muted" style="margin:0">${M.meas.length} de ${M.recs.length} tareas se comparan con terreno, ponderadas por ${M.basis==="hh"?"las horas-hombre del programa":"la duración de cada tarea"}. ${M.sinEq} quedan sin equivalencia en la app (ingeniería, suministros, permisos, pruebas u obras que la app no registra) y no entran a la comparación; las ves en «Sin equivalencia».</p></section>`;
-  h+=`<section class="panel stack"><div class="spread"><h2>Curva S</h2><span class="small muted">Tareas que se comparan con terreno · lo real se rehace con el historial de registros</span></div>${pgChart(P)}</section>`;
+  <div class="tmfig">${fig("Programado",fmtP(T0.p,1),`${M.campos?"Texto28 del programa":"calculado con la línea base"} · al ${pgD(P.estado)}`)}${fig("Avance real",fmtP(T0.r,1),`${M.campos?"Texto27 del programa":"% completado del programa"} · al ${pgD(P.estado)}`)}${fig("Desviación",T0.p!=null&&T0.r!=null?ppTxt(T0.r-T0.p):"—","avance real − programado",T0.p!=null&&T0.r!=null&&T0.r-T0.p<-5?"crit":"")}${fig("Índice de cumplimiento",pgIdxTxt(T0),"avance real ÷ programado")}${fig("Registrado en terreno",A?fmtP(A.ter,1):"—",A?`en la app; el programa informa ${fmtP(A.real,1)} en esas ${nTxt(A.n,"tarea","tareas")}`:"sin tareas con equivalente en la app",A&&Math.abs(A.ter-A.real)>=10?"crit":"")}${fig("Término vigente",R&&R.F?pgD(R.F):"—",dv?`${dv>0?"+":""}${dv} días vs línea base (${pgD(R.bF)})`:R&&R.bF?`línea base ${pgD(R.bF)}`:"",dv>0?"crit":"")}</div>
+  <p class="small muted" style="margin:0">${nTxt(M.leaves.filter(t=>!t.m).length,"tarea","tareas")} ponderadas con ${M.basis==="peso"?"los pesos del programa (Texto30)":M.basis==="hh"?"las horas-hombre del programa":"la duración de cada tarea"}.${M.campos?"":" Este programa no trae Texto27/Texto28: el programado se calcula con la línea base a la fecha de estado y el avance real es el % completado."} ${M.meas.length} tienen equivalente en la app y se contrastan con lo registrado en terreno; ${M.sinEq} no (ingeniería, suministros, permisos, pruebas u obras que la app no registra).</p></section>`;
+  h+=`<section class="panel stack"><div class="spread"><h2>Curva S</h2><span class="small muted">Todas las tareas del programa, con sus pesos</span></div>${pgChart(P)}</section>`;
   h+=`<section class="panel stack"><h2>Alertas del programa</h2>${pgAlertsHtml(X.al,k,false)}</section>`;
   /* partidas del programa (EDT) */
-  {const tr=[];for(const t of P.T){if(!t.s||t.l<1||t.l>G.prof)continue;const a=pgAgg(M,X.byO,t.o);if(!a)continue;
-    tr.push(`<tr${G.pref===t.o?` class="on"`:""}><td class="mono small">${esc(t.o)}</td><td class="nm" style="padding-left:${10+(t.l-1)*14}px"><button class="linkbtn" style="font-family:var(--f-body);text-align:left;white-space:normal" data-pgpref="${esc(t.o)}">${esc(t.n)}</button></td><td class="r num">${a.n}</td><td class="r num small">${pgD(t.bS)} – ${pgD(t.bF)}</td><td class="r num small">${pgD(t.S)} – ${pgD(t.F)}</td><td class="r num">${fmtP(a.lb,1)}</td><td class="r num">${fmtP(a.vig,1)}</td><td class="r num"><b>${fmtP(a.real,1)}</b></td><td class="r num">${fmtP(a.decl,1)}</td><td class="r num">${ppHtml(a.real-a.lb)}</td></tr>`);}
+  {const tr=[];for(const t of P.T){if(!t.s||t.l<1||t.l>G.prof)continue;const p=M.pv.get(t.o),re=M.rv.get(t.o);
+    tr.push(`<tr${G.pref===t.o?` class="on"`:""}><td class="mono small">${esc(t.o)}</td><td class="nm" style="padding-left:${10+(t.l-1)*14}px"><button class="linkbtn" style="font-family:var(--f-body);text-align:left;white-space:normal" data-pgpref="${esc(t.o)}">${esc(t.n)}</button></td><td class="r num small">${pgD(t.bS)} – ${pgD(t.bF)}</td><td class="r num small">${pgD(t.S)} – ${pgD(t.F)}</td><td class="r num">${fmtP(p,1)}</td><td class="r num"><b>${fmtP(re,1)}</b></td><td class="r num">${pgDev({p,r:re})}</td><td class="r num">${pgTerTd(pgAgg(M,X.ter,t.o))}</td></tr>`);}
   h+=`<section class="panel stack"><div class="spread"><h2>Avance por partida del programa</h2><div class="row" style="gap:8px"><label for="pg-prof" class="small">Niveles de la EDT</label><select id="pg-prof" style="width:auto">${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${G.prof===n?"selected":""}>${n}</option>`).join("")}</select></div></div>
-  ${tr.length?`<div class="tbl-wrap" id="pg-wbs" data-keep-scroll="1" style="max-height:560px"><table class="tec rp"><thead><tr><th>EDT</th><th>Partida</th><th class="r">Tareas</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Prog. LB</th><th class="r">Prog. vigente</th><th class="r">Real</th><th class="r">Declarado</th><th class="r">Real − LB</th></tr></thead><tbody>${tr.join("")}</tbody></table></div>
-  <p class="small muted" style="margin:0">Toca una partida para ver solo sus tareas. Prog. LB y Prog. vigente = avance que debería tener hoy con las fechas de línea base o con las actuales del programa.</p>`:`<p class="muted" style="margin:0">El programa no tiene partidas con tareas que se comparen con terreno.</p>`}</section>`;}
+  ${tr.length?`<div class="tbl-wrap" id="pg-wbs" data-keep-scroll="1" style="max-height:560px"><table class="tec rp"><thead><tr><th>EDT</th><th>Partida</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Terreno (app)</th></tr></thead><tbody>${tr.join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado y avance real de cada partida tal como los informa el programa (Texto28 y Texto27) al ${pgD(P.estado)}. Terreno = lo registrado en la app en las tareas de la partida que tienen equivalente. Toca una partida para ver solo sus tareas.</p>`:`<p class="muted" style="margin:0">El programa no tiene partidas.</p>`}</section>`;}
   /* tareas */
   {const q=nrm(G.q),inP=t=>!G.pref||t.o===G.pref||t.o.indexOf(G.pref+".")===0,alO=new Set(X.al.filter(a=>a.o).map(a=>a.o)),LIM=400;
-  const VIS=[["alertas","Con alerta"],["curso","En ejecución"],["todas","Todas las comparables"],["hitos","Hitos"],["sin","Sin equivalencia"]];
+  const VIS=[["alertas","Con alerta"],["curso","En ejecución"],["todas","Todas"],["comp","Con equivalencia en terreno"],["hitos","Hitos"],["sin","Sin equivalencia"]];
   h+=`<section class="panel stack"><div class="spread"><h2>Tareas</h2>${G.pref?`<span class="small">Partida <b class="mono">${esc(G.pref)}</b> ${esc((M.byO.get(G.pref)||{}).n||"")} <button class="btn small ghost" data-pgpref="">Quitar filtro</button></span>`:""}</div>
   <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Ver</label><div class="seg" role="group" aria-label="Tareas">${VIS.map(([v,t])=>`<button data-pgvista="${v}" aria-pressed="${G.vista===v}">${t}</button>`).join("")}</div></div>
   <div class="field"><label for="pg-q">Buscar</label><input id="pg-q" type="search" value="${esc(G.q)}" placeholder="Tarea, estructura o EDT" autocomplete="off"></div></div>`;
   const busca=(t,extra)=>!q||nrm(t.n).includes(q)||t.o.indexOf(q)===0||(extra&&nrm(extra).includes(q));
   if(G.vista==="hitos"){const L=M.ms.filter(t=>inP(t)&&busca(t));
-    h+=L.length?`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>EDT</th><th>Hito</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Desplazamiento</th><th class="r">Declarado</th><th>Estado</th></tr></thead><tbody>${L.map(t=>{const F0=pgMs(t.F),dv=pgDias(t.F,t.bF),e=t.p>=100?{k:"ok",t:"Cumplido"}:F0<=now?{k:"late",t:"Vencido"}:F0<=now+30*PG_DAY?{k:"low",t:"Próximo"}:{k:"fut",t:"Pendiente"};
-      return `<tr><td class="mono small">${esc(t.o)}</td><td class="nm">${esc(t.n)}${t.c?` <span class="small crit">· ruta crítica</span>`:""}</td><td class="r num">${pgD(t.bF)}</td><td class="r num">${pgD(t.F)}</td><td class="r num">${dv?`<span class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</span>`:"—"}</td><td class="r num">${fmtP(t.p)}</td><td>${pgChip(e)}</td></tr>`;}).join("")}</tbody></table></div>`:`<p class="muted" style="margin:0">Sin hitos${G.pref?" en esta partida":""}.</p>`;}
+    h+=L.length?`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>EDT</th><th>Hito</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Desplazamiento</th><th class="r">Avance real</th><th>Estado</th></tr></thead><tbody>${L.map(t=>{const re=M.rv.get(t.o),F0=pgMs(t.F),dv=pgDias(t.F,t.bF),e=re>=100?{k:"ok",t:"Cumplido"}:F0<=ref?{k:"late",t:"Vencido"}:F0<=now+30*PG_DAY?{k:"low",t:"Próximo"}:{k:"fut",t:"Pendiente"};
+      return `<tr><td class="mono small">${esc(t.o)}</td><td class="nm">${esc(t.n)}${t.c?` <span class="small crit">· ruta crítica</span>`:""}</td><td class="r num">${pgD(t.bF)}</td><td class="r num">${pgD(t.F)}</td><td class="r num">${dv?`<span class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</span>`:"—"}</td><td class="r num">${fmtP(re)}</td><td>${pgChip(e)}</td></tr>`;}).join("")}</tbody></table></div>`:`<p class="muted" style="margin:0">Sin hitos${G.pref?" en esta partida":""}.</p>`;}
   else if(G.vista==="sin"){const L=M.recs.filter(r=>!r.parts&&inP(r.t)&&busca(r.t,r.why));
-    h+=L.length?`<div class="tbl-wrap" style="max-height:620px"><table class="tec rp"><thead><tr><th>EDT</th><th>Tarea</th><th>Motivo</th><th class="r">Vigente</th><th class="r">Declarado</th></tr></thead><tbody>${L.slice(0,LIM).map(r=>`<tr><td class="mono small">${esc(r.t.o)}</td><td class="nm">${esc(r.t.n)}<small>${esc((M.byO.get(pgPar(r.t.o))||{}).n||"")}</small></td><td class="small" style="white-space:normal;min-width:200px">${esc(r.why)}</td><td class="r num small">${pgD(r.t.S)} – ${pgD(r.t.F)}</td><td class="r num">${fmtP(r.t.p)}</td></tr>`).join("")}</tbody></table></div>${L.length>LIM?`<p class="small muted" style="margin:0">Se muestran ${LIM} de ${L.length}; usa la búsqueda o elige una partida.</p>`:""}`:`<p class="muted" style="margin:0">Todas las tareas${G.pref?" de esta partida":""} tienen equivalencia.</p>`;}
-  else{let L=M.meas.filter(r=>inP(r.t)&&busca(r.t,r.sl));
-    if(G.vista==="alertas")L=L.filter(r=>alO.has(r.t.o));
-    else if(G.vista==="curso")L=L.filter(r=>{const x=X.byO.get(r.t.o),S0=pgMs(r.t.S),F0=pgMs(r.t.F);return (S0<=now&&F0>now)||(x&&x.real>0&&x.real<99.95);});
-    h+=L.length?`<div class="tbl-wrap" id="pg-tbl" data-keep-scroll="1" style="max-height:620px"><table class="tec rp"><thead><tr><th>EDT</th><th>Tarea</th><th>Alcance · se compara con</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Prog. LB</th><th class="r">Prog. vig.</th><th class="r">Real</th><th class="r">Declarado</th><th>Estado</th></tr></thead><tbody>${L.slice(0,LIM).map(r=>{const x=X.byO.get(r.t.o);
-      return `<tr><td class="mono small">${esc(r.t.o)}</td><td class="nm">${esc(r.t.n)}${r.t.c?` <span class="small crit">· ruta crítica</span>`:""}<small>${esc((M.byO.get(pgPar(r.t.o))||{}).n||"")}</small></td><td class="nm small">${esc(r.sl)}<small>${esc(r.ml)}</small></td><td class="r num small">${pgD(pgLB(r.t)[0])} – ${pgD(pgLB(r.t)[1])}</td><td class="r num small">${pgD(r.t.S)} – ${pgD(r.t.F)}</td><td class="r num">${fmtP(x&&x.lb)}</td><td class="r num">${fmtP(x&&x.vig)}</td><td class="r num"><b>${x&&x.real!=null?fmtP(x.real):"—"}</b></td><td class="r num">${fmtP(r.t.p)}</td><td>${pgChip(pgEst(r,x,now))}</td></tr>`;}).join("")}</tbody></table></div>${L.length>LIM?`<p class="small muted" style="margin:0">Se muestran ${LIM} de ${L.length}; usa la búsqueda o elige una partida.</p>`:""}`
+    h+=L.length?`<div class="tbl-wrap" style="max-height:620px"><table class="tec rp"><thead><tr><th>EDT</th><th>Tarea</th><th>Motivo</th><th class="r">Vigente</th><th class="r">Programado</th><th class="r">Avance real</th></tr></thead><tbody>${L.slice(0,LIM).map(r=>`<tr><td class="mono small">${esc(r.t.o)}</td><td class="nm">${esc(r.t.n)}<small>${esc((M.byO.get(pgPar(r.t.o))||{}).n||"")}</small></td><td class="small" style="white-space:normal;min-width:200px">${esc(r.why)}</td><td class="r num small">${pgD(r.t.S)} – ${pgD(r.t.F)}</td><td class="r num">${fmtP(M.pv.get(r.t.o))}</td><td class="r num">${fmtP(M.rv.get(r.t.o))}</td></tr>`).join("")}</tbody></table></div>${L.length>LIM?`<p class="small muted" style="margin:0">Se muestran ${LIM} de ${L.length}; usa la búsqueda o elige una partida.</p>`:""}`:`<p class="muted" style="margin:0">Todas las tareas${G.pref?" de esta partida":""} tienen equivalencia.</p>`;}
+  else{const rz=new Map(M.recs.map(r=>[r.t.o,r])),mz=new Map(M.meas.map(r=>[r.t.o,r]));let L=M.leaves.filter(t=>!t.m&&inP(t)&&busca(t,(rz.get(t.o)||{}).sl));
+    if(G.vista==="alertas")L=L.filter(t=>alO.has(t.o));
+    else if(G.vista==="curso")L=L.filter(t=>{const re=M.rv.get(t.o),S0=pgMs(t.S),F0=pgMs(t.F);return (S0<=ref&&F0>ref)||(re>0&&re<99.95);});
+    else if(G.vista==="comp")L=L.filter(t=>mz.has(t.o));
+    h+=L.length?`<div class="tbl-wrap" id="pg-tbl" data-keep-scroll="1" style="max-height:620px"><table class="tec rp"><thead><tr><th>EDT</th><th>Tarea</th><th>Alcance en la app · se compara con</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Terreno (app)</th><th>Estado</th></tr></thead><tbody>${L.slice(0,LIM).map(t=>{const r=mz.get(t.o),z=rz.get(t.o),p=M.pv.get(t.o),re=M.rv.get(t.o),te=X.ter.get(t.o);
+      return `<tr><td class="mono small">${esc(t.o)}</td><td class="nm">${esc(t.n)}${t.c?` <span class="small crit">· ruta crítica</span>`:""}<small>${esc((M.byO.get(pgPar(t.o))||{}).n||"")}</small></td><td class="nm small">${r?`${esc(r.sl)}<small>${esc(r.ml)}</small>`:`<span class="muted">${esc((z&&z.why)||"Sin equivalencia en la app")}</span>`}</td><td class="r num small">${pgD(pgLB(t)[0])} – ${pgD(pgLB(t)[1])}</td><td class="r num small">${pgD(t.S)} – ${pgD(t.F)}</td><td class="r num">${fmtP(p)}</td><td class="r num"><b>${fmtP(re)}</b></td><td class="r num">${te!=null?fmtP(te):"—"}</td><td>${pgChip(pgEst(t,p,re,ref))}</td></tr>`;}).join("")}</tbody></table></div>${L.length>LIM?`<p class="small muted" style="margin:0">Se muestran ${LIM} de ${L.length}; usa la búsqueda o elige una partida.</p>`:""}`
       :`<p class="muted" style="margin:0">${G.vista==="alertas"?"Ninguna tarea con alerta":"No hay tareas"}${G.pref?" en esta partida":""}${q?" con esa búsqueda":""}.</p>`;}
-  h+=`<p class="small muted" style="margin:0">Programado = lineal entre el inicio y el fin de cada tarea. Real = avance registrado en la app sobre las estructuras, vanos o partidas que nombra la tarea (si no nombra ninguna, las del contratista que calzan con la ruta: norte/sur, suspensión/anclaje). La liberación se mide con su estado actual.</p></section>`;}
-  if((P.revs||[]).length)h+=`<section class="panel stack"><h2>Revisiones cargadas</h2><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Archivo</th><th class="r">Fecha de estado</th><th class="r">Término vigente</th><th class="r">Término línea base</th><th class="r">Declarado total</th><th>Cargado</th></tr></thead><tbody>${P.revs.map(v=>`<tr><td>${esc(v.archivo||"")}</td><td class="r num">${pgD(v.estado)}</td><td class="r num">${pgD(v.fin)}</td><td class="r num">${pgD(v.finLB)}</td><td class="r num">${v.decl!=null?fmtP(v.decl):"—"}</td><td class="small">${pgD(v.fecha)}${v.por?" · "+esc(v.por):""}</td></tr>`).join("")}</tbody></table></div></section>`;
+  h+=`<p class="small muted" style="margin:0">Programado y avance real = Texto28 y Texto27 de cada tarea, a la fecha de estado del programa (${pgD(P.estado)}); el estado de la tarea se evalúa a esa fecha. Terreno = avance registrado en la app sobre las estructuras, vanos o partidas que nombra la tarea (si no nombra ninguna, las del contratista que calzan con la ruta: norte/sur, suspensión/anclaje); la liberación se mide con su estado actual.</p></section>`;}
+  if((P.revs||[]).length)h+=`<section class="panel stack"><h2>Revisiones cargadas</h2><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Archivo</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Término vigente</th><th class="r">Término línea base</th><th>Cargado</th></tr></thead><tbody>${P.revs.map(v=>`<tr><td>${esc(v.archivo||"")}</td><td class="r num">${pgD(v.estado)}</td><td class="r num">${fmtP(v.p28,1)}</td><td class="r num"><b>${fmtP(v.r27!=null?v.r27:v.decl,1)}</b></td><td class="r num">${pgD(v.fin)}</td><td class="r num">${pgD(v.finLB)}</td><td class="small">${pgD(v.fecha)}${v.por?" · "+esc(v.por):""}</td></tr>`).join("")}</tbody></table></div></section>`;
   return h;}
-/* Resumen: programado frente a real de cada contratista */
+/* Resumen: programado frente a avance real de cada contratista (de su programa) y lo registrado en terreno */
 function pgResumen(){const ps=progs();if(!ps.length)return "";
-  return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Programado línea base</th><th class="r">Programado vigente</th><th class="r">Real en terreno</th><th class="r">Real − LB</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
-  ${ps.map(P=>{const M=pgModel(P),X=pgNow(P),A=X.agg,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length;
-    return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td><td class="r num">${A?fmtP(A.lb,1):"—"}</td><td class="r num">${A?fmtP(A.vig,1):"—"}</td><td class="r num"><b>${A?fmtP(A.real,1):"—"}</b></td><td class="r num">${A?ppHtml(A.real-A.lb):"—"}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div></section>`;}
+  return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
+  ${ps.map(P=>{const M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length;
+    return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td><td class="r num">${pgD(P.estado)}</td><td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de cada programa a su fecha de estado. Terreno = lo registrado en la app en las tareas con equivalente, junto al avance real que el programa informa para ellas.</p></section>`;}
 
 /* ---------- Reporte semanal ---------- */
 /* Compara el avance al cierre del día anterior al período con el avance al último día del período. El avance a una fecha se
@@ -2669,7 +2700,8 @@ function repCalc(){const R=S.rep;
     for(const it of seItems(c.id)){const q=it.cat+"|"+it.id,a=P0.se.byI[q]||0,b=P1.se.byI[q]||0;z.n++;if(b>=99.95)z.acum++;if(a<99.95&&b>=99.95)z.ter.push(it.id);else if(a<=0&&b>0)z.ini.push(it.id);}
     return z;});
   /* programas de los contratistas: programado y real al inicio y al cierre del período; alertas vigentes (sin los avisos) */
-  x.pg=progs().map(P=>{const M=pgModel(P);return {P,a:pgEvalAt(M,g0,pgEnd(f0)),b:pgEvalAt(M,g1,pgEnd(R.hasta))};}).filter(z=>z.a&&z.b);
+  x.pg=progs().map(P=>{const M=pgModel(P),C=pgCurve(P),rev=C?C.rev:[],ult=d=>[...rev].reverse().find(v=>v.d<=d)||null;
+    return {P,M,prog:M.tot.p,real:M.tot.r,ta:pgEvalAt(M,g0,pgEnd(f0)),tb:pgEvalAt(M,g1,pgEnd(R.hasta)),prA:pgPlanAll(M,pgEnd(f0)),prB:pgPlanAll(M,pgEnd(R.hasta)),ra:ult(f0),rb:ult(R.hasta)};});
   x.pgAl=[].concat(...progs().map(P=>pgNow(P).al)).filter(a=>a.sev!=="info");
   REPC={av:S.av,g:gc(),se:S.se,pr:S.prog,hoy:today(),d:R.desde,h:R.hasta,x};return x;}
 function repAlertas(x){const out=[];
@@ -2702,9 +2734,9 @@ function vReporte(){
    <tr><td><b>Avance ponderado</b></td><td></td>${list.map(s=>`<td class="r num"><b>${fmtP(P1.sec[s.id].pct,1)}</b><small>${ppTxt(P1.sec[s.id].pct-P0.sec[s.id].pct)}</small></td>`).join("")}<td class="r num">${fmtP(P0.lineaPct,1)}</td><td class="r num"><b>${fmtP(P1.lineaPct,1)}</b></td><td class="r num">${ppHtml(P1.lineaPct-P0.lineaPct)}</td></tr></tbody></table></div>
    <p class="small muted" style="margin:0">El avance a cada fecha se rehace con el historial: en cada actividad vale el registro con la fecha más reciente hasta ese día, igual que en el resto de la app. Aporte al global = avance del período × lo que pondera la parte. En las columnas por sector, la cifra chica es la variación del período.</p></section>`;}
   /* programado vs real por contratista (programas cargados) */
-  if(x.pg.length)h+=`<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn noprint" style="font-family:var(--f-body)" data-tab="programas">Ver programas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Programado LB al ${f1}</th><th class="r">Real al ${f1}</th><th class="r">Real − LB</th><th class="r">Programado en el período · LB</th><th class="r">Programado en el período · vigente</th><th class="r">Real en el período</th><th class="r">Cumplimiento del período</th></tr></thead><tbody>
-   ${x.pg.map(z=>{const pl=z.b.vig-z.a.vig,re=z.b.real-z.a.real;return `<tr><td>${esc(progName(z.P.contr))}<small>${esc(z.P.titulo||"")} · estado ${pgD(z.P.estado)}</small></td><td class="r num">${fmtP(z.b.lb,1)}</td><td class="r num"><b>${fmtP(z.b.real,1)}</b></td><td class="r num">${ppHtml(z.b.real-z.b.lb)}</td><td class="r num">${ppTxt(z.b.lb-z.a.lb)}</td><td class="r num">${ppTxt(pl)}</td><td class="r num"><b>${ppTxt(re)}</b></td><td class="r num">${pl>0.05?fmtP(re/pl*100):"—"}</td></tr>`;}).join("")}</tbody></table></div>
-   <p class="small muted" style="margin:0">Sobre las tareas de cada programa que se comparan con terreno. Cumplimiento del período = avance real del período ÷ avance programado del período con las fechas vigentes.</p></section>`;
+  if(x.pg.length)h+=`<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn noprint" style="font-family:var(--f-body)" data-tab="programas">Ver programas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Avance real del período</th><th class="r">Programado del período</th><th class="r">Terreno del período (app)</th></tr></thead><tbody>
+   ${x.pg.map(z=>`<tr><td>${esc(progName(z.P.contr))}<small>${esc(z.P.titulo||"")}</small></td><td class="r num">${pgD(z.P.estado)}</td><td class="r num">${fmtP(z.prog,1)}</td><td class="r num"><b>${fmtP(z.real,1)}</b></td><td class="r num">${pgDev({p:z.prog,r:z.real})}</td><td class="r num">${z.ra&&z.rb&&z.ra!==z.rb?`<b>${ppTxt(z.rb.r-z.ra.r)}</b>`:"—"}</td><td class="r num">${z.prA!=null&&z.prB!=null?ppTxt(z.prB-z.prA):"—"}</td><td class="r num">${z.ta&&z.tb?ppTxt(z.tb.real-z.ta.real):"—"}</td></tr>`).join("")}</tbody></table></div>
+   <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de la última revisión cargada de cada programa. Avance real del período = diferencia entre las revisiones cargadas vigentes al inicio y al cierre del período («—» si no hay dos revisiones). Programado del período = avance de la línea base entre esas fechas, con los pesos del programa. Terreno del período = lo registrado en la app en las tareas con equivalente.</p></section>`;
   /* producción */
   h+=`<section class="panel stack"><h2>Producción del período</h2><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Indicador</th><th class="r">Al 100 % en el período</th><th class="r">Con primer avance</th><th class="r">Acumulado al ${f1}</th><th>N° que llegan al 100 % en el período</th></tr></thead><tbody>
   ${x.prod.map(p=>`<tr><td>${esc(p.t)}<small>${esc(p.u)}</small></td><td class="r num"><b>${p.ter.length}</b></td><td class="r num">${p.ini?p.ini.length:"—"}</td><td class="r num">${p.acum} / ${p.n}</td><td class="rp-ids">${ids(p.ter,80)}</td></tr>`).join("")}</tbody></table></div>
@@ -2752,8 +2784,8 @@ function repTexto(x){const R=S.rep,P0=x.P0,P1=x.P1,T=x.T,c=S.cfg||{},LS=x.libSt,
   for(const z of x.se)if(z.ter.length||Math.abs(z.p1-z.p0)>=0.05)L.push("- S/E, "+z.c.nombre.toLowerCase()+": "+pr(z.p0,z.p1)+(z.ter.length?" · al 100 %: "+listaTxt(z.ter,20):""));
   L.push("","LIBERACIONES","- Cambios registrados: "+x.libEv.length+" ("+x.libN.ser+" servidumbres liberadas, "+x.libN.pmf+" PMF aprobados, "+x.libN.res+" restricciones)");
   L.push("- Estado al "+fmtD(today())+": torres aptas "+LS.t.apta+" de "+LS.t.n+" · vanos aptos "+LS.v.apta+" de "+LS.v.n+" · restringidas "+(LS.t.res+LS.v.res));
-  if(x.pg.length){L.push("","PROGRAMADO VS REAL (tareas de cada programa que se comparan con terreno)");
-    for(const z of x.pg)L.push("- "+progName(z.P.contr)+": real "+fmtP(z.b.real,1)+" frente a "+fmtP(z.b.lb,1)+" programado (línea base) · en el período: real "+ppTxt(z.b.real-z.a.real)+", programado "+ppTxt(z.b.vig-z.a.vig)+" (vigente)");}
+  if(x.pg.length){L.push("","PROGRAMADO VS REAL (programas de los contratistas)");
+    for(const z of x.pg)L.push("- "+progName(z.P.contr)+" (estado "+pgD(z.P.estado)+"): avance real "+fmtP(z.real,1)+" frente a "+fmtP(z.prog,1)+" programado"+(z.prog!=null&&z.real!=null?" ("+ppTxt(z.real-z.prog)+")":"")+(z.ra&&z.rb&&z.ra!==z.rb?" · avance real del período "+ppTxt(z.rb.r-z.ra.r):"")+(z.ta&&z.tb?" · terreno del período "+ppTxt(z.tb.real-z.ta.real):""));}
   const AL=repAlertas(x);L.push("","ALERTAS");if(!AL.length)L.push("- Sin alertas en el período.");for(const a of AL)L.push("- "+a.titulo+": "+a.detalle);
   L.push("","REGISTROS EN TERRENO: "+x.regs.length+" de "+nTxt(x.insp.length,"inspector","inspectores")+(x.cargas?" · "+nTxt(x.cargas,"carga","cargas")+" de matriz Excel":""));
   for(const i of x.insp)L.push("- "+i.nombre+": "+i.n);
@@ -2770,8 +2802,9 @@ function repPayload(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T,c=S.cfg||{
     se:x.se.map(z=>({partida:z.c.nombre,inicio:r1(z.p0),cierre:r1(z.p1),al100:z.ter,acumulado:z.acum,total:z.n})),
     contratistas:x.contr.map(r=>({nombre:r.c,estructuras:r.n,registros:r.regs,elementosConAvance:r.el.size,fundaciones:r.fun,montaje:r.mon,vanosConductor:r.ten,avanceMedio:r1(r.t1/r.n)})),
     liberaciones:{cambios:x.libEv.length,servidumbresLiberadas:x.libN.ser,pmfAprobados:x.libN.pmf,restricciones:x.libN.res,torresAptas:x.libSt.t.apta,torres:x.libSt.t.n,vanosAptos:x.libSt.v.apta,vanos:x.libSt.v.n},
-    programas:x.pg.map(z=>({contratista:progName(z.P.contr),programa:z.P.titulo||"",fechaEstado:z.P.estado||"",real:r1(z.b.real),programadoLB:r1(z.b.lb),programadoVigente:r1(z.b.vig),
-      periodo:{real:r1(z.b.real-z.a.real),programadoLB:r1(z.b.lb-z.a.lb),programadoVigente:r1(z.b.vig-z.a.vig)}})),
+    programas:x.pg.map(z=>({contratista:progName(z.P.contr),programa:z.P.titulo||"",fechaEstado:z.P.estado||"",programado:z.prog!=null?r1(z.prog):null,avanceReal:z.real!=null?r1(z.real):null,
+      desviacion:z.prog!=null&&z.real!=null?r1(z.real-z.prog):null,
+      periodo:{avanceReal:z.ra&&z.rb&&z.ra!==z.rb?r1(z.rb.r-z.ra.r):null,programado:z.prA!=null&&z.prB!=null?r1(z.prB-z.prA):null,terreno:z.ta&&z.tb?r1(z.tb.real-z.ta.real):null}})),
     alertasProgramas:x.pgAl.map(a=>({prioridad:a.sev,tipo:a.tipo,grupo:PG_AL[a.tipo],contratista:a.prog,tarea:a.titulo,edt:a.o,detalle:a.det})),
     alertas:repAlertas(x),
     registros:{total:x.regs.length,elementos:x.nEl,cargasExcel:x.cargas,inspectores:x.insp.map(i=>({nombre:i.nombre,registros:i.n,elementos:i.el.size}))},
@@ -2789,8 +2822,8 @@ function repCSV(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T;const L=[];
   for(const z of x.se)row([z.c.nombre,f(z.p0),f(z.p1),f(z.p1-z.p0),z.ter.length,z.acum,z.n,z.ter.join(", ")]);
   L.push("");row(["CONTRATISTA","Estructuras","Registros en terreno","Elementos con avance","Fundaciones al 100 %","Estructuras montadas","Vanos con conductor","Avance medio %","Período pp"]);
   for(const r of x.contr)row([r.c,r.n,r.regs,r.el.size,r.fun,r.mon,r.ten,f(r.t1/r.n),f((r.t1-r.t0)/r.n)]);
-  if(x.pg.length){L.push("");row(["PROGRAMADO VS REAL","Programado LB al cierre %","Programado vigente al cierre %","Real al cierre %","Programado LB período pp","Programado vigente período pp","Real período pp","Fecha de estado del programa"]);
-    for(const z of x.pg)row([progName(z.P.contr),f(z.b.lb),f(z.b.vig),f(z.b.real),f(z.b.lb-z.a.lb),f(z.b.vig-z.a.vig),f(z.b.real-z.a.real),pgD(z.P.estado)]);}
+  if(x.pg.length){const fv=v=>v==null?"":f(v);L.push("");row(["PROGRAMADO VS REAL","Fecha de estado","Programado % (Texto28)","Avance real % (Texto27)","Desviación pp","Avance real del período pp (revisiones)","Programado del período pp (línea base)","Terreno del período pp (app)"]);
+    for(const z of x.pg)row([progName(z.P.contr),pgD(z.P.estado),fv(z.prog),fv(z.real),z.prog!=null&&z.real!=null?f(z.real-z.prog):"",z.ra&&z.rb&&z.ra!==z.rb?f(z.rb.r-z.ra.r):"",z.prA!=null&&z.prB!=null?f(z.prB-z.prA):"",z.ta&&z.tb?f(z.tb.real-z.ta.real):""]);}
   L.push("");row(["ALERTAS","Elemento","Estado o actividad","Detalle"]);
   if(!x.noApt.length&&!x.retro.length&&!x.sinReg.length&&!x.pgAl.length)row(["Sin alertas en el período"]);
   for(const a of x.pgAl)row(["Programa · "+PG_AL[a.tipo]+" ("+a.sev+")",a.prog+(a.o?" · EDT "+a.o:""),a.titulo,a.det]);
