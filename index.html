@@ -665,7 +665,8 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 (function(){
 "use strict";
 const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"Cruce"},{id:"isla",nombre:"Isla"}];
-const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal"},{id:"programas",t:"Programas"},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"config",t:"Configuración",admin:true}];
+/* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
+const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"config",t:"Configuración",admin:true}];
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -807,7 +808,7 @@ const S={me:null,userName:"",userEmail:"",canWrite:false,canAdmin:false,
   map:{sec:"total",vista:"det",tt:"",contr:"",q:""},tbl:{sec:"continente",q:"",tt:"",est:""},
   drw:null,draft:null,saving:false,imp:null,chan:null,lastLoad:0,
   se:null,SE:null,seCat:"fun",seDraft:null,
-  rep:{modo:"7d",desde:"",hasta:"",env:false,vista:"ejecutivo",anexo:false,notaEd:null},n8nDraft:null,rnotas:{},
+  rep:{modo:"7d",desde:"",hasta:"",env:false,vista:"ejecutivo",anexo:false,notaEd:null},n8nDraft:null,rnotas:{},n8n:null,
   prog:new Map(),pg:{sel:"",contr:"",vista:"alertas",prof:3,pref:"",q:"",open:new Set()},
   lib:{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:"",sel:new Set(),base:"sat",bulk:{v:"ser",est:"lib",fecha:"",ref:"",obs:""}},pmfEd:null};
 
@@ -845,6 +846,7 @@ async function loadAll(){
   S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=normUni(((cf||[]).find(r=>r.id==="unidades")||{}).data||null);S.se=((cf||[]).find(r=>r.id==="se")||{}).data||null;
   S.prog=new Map((cf||[]).filter(r=>r.id.indexOf("prog__")===0&&r.data).map(r=>[r.id,r.data]));
   S.rnotas=((cf||[]).find(r=>r.id==="rep_notas")||{}).data||{};
+  S.n8n=((cf||[]).find(r=>r.id==="n8n")||{}).data||null;
   const av=new Map();for(let from=0;;from+=1000){const {data,error}=await sb.from("avance").select("id,data").order("id").range(from,from+999);if(error)throw mapErr(error);for(const r of data)av.set(r.id,r.data);if(data.length<1000)break;}
   S.av=av;S.lastLoad=Date.now();
 }
@@ -852,7 +854,7 @@ function subscribe(){
   if(S.chan)return;
   S.chan=sb.channel("cambios-avance")
     .on("postgres_changes",{event:"*",schema:"public",table:"avance"},p=>{const m=new Map(S.av);if(p.eventType==="DELETE"){if(p.old&&p.old.id)m.delete(p.old.id);}else if(p.new&&p.new.id)m.set(p.new.id,p.new.data);S.av=m;schedule();})
-    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;if(r&&r.id==="rep_notas")S.rnotas=r.data||{};
+    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;if(r&&r.id==="rep_notas")S.rnotas=r.data||{};if(r&&r.id==="n8n")S.n8n=r.data||null;
       /* programas de los contratistas: si el aviso llega sin datos (fila grande), se vuelve a leer la fila */
       if(r&&r.id&&r.id.indexOf("prog__")===0){if(r.data){const m=new Map(S.prog);m.set(r.id,r.data);S.prog=m;}else sb.from("config").select("id,data").eq("id",r.id).maybeSingle().then(({data})=>{if(data&&data.data){const m=new Map(S.prog);m.set(data.id,data.data);S.prog=m;schedule();}});}
       if(p.eventType==="DELETE"&&p.old&&p.old.id&&String(p.old.id).indexOf("prog__")===0){const m=new Map(S.prog);m.delete(p.old.id);S.prog=m;}
@@ -862,7 +864,7 @@ function subscribe(){
 async function rpcAvance(key,base,act,hist){const {error}=await sb.rpc("registrar_avance",{p_id:key,p_base:base,p_act:act,p_hist:hist});if(error)throw mapErr(error);}
 function mergeLocal(key,base,act,hist){const prev=S.av.get(key);const d=Object.assign({},prev||base);d.act=Object.assign({},(prev&&prev.act)||{});d.hist=Object.assign({},(prev&&prev.hist)||{},hist);
   for(const [k,v] of Object.entries(act)){const p=d.act[k];if(!p||(p.fecha||"")<=(v.fecha||""))d.act[k]=v;}const m=new Map(S.av);m.set(key,d);S.av=m;}
-async function setConfig(id,data){await withRetry(async()=>{const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);});if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;else if(id==="rep_notas")S.rnotas=data;else if(id.indexOf("prog__")===0){const m=new Map(S.prog);m.set(id,data);S.prog=m;}}
+async function setConfig(id,data){await withRetry(async()=>{const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);});if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;else if(id==="rep_notas")S.rnotas=data;else if(id==="n8n")S.n8n=data;else if(id.indexOf("prog__")===0){const m=new Map(S.prog);m.set(id,data);S.prog=m;}}
 async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||{};await setConfig(id,Object.assign({},base,patch));}
 
 /* ---------- modelo ---------- */
@@ -998,6 +1000,7 @@ function render(){
     if(S.canAdmin&&S.tab==="config"){html+=vConfig();}
     else html+=`<div class="panel empty stack" style="align-items:center"><h2>La app aún no tiene datos cargados</h2><p>${S.canAdmin?"Ve a <b>Configuración</b> e importa el respaldo de la app anterior (archivo JSON).":"Un administrador debe cargar los datos del proyecto."}</p>${S.canAdmin?`<button class="btn primary" data-tab="config">Ir a Configuración</button>`:""}</div>`;
     m.innerHTML=html;$("#drawer").innerHTML="";restoreFocus(fid,selS);return;}
+  {const tb=TABS.find(t=>t.id===S.tab);if(tb&&tb.admin&&!S.canAdmin)S.tab="resumen";}
   html+=({resumen:vResumen,reporte:vReporte,programas:vProgramas,linea:vLinea,cruce:vCruce,se:vSE,registrar:vRegistrar,liberaciones:vLiberaciones,estructuras:vEstructuras,config:vConfig}[S.tab]||vResumen)();
   /* las tablas con scroll propio (data-keep-scroll) conservan su posición al redibujar */
   const keep=[...document.querySelectorAll("[data-keep-scroll]")].map(el=>[el.id,el.scrollTop]);
@@ -1354,7 +1357,7 @@ function vResumen(){
    <div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">Proyecto</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}">${esc(s.nombre)}</button>`).join("")}</div></div>
    <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span><span class="d">${r.cnt.ter}/${r.n} estructuras · ${r.vdone}/${r.nv} vanos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
    ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)"><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras</span><span class="d muted">Pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
-  h+=pgResumen();
+  if(S.canAdmin)h+=pgResumen();
   h+=kpiSection();
   h+=tendMetros();
   h+=`<section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades. El modelo de torre está en <button class="linkbtn" style="font-family:var(--f-body)" data-tab="linea">Pictograma de la línea</button>.</span></div>
@@ -3042,7 +3045,7 @@ function vReporte(){
   else h+=repDetalle(x);
   return h+`</div>`;}
 /* barra de herramientas (no se imprime): formato, período y salidas */
-function repBarra(x,ej){const R=S.rep,n8=S.cfg&&S.cfg.n8n&&S.cfg.n8n.url;
+function repBarra(x,ej){const R=S.rep,n8=(n8nCfg()||{}).url;
   return `<section class="panel stack noprint"><div class="spread"><div class="stack" style="gap:2px"><h2>Reporte semanal</h2><span class="small muted">Del <b>${fmtD(R.desde)}</b> al <b>${fmtD(R.hasta)}</b> · comparado con el avance al cierre del ${fmtD(x.f0)}</span></div>
    <div class="row" style="gap:6px"><button class="btn small${ej?"":" ghost"}" data-rpprint="1">${ej?"Imprimir o guardar PDF":"Imprimir detalle"}</button><button class="btn small ghost" data-rpcsv="1">Descargar CSV</button><button class="btn small ghost" data-rpcopy="1">Copiar texto</button>${n8?`<button class="btn small ghost" data-rpsend="1" ${R.env?"disabled":""}>${R.env?"Enviando…":"Enviar a n8n"}</button>`:""}</div></div>
    <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Formato</label><div class="seg" role="group" aria-label="Formato">${[["ejecutivo","Resumen ejecutivo"],["detalle","Detalle técnico"]].map(([k,t])=>`<button data-rpvista="${k}" aria-pressed="${(ej?"ejecutivo":"detalle")===k}">${t}</button>`).join("")}</div></div>
@@ -3178,7 +3181,7 @@ function repCSV(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T;const L=[];
 async function copiarTexto(t){try{await navigator.clipboard.writeText(t);return true;}catch(e){
   const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand("copy");}catch(_){}a.remove();return ok;}}
 /* Envío a n8n: POST JSON al webhook configurado por el administrador. "prueba" manda un mensaje corto para verificar la conexión */
-async function repEnviar(prueba){const n=S.cfg&&S.cfg.n8n;if(!n||!n.url||S.rep.env)return;
+async function repEnviar(prueba){const n=n8nCfg();if(!n||!n.url||S.rep.env)return;
   const c=S.cfg;const body=prueba?{tipo:"prueba",proyecto:{codigo:c.codigo||"STN4324",nombre:c.nombre||"Línea Tineo – Ancud"},emitido:{fecha:new Date().toISOString(),por:S.userName},texto:"Prueba de conexión desde la app de avance."}:repPayload();
   S.rep.env=true;render();
   try{const r=await fetch(n.url,{method:"POST",headers:Object.assign({"Content-Type":"application/json"},n.clave?{"X-Avance-Key":n.clave}:{}),body:JSON.stringify(body)});
@@ -3220,11 +3223,11 @@ function vConfig(){
   <h3>Cargar matrices de la subestación (CSV)</h3>
   <div class="form-grid"><div class="field"><label for="se-f">Matriz Fundaciones (incluye canaletas y drenajes)</label><input id="se-f" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="se-e">Matriz Estructuras</label><input id="se-e" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="se-fecha">Fecha de corte</label><input id="se-fecha" type="date" max="${today()}" value="${today()}"></div></div>
   <div class="row"><button class="btn" id="se-imp" ${busy?"disabled":""}>Importar matrices S/E</button></div></section>`;}
-  {const n=S.n8nDraft||Object.assign({url:"",clave:""},S.cfg.n8n||{});
+  {const n=S.n8nDraft||Object.assign({url:"",clave:""},n8nCfg()||{});
   h+=`<section class="panel stack"><h2>Integración con n8n</h2><p class="muted small">El botón <b>Enviar a n8n</b> del Reporte semanal manda el reporte a un webhook de n8n: cifras, producción, liberaciones, alertas y un texto listo para correo (campo <span class="mono">texto</span>). En n8n crea un flujo con un nodo <b>Webhook</b> (método POST), actívalo y pega aquí su <b>Production URL</b>. Debe ser https, salvo que n8n corra en este mismo PC (http://localhost:5678).</p>
   <div class="form-grid"><div class="field"><label for="n8n-url">URL del webhook</label><input id="n8n-url" type="text" inputmode="url" value="${esc(n.url)}" placeholder="https://…/webhook/reporte-avance" autocomplete="off"></div><div class="field"><label for="n8n-key">Clave (opcional)</label><input id="n8n-key" type="text" value="${esc(n.clave)}" autocomplete="off"></div></div>
   <p class="small muted" style="margin:0">La clave viaja en el encabezado <span class="mono">X-Avance-Key</span>: úsala en el Webhook con <b>Header Auth</b> para rechazar llamadas que no vengan de la app. Los usuarios con sesión pueden verla. Para desactivar la integración, deja la URL vacía y guarda.</p>
-  <div class="row"><button class="btn small" id="n8n-save" ${S.saving?"disabled":""}>Guardar integración</button>${S.cfg.n8n&&S.cfg.n8n.url?`<button class="btn small ghost" id="n8n-test" ${S.rep.env?"disabled":""}>Enviar prueba</button>`:""}</div></section>`;}
+  <div class="row"><button class="btn small" id="n8n-save" ${S.saving?"disabled":""}>Guardar integración</button>${(n8nCfg()||{}).url?`<button class="btn small ghost" id="n8n-test" ${S.rep.env?"disabled":""}>Enviar prueba</button>`:""}</div></section>`;}
   h+=`<section class="panel stack"><h2>Usuarios</h2><p class="muted small">Las cuentas se crean e invitan desde Supabase (Authentication → Users → Invite user). Todo usuario con sesión puede ver y registrar avances. Solo quienes estén en la tabla <span class="mono">admins</span> ven esta pestaña y pueden cambiar la configuración. Revisa la guía de publicación.</p></section>`;
   h+=`<div class="row"><button class="btn primary" id="c-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar configuración"}</button><button class="btn ghost" id="c-discard">Descartar cambios</button></div>`;
   return h+`</div>`;
@@ -3249,12 +3252,17 @@ async function guardarN8n(){if(S.saving)return;
   const ui=$("#n8n-url"),ki=$("#n8n-key");const url=(ui?ui.value:"").trim(),clave=(ki?ki.value:"").trim().slice(0,200);
   if(url&&!/^https:\/\/\S+$/i.test(url)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/\S*$/i.test(url)){toast("La URL del webhook debe empezar con https:// (o http://localhost si n8n corre en este PC).",true);return;}
   S.saving=true;render();
-  try{await updateConfig("proyecto",{n8n:url?{url,clave}:null});S.n8nDraft=null;toast(url?"Integración con n8n guardada.":"Integración con n8n desactivada.");}
+  try{await setConfig("n8n",{url,clave:url?clave:""});if(S.cfg&&S.cfg.n8n)await updateConfig("proyecto",{n8n:null});S.n8nDraft=null;toast(url?"Integración con n8n guardada.":"Integración con n8n desactivada.");}
   catch(e){toast(e.code==="denied"?"No tienes permiso de administrador.":"No se pudo guardar. Intenta de nuevo.",true);}
   S.saving=false;render();}
+/* La URL y la clave del webhook van en su propia fila de config ("n8n"), que solo leen los administradores.
+   Antes iban en "proyecto", que leen todos: n8nCfg() acepta las dos y migrarN8n() las traslada al entrar un administrador */
+const n8nCfg=()=>S.n8n||(S.cfg&&S.cfg.n8n)||null;
+async function migrarN8n(){if(!S.canAdmin||!S.cfg||!S.cfg.n8n)return;const v=S.cfg.n8n;
+  try{if(!S.n8n&&v.url)await setConfig("n8n",{url:v.url,clave:v.clave||""});await updateConfig("proyecto",{n8n:null});render();}catch(e){}}
 
 /* ---------- Respaldo JSON ---------- */
-function exportarRespaldo(){descargar("respaldo-avance-tineo-ancud-"+today()+".json",JSON.stringify({version:1,exportado:new Date().toISOString(),config:{proyecto:S.cfg,unidades:S.uni,se:S.se,programas:Object.fromEntries(S.prog),notas:S.rnotas},avance:Object.fromEntries(S.av)}),"application/json");toast("Respaldo descargado.");}
+function exportarRespaldo(){descargar("respaldo-avance-tineo-ancud-"+today()+".json",JSON.stringify({version:1,exportado:new Date().toISOString(),config:{proyecto:S.cfg,unidades:S.uni,se:S.se,programas:Object.fromEntries(S.prog),notas:S.rnotas,n8n:S.n8n},avance:Object.fromEntries(S.av)}),"application/json");toast("Respaldo descargado.");}
 async function importarRespaldo(){
   const f=$("#b-file").files[0];if(!f){toast("Selecciona el archivo de respaldo (.json).",true);return;}
   let j;try{j=JSON.parse(await f.text());}catch(e){toast("El archivo no es un respaldo válido (JSON).",true);return;}
@@ -3266,6 +3274,8 @@ async function importarRespaldo(){
     if(j.config.unidades)await setConfig("unidades",j.config.unidades);
     if(j.config.se)await setConfig("se",j.config.se);
     if(j.config.notas&&typeof j.config.notas==="object")await setConfig("rep_notas",j.config.notas);
+    if(j.config.n8n&&typeof j.config.n8n.url==="string")await setConfig("n8n",{url:j.config.n8n.url,clave:String(j.config.n8n.clave||"")});
+    await migrarN8n();
     for(const [id,d] of Object.entries(j.config.programas||{}))if(/^prog__[A-Za-z0-9_.~:@+-]{1,80}$/.test(id)&&d&&Array.isArray(d.T))await setConfig(id,d);
     S.imp.msg="Guardando avances";
     for(let i=0;i<rows.length;i+=200){const ch=rows.slice(i,i+200);await withRetry(async()=>{const {error}=await sb.from("avance").upsert(ch);if(error)throw mapErr(error);});S.imp.done+=ch.length;schedule();}
@@ -3536,7 +3546,7 @@ document.addEventListener("input",ev=>{
   const t=ev.target,ds=t.dataset;
   if(t.id==="pg-q"){S.pg.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
   if(t.id==="ex-nota"||t.id==="ex-firma"){if(S.rep.notaEd)S.rep.notaEd[t.id==="ex-nota"?"texto":"firma"]=t.value;return;}
-  if(t.id==="n8n-url"||t.id==="n8n-key"){if(!S.n8nDraft)S.n8nDraft=Object.assign({url:"",clave:""},(S.cfg&&S.cfg.n8n)||{});S.n8nDraft[t.id==="n8n-url"?"url":"clave"]=t.value;return;}
+  if(t.id==="n8n-url"||t.id==="n8n-key"){if(!S.n8nDraft)S.n8nDraft=Object.assign({url:"",clave:""},n8nCfg()||{});S.n8nDraft[t.id==="n8n-url"?"url":"clave"]=t.value;return;}
   if(t.id==="lib-q"){S.lib.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
   if(S.drw&&S.drw.lib){const f=S.drw.f;if(f&&t.id==="lib-fecha"){f.fecha=t.value;return;}if(f&&t.id==="lib-ref"){f.ref=t.value;return;}if(f&&t.id==="lib-obs"){f.obs=t.value;return;}if(f&&t.id==="lib-cod"){f.cod=t.value;return;}if(t.id==="lib-nota"){S.drw.nota=t.value;return;}}
   if(S.pmfEd){if(t.id==="pmf-fecha"){S.pmfEd.fecha=t.value;return;}if(t.id==="pmf-ref"){S.pmfEd.ref=t.value;return;}if(t.id==="pmf-obs"){S.pmfEd.obs=t.value;return;}}
@@ -3600,15 +3610,15 @@ async function handleSession(session,force){
   /* (solo con usuario: sin sesión hay que mostrar siempre el ingreso, aunque la página parta en "cargando") */
   if(!force&&uid===S.me&&(S.state==="ok"||S.state==="setpass"||(uid&&S.state==="loading")))return;
   S.me=uid;S.authErr="";
-  if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.prog=new Map();S.rnotas={};S.rep.notaEd=null;S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
+  if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.prog=new Map();S.rnotas={};S.n8n=null;S.rep.notaEd=null;S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
   const u=session.user;S.userEmail=u.email||"";S.userName=(u.user_metadata&&(u.user_metadata.nombre||u.user_metadata.full_name||u.user_metadata.name))||S.userEmail;
   if(S.authMode==="setpass"){S.state="setpass";render();return;}
   S.state="loading";render();vigilarCarga();
   try{
     await conSesion(async()=>{const {data:adm,error}=await sb.from("admins").select("user_id").eq("user_id",uid).maybeSingle();if(error)throw mapErr(error);S.canAdmin=!!adm;});S.canWrite=true;
-    await conSesion(loadAll);subscribe();S.state="ok";S.authMsg="";
+    await conSesion(loadAll);subscribe();S.state="ok";S.authMsg="";migrarN8n();
     const h0=(location.hash||"").slice(1);if(TABS.some(t=>t.id===h0))S.tab=h0;
-    if(S.tab==="config"&&!S.canAdmin)S.tab="resumen";
+    {const tb=TABS.find(t=>t.id===S.tab);if(tb&&tb.admin&&!S.canAdmin)S.tab="resumen";}
   }catch(e){
     /* la sesión no se pudo renovar: se vuelve al ingreso con un aviso claro, en vez del error técnico */
     if(e&&e.code==="auth"){S.authMsg="Tu sesión expiró. Vuelve a ingresar con tu correo y contraseña.";S.me=null;S.state="login";try{await sb.auth.signOut({scope:"local"});}catch(_){}render();return;}
