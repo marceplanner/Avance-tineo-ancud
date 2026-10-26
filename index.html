@@ -615,7 +615,11 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 .expie{margin-top:auto;padding-top:.7em;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:1em;font-family:var(--f-mono);font-size:.7em;color:var(--muted)}
 .exanexo-t{font-size:1.25rem;margin-top:6px}
 .print-only{display:none}
-@media (max-width:760px){.exdoc{font-size:14px}.exhoja{padding:1.2em 1em}.exrot{grid-template-columns:1fr}.exrot .m{border-right:0;border-bottom:1.5px solid var(--ink)}.exhero{grid-template-columns:1fr}.exbig{border-right:0;border-bottom:1px solid var(--line);padding:0 0 1em}.extiles,.exfig4{grid-template-columns:repeat(2,minmax(0,1fr))}.extile,.exfig4>div{border-top:1px solid var(--line)}.exbul-h{display:none}.exbul-r{grid-template-columns:1fr 1fr}.exbul-g{grid-column:1/-1}}
+/* colores y fondos del resumen se imprimen aunque el navegador tenga desactivados los «Gráficos de fondo» */
+.exdoc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.exdoc .mlegend{font-size:.8em;gap:.35em 1.2em}
+/* solo pantalla: en la impresión la hoja A4 mide ~700 px y no debe tomar el diseño de celular */
+@media screen and (max-width:760px){.exdoc{font-size:14px}.exhoja{padding:1.2em 1em}.exrot{grid-template-columns:1fr}.exrot .m{border-right:0;border-bottom:1.5px solid var(--ink)}.exhero{grid-template-columns:1fr}.exbig{border-right:0;border-bottom:1px solid var(--line);padding:0 0 1em}.extiles,.exfig4{grid-template-columns:repeat(2,minmax(0,1fr))}.extile,.exfig4>div{border-top:1px solid var(--line)}.exbul-h{display:none}.exbul-r{grid-template-columns:1fr 1fr}.exbul-g{grid-column:1/-1}}
 /* Impresión (PDF): solo el contenido, en claro, sin menú ni paneles laterales */
 @media print{
   @page{size:A4;margin:12mm}
@@ -2862,7 +2866,7 @@ function exPuntos(x){const P0=x.P0,P1=x.P1,T=x.T,LS=x.libSt,[acc,pat,fun,mon,vc]
   const pr=[];if(fun.ter.length)pr.push(nTxt(fun.ter.length,"fundación","fundaciones"));if(mon.ter.length)pr.push(nTxt(mon.ter.length,"estructura montada","estructuras montadas"));
   if(vc.ter.length)pr.push(`${nTxt(vc.ter.length,"vano","vanos")} con conductor tendido`);if(pat.ter.length)pr.push(nTxt(pat.ter.length,"malla de puesta a tierra","mallas de puesta a tierra"));if(acc.ter.length)pr.push(nTxt(acc.ter.length,"camino de acceso","caminos de acceso"));
   const mt=T.c1p+T.c2p,sec=secs().filter(s=>P1.sec[s.id].has).map(s=>({s,d:P1.sec[s.id].pct-P0.sec[s.id].pct})).sort((a,b)=>b.d-a.d)[0];
-  out.push((pr.length?`En el período se completaron ${listaY(pr)}`:"En el período no se completaron fundaciones, estructuras ni vanos")+(mt>=1?`; se tendieron ${fmtM(mt)} de conductor (metros de circuito)`:"")+"."+(sec&&sec.d>=0.05?` El mayor avance fue en ${sec.s.nombre} (${ppTxt(sec.d)}).`:""));
+  out.push((pr.length?`Completado en el período: ${listaY(pr)}`:"En el período no se completaron fundaciones, estructuras ni vanos")+(mt>=1?`; se tendieron ${fmtM(mt)} de conductor (metros de circuito)`:"")+"."+(sec&&sec.d>=0.05?` El mayor avance fue en ${sec.s.nombre} (${ppTxt(sec.d)}).`:""));
   const pg=x.pg.filter(z=>z.prog!=null&&z.real!=null);
   if(pg.length){const atr=pg.filter(z=>z.real-z.prog<-2).sort((a,b)=>(a.real-a.prog)-(b.real-b.prog));
     if(atr.length){const w=atr[0],R=w.M.root,dv=R?pgDias(R.F,R.bF):null;
@@ -2879,7 +2883,7 @@ function exPuntos(x){const P0=x.P0,P1=x.P1,T=x.T,LS=x.libSt,[acc,pat,fun,mon,vc]
 function exFrentesSvg(x){const P0=x.P0,P1=x.P1,list=secs().filter(s=>P1.sec[s.id].has),CW=230,gy=196,H=116,W=CW*(list.length+1);let g="";
   /* rótulo de etapa en la columna derecha del panel; la línea de llamada parte del elemento dibujado (px,py) */
   const lab=(ox,y,name,v,dv,px,py)=>{const lx=ox+136;py=py==null?y:py;
-    return `<path class="ldr" d="M${f1(px)} ${f1(py)}${Math.abs(py-y)>0.5?`L${lx-8} ${f1(y)}`:""}H${lx-4}"/><circle cx="${f1(px)}" cy="${f1(py)}" r="1.6" style="fill:var(--ink-2)"/><text class="cap" x="${lx}" y="${f1(y-5)}" style="font-size:10.5px">${esc(name)}</text><text class="big" x="${lx}" y="${f1(y+10)}" style="font-size:16px">${fmtP(v,1)}</text><text class="tx" x="${lx}" y="${f1(y+21)}" style="font-size:10px">${ppTxt(dv)}</text>`;};
+    return `<path class="ldr" d="M${f1(px)} ${f1(py)}${Math.abs(py-y)>0.5?`L${lx-8} ${f1(y)}`:""}H${lx-4}"/><circle cx="${f1(px)}" cy="${f1(py)}" r="1.6" style="fill:var(--ink-2)"/><text class="cap" x="${lx}" y="${f1(y-4)}" style="font-size:10px">${esc(name)}</text><text class="big" x="${lx}" y="${f1(y+12)}" style="font-size:16px">${fmtP(v,1)}<tspan dx="4" style="font-family:var(--f-disp);font-size:10px;font-weight:500;fill:var(--ink-2)">${ppTxt(dv)}</tspan></text>`;};
   const head=(ox,name,v,dv,col)=>`<rect x="${ox+12}" y="10" width="9" height="9" style="fill:${col}"/><text class="cap" x="${ox+27}" y="18.5" style="font-size:11px;fill:var(--ink)">${esc(name)}</text><text class="big" x="${ox+12}" y="47" style="font-size:28px">${fmtP(v,1)}</text><text class="tx" x="${ox+12}" y="62" style="font-size:10.5px">${ppTxt(dv)} en el período</text>`;
   const suelo=ox=>`<rect class="earth" x="${ox+10}" y="${gy}" width="${CW-20}" height="38"/><line class="gl" x1="${ox+10}" x2="${ox+CW-10}" y1="${gy}" y2="${gy}"/>`;
   const sep=ox=>`<line x1="${ox}" x2="${ox}" y1="8" y2="${gy+66}" style="stroke:var(--line);stroke-width:1"/>`;
@@ -2928,7 +2932,7 @@ function exLineaSvg(x){
     /* sectores: banda de color, nombre y avance */
     for(let i0=0;i0<R.length;){let i1=i0;while(i1+1<R.length&&R[i1+1].s===R[i0].s)i1++;
       const sid=R[i0].s,xa=xs[i0]-3,xb=xs[i1]+3,p1=P1.sec[sid].pct,p0=x.P0.sec[sid].pct;
-      g+=`<line x1="${f1(xa)}" x2="${f1(xb)}" y1="${y0+3}" y2="${y0+3}" style="stroke:${secColor(sid)};stroke-width:3"/><text class="cap" x="${f1(xa)}" y="${y0+16}" style="font-size:10.5px;fill:var(--ink)">${esc(secName(sid))}</text><text class="tx" x="${f1(xa)}" y="${y0+29}" style="font-size:10.5px"><tspan style="font-weight:600;fill:var(--ink)">${fmtP(p1,1)}</tspan>${xb-xa>170?` · ${ppTxt(p1-p0)} en el período`:""}</text>`;
+      g+=`<line x1="${f1(xa)}" x2="${f1(xb)}" y1="${y0+3}" y2="${y0+3}" style="stroke:${secColor(sid)};stroke-width:3"/><text class="cap" x="${f1(xa)}" y="${y0+13}" style="font-size:10.5px;fill:var(--ink)">${esc(secName(sid))}</text><text class="tx" x="${f1(xa)}" y="${y0+25}" style="font-size:10.5px"><tspan style="font-weight:600;fill:var(--ink)">${fmtP(p1,1)}</tspan>${xb-xa>170?` · ${ppTxt(p1-p0)} en el período`:""}</text>`;
       i0=i1+1;}
     /* terreno, con el canal de Chacao entre 2C y 3C */
     const i2=R.findIndex(t=>String(t.e.id).toUpperCase()==="2C"),i3=R.findIndex(t=>String(t.e.id).toUpperCase()==="3C"),xg0=xm(r.m0),xg1=xm(r.m1);
@@ -2957,10 +2961,10 @@ function exLineaSvg(x){
     /* eje en km */
     for(let km=Math.ceil((r.m0+ML0)/5000)*5;km<=Math.floor((r.m1+ML0)/5000)*5;km+=5){const xx=xm(km*1000-ML0);g+=`<line x1="${f1(xx)}" x2="${f1(xx)}" y1="${gy+15}" y2="${gy+19}" style="stroke:var(--line-2);stroke-width:1"/><text class="tx" x="${f1(xx)}" y="${gy+29}" text-anchor="middle" style="font-size:9px;fill:var(--muted)">km ${km}</text>`;}
     /* cifras al cierre, en el espacio libre de la última fila (a la derecha del rótulo de la S/E Nueva Ancud) */
-    if(j===rows.length-1){const xe=xm(r.m1)+(r.b===N-1?100:30),xv=Math.min(W-16,xe+290);if(xv-xe>=230){const [,,fun,mon,vc]=x.prod,LS=x.libSt,yy=q=>y0+36+q*16;
+    if(j===rows.length-1){const xe=xm(r.m1)+(r.b===N-1?100:30),xv=Math.min(W-16,xe+340);if(xv-xe>=230){const [,,fun,mon,vc]=x.prod,LS=x.libSt,yy=q=>y0+36+q*16;
       const ln=[["Estructuras montadas",`${mon.acum} de ${mon.n}`],["Fundaciones terminadas",`${fun.acum} de ${fun.n}`],["Vanos con conductor (6 fases)",`${vc.acum} de ${vc.n}`],["Torres aptas para construir",`${LS.t.apta} de ${LS.t.n}`]];
       g+=`<text class="cap" x="${f1(xe)}" y="${y0+16}" style="font-size:10.5px">Al ${fmtD(S.rep.hasta)}</text>`+ln.map((l,q)=>`<text class="tx" x="${f1(xe)}" y="${yy(q)}" style="font-size:11px">${esc(l[0])}</text><text class="tx" x="${f1(xv)}" y="${yy(q)}" text-anchor="end" style="font-size:11px;font-weight:600;fill:var(--ink)">${esc(l[1])}</text><line x1="${f1(xe)}" x2="${f1(xv)}" y1="${yy(q)+5}" y2="${yy(q)+5}" style="stroke:var(--line);stroke-width:1"/>`).join("")
-        +`<path d="M${f1(xe)} ${yy(4)-8}H${f1(xe+4.8)}L${f1(xe+2.4)} ${yy(4)-3.5}Z" style="fill:var(--accent)"/><text class="tx" x="${f1(xe+9)}" y="${yy(4)}" style="font-size:11px">Avance en el período</text><text class="tx" x="${f1(xv)}" y="${yy(4)}" text-anchor="end" style="font-size:11px;font-weight:600;fill:var(--ink)">${nTxt(nE,"estructura","estructuras")} · ${nTxt(nV,"vano","vanos")}</text>`;}}});
+        +`<path d="M${f1(xe)} ${yy(4)-8}H${f1(xe+4.8)}L${f1(xe+2.4)} ${yy(4)-3.5}Z" style="fill:var(--accent)"/><text class="tx" x="${f1(xe+9)}" y="${yy(4)}" style="font-size:11px">Avance del período</text><text class="tx" x="${f1(xv)}" y="${yy(4)}" text-anchor="end" style="font-size:11px;font-weight:600;fill:var(--ink)">${nTxt(nE,"estructura","estructuras")} · ${nTxt(nV,"vano","vanos")}</text>`;}}});
   return `<svg class="mdl" viewBox="0 0 ${W} ${6+rows.length*RH+12}" role="img" aria-label="${esc(`Perfil de la línea al ${fmtD(S.rep.hasta)}: ${x.prod[3].acum} de ${x.prod[3].n} estructuras montadas, ${x.prod[2].acum} fundaciones terminadas y ${x.prod[4].acum} vanos con conductor`)}">${g}</svg>`;}
 function exLegLinea(){const ic=(w,h,c)=>`<svg class="mdl" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:inline-block;width:${w}px;height:${h}px;flex:none" aria-hidden="true">${c}</svg>`,T=exTorreD(8,17,15,3.2);
   const it=[[ic(16,18,`<path class="steel" style="stroke-width:.9" d="${T}"/>`),"Estructura montada"],[ic(16,18,`<path class="ghost" d="${T}"/><clipPath id="exlg"><rect x="0" y="10" width="16" height="8"/></clipPath><path class="steel" style="stroke-width:.9" clip-path="url(#exlg)" d="${T}"/>`),"En montaje"],[ic(16,18,`<path class="ghost" d="${T}"/>`),"Por montar"],
