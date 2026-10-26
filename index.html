@@ -2521,15 +2521,19 @@ document.addEventListener("change",ev=>{const t=ev.target;
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&S.state==="ok"&&Date.now()-S.lastLoad>120000){try{await conSesion(loadAll);render();}catch(e){}}});
 
 /* ---------- inicio ---------- */
+/* Seguro contra esperas infinitas: si tras 30 s sigue "Cargando…", se muestra el aviso con «Reintentar» y «Cerrar sesión» */
+let cargaN=0;
+function vigilarCarga(){const n=++cargaN;setTimeout(()=>{if(S.state==="loading"&&n===cargaN){S.state="error";S.authErr="La carga está tardando más de lo normal. Revisa tu conexión a internet y presiona «Reintentar». Si se repite, presiona «Cerrar sesión» y vuelve a ingresar.";render();}},30000);}
 async function handleSession(session,force){
   const uid=session&&session.user?session.user.id:null;
   /* al abrir, getSession y el evento inicial llaman a esta función casi a la vez: si ya se está cargando el mismo usuario, no se repite */
-  if(!force&&uid===S.me&&(S.state==="ok"||S.state==="setpass"||S.state==="loading"))return;
+  /* (solo con usuario: sin sesión hay que mostrar siempre el ingreso, aunque la página parta en "cargando") */
+  if(!force&&uid===S.me&&(S.state==="ok"||S.state==="setpass"||(uid&&S.state==="loading")))return;
   S.me=uid;S.authErr="";
   if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
   const u=session.user;S.userEmail=u.email||"";S.userName=(u.user_metadata&&(u.user_metadata.nombre||u.user_metadata.full_name||u.user_metadata.name))||S.userEmail;
   if(S.authMode==="setpass"){S.state="setpass";render();return;}
-  S.state="loading";render();
+  S.state="loading";render();vigilarCarga();
   try{
     await conSesion(async()=>{const {data:adm,error}=await sb.from("admins").select("user_id").eq("user_id",uid).maybeSingle();if(error)throw mapErr(error);S.canAdmin=!!adm;});S.canWrite=true;
     await conSesion(loadAll);subscribe();S.state="ok";S.authMsg="";
@@ -2544,6 +2548,7 @@ async function handleSession(session,force){
 render();
 (async function boot(){
   if(!window.supabase||!APP.SUPABASE_URL||/TU-PROYECTO/.test(APP.SUPABASE_URL)||!APP.SUPABASE_ANON_KEY||/PEGA-AQUI/.test(APP.SUPABASE_ANON_KEY)){S.state="noconfig";render();return;}
+  vigilarCarga();
   sb=window.supabase.createClient(APP.SUPABASE_URL,APP.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   sb.auth.onAuthStateChange((ev,session)=>{if(ev==="PASSWORD_RECOVERY")S.authMode="setpass";setTimeout(()=>handleSession(session,ev==="PASSWORD_RECOVERY"),0);});
   const {data:{session}}=await sb.auth.getSession();await handleSession(session);
