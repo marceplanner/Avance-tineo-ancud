@@ -530,6 +530,92 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 .pgc-hit:focus-visible{stroke:var(--accent);stroke-width:2}
 .lkey{display:inline-block;width:18px;height:0;border-top:2px solid var(--c);flex:none}
 .lkey.d{border-top-style:dashed}
+/* ===== Resumen ejecutivo para directorio: hojas A4 en pantalla y al imprimir (medidas en em, relativas a .exdoc) ===== */
+.exdoc{font-size:15px;display:flex;flex-direction:column;align-items:center;gap:22px}
+.exhoja{width:100%;max-width:1040px;background:var(--surface);border:1px solid var(--line-2);padding:2.2em 2.6em 1.2em;display:flex;flex-direction:column;gap:1.5em}
+.exrot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);border:1.5px solid var(--ink)}
+.exrot .m{padding:.9em 1.2em;border-right:1.5px solid var(--ink);display:flex;flex-direction:column;gap:.2em;min-width:0}
+.exrot .k{font-family:var(--f-mono);font-size:.74em;color:var(--ink-2);letter-spacing:.04em}
+.exrot h1{font-size:1.8em;font-weight:700;line-height:1.05}
+.exrot .s{font-size:.92em;color:var(--ink-2)}
+.exrot .c{display:grid;grid-template-columns:repeat(2,minmax(0,auto))}
+.exrot .c>div{padding:.55em .9em;border-left:1px solid var(--line-2);border-top:1px solid var(--line-2);margin:-1px 0 0 -1px;display:flex;flex-direction:column;justify-content:center;gap:.1em;min-width:0}
+.exrot .c span{font-family:var(--f-disp);font-size:.66em;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.exrot .c b{font-family:var(--f-mono);font-size:.84em;font-weight:600;overflow-wrap:anywhere}
+.exsec{display:flex;flex-direction:column;gap:.75em}
+.exsec>h2{display:flex;align-items:baseline;flex-wrap:wrap;gap:.2em .7em;font-size:1.1em;font-weight:700;padding-bottom:.35em;border-bottom:1.5px solid var(--ink)}
+.exsec>h2 i{font-style:normal;font-family:var(--f-mono);font-size:.76em;font-weight:600;color:var(--muted)}
+.exsec>h2 span{font-family:var(--f-body);font-size:.74em;font-weight:400;color:var(--ink-2);margin-left:auto}
+.exl{font-family:var(--f-disp);font-size:.7em;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
+.exm{font-size:.78em;color:var(--muted)}
+.exnota{font-size:.8em;line-height:1.45;color:var(--ink-2);margin:0}
+.exhero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);gap:1.4em;align-items:stretch}
+.exbig{display:flex;flex-direction:column;justify-content:center;gap:.4em;padding-right:1.4em;border-right:1px solid var(--line)}
+.exbig>b{font-family:var(--f-disp);font-weight:700;font-size:4.2em;line-height:.9;letter-spacing:-.02em}
+.exbig>b small{font-size:.42em;font-weight:600;color:var(--ink-2);margin-left:.08em;letter-spacing:0}
+.exd{font-size:.88em}
+.exs{font-size:.86em;color:var(--ink-2)}
+.exs b{color:var(--ink);font-family:var(--f-mono);font-weight:600}
+.exprog{display:block;height:6px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.exprog i{display:block;height:100%;background:var(--sv-1);border-radius:0 2px 2px 0}
+.exkpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line)}
+.exkpis>div{padding:.7em .85em;border-left:1px solid var(--line);border-top:1px solid var(--line);margin:-1px 0 0 -1px;display:flex;flex-direction:column;gap:.15em;min-width:0}
+.exkpis b{font-family:var(--f-disp);font-size:1.75em;font-weight:700;line-height:1.05}
+.exkpis b small{font-size:.5em;font-weight:600;color:var(--muted)}
+.exkpis span{font-size:.8em;color:var(--ink-2)}
+.expts{margin:0;padding:0;list-style:none;counter-reset:pt;display:flex;flex-direction:column;gap:.6em}
+.expts li{counter-increment:pt;display:grid;grid-template-columns:1.7em minmax(0,1fr);gap:.55em;font-size:.95em;line-height:1.5}
+.expts li::before{content:counter(pt);width:1.9em;height:1.9em;border:1.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:.72em;font-weight:600;margin-top:.2em}
+.excom{border-left:3px solid var(--ink);background:var(--surface-2);padding:.7em 1em;display:flex;flex-direction:column;gap:.3em}
+.excom p{margin:0;font-size:.92em;line-height:1.5}
+.exed{display:flex;flex-direction:column;gap:6px;border:1px dashed var(--line-2);padding:10px 12px;font-size:15px}
+.exed label{font-size:.84rem;color:var(--ink-2)}
+.exfig{overflow-x:auto}
+.exfig .mdl{min-width:640px}
+.exbul{display:flex;flex-direction:column}
+.exbul-h,.exbul-r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 5.4em 9.4em 8.6em;gap:.9em;align-items:center}
+.exbul-h{font-family:var(--f-disp);font-size:.68em;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-bottom:.45em;border-bottom:1px solid var(--line-2)}
+.exbul-r{padding:.65em 0;border-bottom:1px solid var(--line)}
+.exbul-n{display:flex;flex-direction:column;gap:.05em;min-width:0}
+.exbul-n b{font-family:var(--f-disp);font-size:1.02em}
+.exbul-n span{font-size:.74em;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exbul-g{display:block;width:100%;height:auto}
+.exbul-v{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}
+.exbul-v b{font-family:var(--f-disp);font-size:1.35em;font-weight:700}
+.exbul-v span{font-size:.76em;color:var(--ink-2)}
+.exbul-e{display:flex;flex-direction:column;align-items:flex-start;gap:.3em;font-size:.86em}
+.exbul-t{display:flex;flex-direction:column;font-size:.8em;line-height:1.3}
+.exbul-t span{color:var(--muted);font-size:.92em}
+.exbul-t b{font-family:var(--f-mono);font-weight:600}
+.exleg{display:inline-flex;align-items:center;gap:.45em;text-transform:none;letter-spacing:0;font-family:var(--f-body);font-weight:400;font-size:1.3em;color:var(--ink-2)}
+.exleg svg{flex:none}
+.extiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line)}
+.extile{padding:.75em .8em;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:.14em;min-width:0}
+.extile:first-child{border-left:0}
+.extile svg{width:100%;max-width:96px;height:auto;margin-bottom:.4em}
+.extile b{font-family:var(--f-disp);font-size:1.8em;font-weight:700;line-height:1}
+.extile span{font-size:.78em;color:var(--ink-2)}
+.exfig4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line)}
+.exfig4>div{padding:.65em .85em;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:.12em;min-width:0}
+.exfig4>div:first-child{border-left:0}
+.exfig4 b{font-family:var(--f-disp);font-size:1.5em;font-weight:700;line-height:1.1}
+.exfig4 span{font-size:.78em;color:var(--ink-2)}
+.exfig4>div.crit b{color:var(--crit-ink)}
+.exdoc table{font-size:.84em}
+.exdoc th{font-size:.84em;position:static}
+.exdoc td,.exdoc th{white-space:normal;padding:.45em .6em;vertical-align:top}
+.exdoc td.num,.exdoc td.r{white-space:nowrap}
+.exrisk td>span{display:block;font-size:.92em;color:var(--ink-2);margin-top:.15em}
+.exrisk td:first-child{width:1%;white-space:nowrap}
+.exrisk td:nth-child(2){width:17%}
+.exrisk td:last-child{width:30%;color:var(--ink-2)}
+.exnotas{gap:.35em}
+.exnotas h3{font-size:.86em;font-weight:700}
+.exnotas ul{margin:0;padding-left:1.1em;font-size:.76em;line-height:1.45;color:var(--ink-2);display:flex;flex-direction:column;gap:.2em}
+.expie{margin-top:auto;padding-top:.7em;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:1em;font-family:var(--f-mono);font-size:.7em;color:var(--muted)}
+.exanexo-t{font-size:1.25rem;margin-top:6px}
+.print-only{display:none}
+@media (max-width:760px){.exdoc{font-size:14px}.exhoja{padding:1.2em 1em}.exrot{grid-template-columns:1fr}.exrot .m{border-right:0;border-bottom:1.5px solid var(--ink)}.exhero{grid-template-columns:1fr}.exbig{border-right:0;border-bottom:1px solid var(--line);padding:0 0 1em}.extiles,.exfig4{grid-template-columns:repeat(2,minmax(0,1fr))}.extile,.exfig4>div{border-top:1px solid var(--line)}.exbul-h{display:none}.exbul-r{grid-template-columns:1fr 1fr}.exbul-g{grid-column:1/-1}}
 /* Impresión (PDF): solo el contenido, en claro, sin menú ni paneles laterales */
 @media print{
   @page{size:A4;margin:12mm}
@@ -544,6 +630,17 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
   th,td{padding:4px 6px}
   tr,.tmfig{break-inside:avoid}
   h2,h3{break-after:avoid}
+  th,td{white-space:normal}
+  /* resumen ejecutivo: cada hoja es una página A4; sin el encabezado de la app (la hoja trae su propio rótulo) */
+  body:has(.exdoc) #rotulo{display:none}
+  .exdoc{font-size:9.6pt;display:block}
+  .exhoja{max-width:none;border:0;padding:0;gap:1.05em;min-height:270mm;break-after:page}
+  .exhoja:last-of-type{break-after:auto}
+  .exanexo{break-before:page}
+  .print-only{display:block}
+  .exfig{overflow:visible}
+  .exfig .mdl{min-width:0}
+  .exsec,.exbul-r,.extile,.exdoc tr{break-inside:avoid}
 }
 </style>
 </head>
@@ -710,7 +807,7 @@ const S={me:null,userName:"",userEmail:"",canWrite:false,canAdmin:false,
   map:{sec:"total",vista:"det",tt:"",contr:"",q:""},tbl:{sec:"continente",q:"",tt:"",est:""},
   drw:null,draft:null,saving:false,imp:null,chan:null,lastLoad:0,
   se:null,SE:null,seCat:"fun",seDraft:null,
-  rep:{modo:"7d",desde:"",hasta:"",env:false},n8nDraft:null,
+  rep:{modo:"7d",desde:"",hasta:"",env:false,vista:"ejecutivo",anexo:false,notaEd:null},n8nDraft:null,rnotas:{},
   prog:new Map(),pg:{sel:"",contr:"",vista:"alertas",prof:3,pref:"",q:"",open:new Set()},
   lib:{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:"",sel:new Set(),base:"sat",bulk:{v:"ser",est:"lib",fecha:"",ref:"",obs:""}},pmfEd:null};
 
@@ -747,6 +844,7 @@ async function loadAll(){
   const {data:cf,error:e1}=await sb.from("config").select("id,data");if(e1)throw mapErr(e1);
   S.cfg=normCfg(((cf||[]).find(r=>r.id==="proyecto")||{}).data||null);S.uni=normUni(((cf||[]).find(r=>r.id==="unidades")||{}).data||null);S.se=((cf||[]).find(r=>r.id==="se")||{}).data||null;
   S.prog=new Map((cf||[]).filter(r=>r.id.indexOf("prog__")===0&&r.data).map(r=>[r.id,r.data]));
+  S.rnotas=((cf||[]).find(r=>r.id==="rep_notas")||{}).data||{};
   const av=new Map();for(let from=0;;from+=1000){const {data,error}=await sb.from("avance").select("id,data").order("id").range(from,from+999);if(error)throw mapErr(error);for(const r of data)av.set(r.id,r.data);if(data.length<1000)break;}
   S.av=av;S.lastLoad=Date.now();
 }
@@ -754,7 +852,7 @@ function subscribe(){
   if(S.chan)return;
   S.chan=sb.channel("cambios-avance")
     .on("postgres_changes",{event:"*",schema:"public",table:"avance"},p=>{const m=new Map(S.av);if(p.eventType==="DELETE"){if(p.old&&p.old.id)m.delete(p.old.id);}else if(p.new&&p.new.id)m.set(p.new.id,p.new.data);S.av=m;schedule();})
-    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;
+    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto")S.cfg=normCfg(r.data);if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;if(r&&r.id==="rep_notas")S.rnotas=r.data||{};
       /* programas de los contratistas: si el aviso llega sin datos (fila grande), se vuelve a leer la fila */
       if(r&&r.id&&r.id.indexOf("prog__")===0){if(r.data){const m=new Map(S.prog);m.set(r.id,r.data);S.prog=m;}else sb.from("config").select("id,data").eq("id",r.id).maybeSingle().then(({data})=>{if(data&&data.data){const m=new Map(S.prog);m.set(data.id,data.data);S.prog=m;schedule();}});}
       if(p.eventType==="DELETE"&&p.old&&p.old.id&&String(p.old.id).indexOf("prog__")===0){const m=new Map(S.prog);m.delete(p.old.id);S.prog=m;}
@@ -764,7 +862,7 @@ function subscribe(){
 async function rpcAvance(key,base,act,hist){const {error}=await sb.rpc("registrar_avance",{p_id:key,p_base:base,p_act:act,p_hist:hist});if(error)throw mapErr(error);}
 function mergeLocal(key,base,act,hist){const prev=S.av.get(key);const d=Object.assign({},prev||base);d.act=Object.assign({},(prev&&prev.act)||{});d.hist=Object.assign({},(prev&&prev.hist)||{},hist);
   for(const [k,v] of Object.entries(act)){const p=d.act[k];if(!p||(p.fecha||"")<=(v.fecha||""))d.act[k]=v;}const m=new Map(S.av);m.set(key,d);S.av=m;}
-async function setConfig(id,data){await withRetry(async()=>{const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);});if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;else if(id.indexOf("prog__")===0){const m=new Map(S.prog);m.set(id,data);S.prog=m;}}
+async function setConfig(id,data){await withRetry(async()=>{const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);});if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;else if(id==="rep_notas")S.rnotas=data;else if(id.indexOf("prog__")===0){const m=new Map(S.prog);m.set(id,data);S.prog=m;}}
 async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||{};await setConfig(id,Object.assign({},base,patch));}
 
 /* ---------- modelo ---------- */
@@ -2445,6 +2543,14 @@ function pgPlanAll(M,tm){let W=0,s=0;for(const t of M.leaves){const w=M.wl(t);if
    terreno en la app sirve para contrastar (se rehace si cambian los registros o el día) --- */
 const PG_AL={prog_desact:"Programa sin actualizar",prog_termino:"Término del programa desplazado",prog_atraso:"Atraso global del programa",fin_vencido:"Tareas con término vencido",inicio_vencido:"Tareas que debieron iniciar y no tienen avance",bajo_prog:"Avance real bajo lo programado",sin_liberacion:"Frentes por iniciar o en ejecución sin liberación",terreno:"El programa y lo registrado en terreno no calzan",hito_vencido:"Hitos vencidos",hito_desplazado:"Hitos desplazados respecto de la línea base",hito_proximo:"Próximos hitos (30 días)"};
 let PGX=new WeakMap();
+/* elementos del alcance de una tarea que no están aptos para construcción; no cuentan las tareas de liberación ni las de
+   solo replanteo (como en el reporte semanal). n = elementos con control de liberación */
+function pgLibBad(r){const out={n:0,bad:[]};
+  if(!r||!r.parts||r.parts.some(q=>q.t==="lib")||r.parts.every(q=>q.t==="a"&&q.ids.length===1&&REP_NO_OBRA.has(q.ids[0])))return out;
+  const usaE=r.parts.some(q=>q.on==="e"||q.t==="fs"||q.t==="fun"||q.t==="pat"),usaV=r.parts.some(q=>q.on==="v"||q.t==="tva");
+  if(usaE)for(const y of r.E){const k=kLibE(y.s,y.e.id);if(!libUnit(k))continue;out.n++;if(libGen(k)!=="apta")out.bad.push(String(y.e.id));}
+  if(usaV)for(const y of r.V){const k=kLibV(y.s,y.v.a,y.v.b);if(!libUnit(k))continue;out.n++;if(libGen(k)!=="apta")out.bad.push("vano "+y.v.label);}
+  return out;}
 function pgNow(P){const M=pgModel(P),c=PGX.get(P);if(c&&c.M===M&&c.av===S.av&&c.d===today())return c.X;
   const ter=new Map();for(const r of M.meas)ter.set(r.t.o,pgReal(r,cur));
   const X={now:Date.now(),ref:M.ref,ter,agg:pgAgg(M,ter)};X.al=pgAlerts(M,X);PGX.set(P,{M,av:S.av,d:today(),X});return X;}
@@ -2461,13 +2567,9 @@ function pgAlerts(M,X){const out=[],P=M.P,nm=progName(P.contr),now=X.now,ref=X.r
     else if(p!=null&&re<p-20)push("media","bajo_prog",t.n,`${al}Avance real ${fmtP(re)} frente a ${fmtP(p)} programado al ${cor}.${crit}`,t);
     if(!r)continue;const te=X.ter.get(t.o);
     if(te!=null&&Math.abs(re-te)>=25)push("media","terreno",t.n,`${r.sl}. El programa informa ${fmtP(re)} de avance real; en terreno se registra ${fmtP(te)} de ${r.ml.toLowerCase()}.`,t);
-    /* frentes sin liberación: no cuentan las tareas de liberación ni las de solo replanteo (como en el reporte semanal) */
-    const soloRep=r.parts.every(q=>q.t==="a"&&q.ids.length===1&&REP_NO_OBRA.has(q.ids[0]));
-    if(re<99.95&&!soloRep&&!r.parts.some(q=>q.t==="lib")&&((S0>=now&&S0<=now+21*PG_DAY)||(S0<now&&F0>now))){
-      const usaE=r.parts.some(q=>q.on==="e"||q.t==="fs"||q.t==="fun"||q.t==="pat"),usaV=r.parts.some(q=>q.on==="v"||q.t==="tva");let n=0;const bad=[];
-      if(usaE)for(const y of r.E){const k=kLibE(y.s,y.e.id);if(!libUnit(k))continue;n++;if(libGen(k)!=="apta")bad.push(String(y.e.id));}
-      if(usaV)for(const y of r.V){const k=kLibV(y.s,y.v.a,y.v.b);if(!libUnit(k))continue;n++;if(libGen(k)!=="apta")bad.push("vano "+y.v.label);}
-      if(bad.length)push(S0-now<=7*PG_DAY?"alta":"media","sin_liberacion",t.n,`${S0>now?"Inicia el "+pgD(t.S):"En ejecución desde el "+pgD(t.S)}: ${bad.length} de ${n} elementos no están aptos para construcción (${listaTxt(bad,8)}).`,t);}}
+    /* frentes por iniciar (21 días) o en ejecución con elementos no aptos para construcción */
+    if(re<99.95&&((S0>=now&&S0<=now+21*PG_DAY)||(S0<now&&F0>now))){const lb=pgLibBad(r);
+      if(lb.bad.length)push(S0-now<=7*PG_DAY?"alta":"media","sin_liberacion",t.n,`${S0>now?"Inicia el "+pgD(t.S):"En ejecución desde el "+pgD(t.S)}: ${lb.bad.length} de ${lb.n} elementos no están aptos para construcción (${listaTxt(lb.bad,8)}).`,t);}}
   for(const t of M.ms){const re=M.rv.get(t.o);if(re>=100)continue;const F0=pgMs(t.F),dv=pgDias(t.F,t.bF);
     if(F0<=ref)push("alta","hito_vencido",t.n,`Fecha vigente ${pgD(t.F)}${t.bF?` · línea base ${pgD(t.bF)}`:""}; al ${cor} el programa lo informa al ${fmtP(re)}. Confirmar si se cumplió.`,t);
     else if(dv!=null&&dv>7)push("media","hito_desplazado",t.n,`${dv} días después de la línea base: vigente ${pgD(t.F)}, línea base ${pgD(t.bF)}.`,t);
@@ -2654,7 +2756,7 @@ function repCalc(){const R=S.rep;
   const f0=addDays(R.desde,-1),g0=avAt(f0),g1=avAt(R.hasta),P0=progress(g0),P1=progress(g1);
   const kindOf=k=>(S.av.get(k)||{}).kind;
   const H=allHist(null,true).filter(h=>(h.fecha||"")>=R.desde&&(h.fecha||"")<=R.hasta);
-  const x={f0,P0,P1,regs:H.filter(h=>!h.imp&&kindOf(h.k)!=="lib"),libEv:H.filter(h=>kindOf(h.k)==="lib")};
+  const x={f0,P0,P1,g1,regs:H.filter(h=>!h.imp&&kindOf(h.k)!=="lib"),libEv:H.filter(h=>kindOf(h.k)==="lib")};
   x.cargas=new Set(H.filter(h=>h.imp&&kindOf(h.k)!=="lib").map(h=>h.ts)).size;
   x.nEl=new Set(x.regs.map(h=>h.k)).size;x.seRegs=x.regs.filter(h=>kindOf(h.k)==="se").length;
   {const m=new Map();for(const h of x.regs){const n=autor(h);if(!m.has(n))m.set(n,{nombre:n,n:0,el:new Set(),ult:""});const y=m.get(n);y.n++;y.el.add(h.k);if((h.fecha||"")>y.ult)y.ult=h.fecha;}
@@ -2669,10 +2771,12 @@ function repCalc(){const R=S.rep;
     for(const i in PR){const p=PR[i];p.n++;if(v1[i]>=99.95)p.acum++;
       if(v0[i]<99.95&&v1[i]>=99.95){p.ter.push(e.id);if(i==="fun")r.fun++;if(i==="mon")r.mon++;}else if(v0[i]<=0&&v1[i]>0)p.ini.push(e.id);}}
   const VC=pr("Tendido de conductor","vanos con las seis fases tendidas"),VO=pr("Tendido de OPGW","vanos con OPGW tendido"),VT=pr("Vanos terminados","vanos con todo el tendido al 100 %");VC.ini=VO.ini=null;
-  const T={c1:0,c2:0,og:0};
+  /* metros: netos (c1, c2, og), solo lo tendido de nuevo (c1p, c2p, ogp) y vanos con correcciones (menos tendido que al inicio) */
+  const T={c1:0,c2:0,og:0,c1p:0,c2p:0,ogp:0,cor:[]};
   for(const s of secs())for(const v of vanos(s.id)){const c10=circPct(v.key,"1",g0),c11=circPct(v.key,"1",g1),c20=circPct(v.key,"2",g0),c21=circPct(v.key,"2",g1);
     const o0=g0(v.key,"tv_opg"),o1=g1(v.key,"tv_opg"),t0=P0.sec[s.id].byV[v.key]||0,t1=P1.sec[s.id].byV[v.key]||0;
-    if(v.len!=null){T.c1+=v.len*(c11-c10)/100;T.c2+=v.len*(c21-c20)/100;T.og+=v.len*(o1-o0)/100;}
+    if(v.len!=null){const d1=v.len*(c11-c10)/100,d2=v.len*(c21-c20)/100,dO=v.len*(o1-o0)/100;T.c1+=d1;T.c2+=d2;T.og+=dO;T.c1p+=Math.max(0,d1);T.c2p+=Math.max(0,d2);T.ogp+=Math.max(0,dO);
+      if(d1<-0.5||d2<-0.5||dO<-0.5)T.cor.push({v:v.label,m:Math.min(0,d1)+Math.min(0,d2)+Math.min(0,dO)});}
     const ok0=c10>=99.95&&c20>=99.95,ok1=c11>=99.95&&c21>=99.95;VC.n++;VO.n++;VT.n++;
     if(ok1)VC.acum++;if(o1>=99.95)VO.acum++;if(t1>=99.95)VT.acum++;
     if(!ok0&&ok1){VC.ter.push(v.label);const eb=estById(s.id,v.b);cRow((eb&&eb.contr)||"Sin contratista").ten++;}
@@ -2682,6 +2786,8 @@ function repCalc(){const R=S.rep;
   for(const h of x.regs){const d=S.av.get(h.k);if(d&&d.kind!=="se")cRow(contrDe(d)).regs++;}
   /* actividades que cambiaron en el período (sirve para los frentes activos y las alertas) */
   const dl=[];for(const [k,d] of S.av){if(!d||d.kind==="lib")continue;for(const a of Object.keys(d.act||{})){const p0=g0(k,a),p1=g1(k,a);if(Math.abs(p1-p0)>0.01)dl.push({k,d,a,p0,p1});}}
+  /* estructuras ("sector|N°") y vanos (clave) con avance en el período, para marcarlos en el perfil de la línea */
+  x.chgE=new Set();x.chgV=new Set();for(const z of dl){if(z.p1<=z.p0)continue;if(z.d.kind==="vano")x.chgV.add(z.k);else if(z.d.kind!=="se")x.chgE.add(z.d.sector+"|"+z.d.unidad);}
   const noApt=new Map();
   for(const z of dl){if(z.p1<z.p0||z.d.kind==="se")continue;cRow(contrDe(z.d)).el.add(elemDe(z.d));
     if(REP_NO_OBRA.has(z.a))continue;const lk=libKeyDe(z.d),u=lk&&libUnit(lk);if(!u)continue;const g=libGen(lk);if(g==="apta")continue;
@@ -2714,16 +2820,243 @@ function repAlertas(x){const out=[];
 function libEvTxt(h){const d=S.av.get(h.k)||{};const pm=d.tipo==="pmf";
   return {pm,el:pm?"Código "+d.unidad:(d.tipo==="vano"?"Vano ":"Estructura ")+(d.unidad||""),
     cam:h.a==="obs"?"Observación":pm?"PMF: "+estTxt("pmf",h.est):(h.a==="ser"?"Servidumbre: ":"PMF: ")+estTxt(h.a,h.est)};}
+/* ---------- Resumen ejecutivo para directorio ---------- */
+/* Tres hojas A4: situación general, puntos clave, avance por frente (torres modeladas), programado vs real de cada contratista,
+   perfil modelado de toda la línea, producción, liberaciones, riesgos, hitos y lo que viene. Se imprime o se guarda en PDF
+   desde el navegador; el detalle técnico puede ir como anexo */
+const MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function semanaISO(s){const [y,m,d]=s.split("-").map(Number),t=new Date(Date.UTC(y,m-1,d));t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7)+3);
+  const f=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-f)/864e5-3+((f.getUTCDay()+6)%7))/7);}
+function periodoTxt(a,b){const [ya,ma,da]=a.split("-").map(Number),[yb,mb,db]=b.split("-").map(Number);
+  return ya===yb&&ma===mb?`${da} al ${db} de ${MESES_L[mb-1]} de ${yb}`:ya===yb?`${da} de ${MESES_L[ma-1]} al ${db} de ${MESES_L[mb-1]} de ${yb}`:`${da} de ${MESES_L[ma-1]} de ${ya} al ${db} de ${MESES_L[mb-1]} de ${yb}`;}
+/* «Semana 43» cuando el período va de lunes a domingo; si no, el rango de fechas */
+function exSemana(R){const [y,m,d]=R.desde.split("-").map(Number),lun=new Date(y,m-1,d).getDay()===1,n=Math.round((pgEnd(R.hasta)-pgEnd(R.desde))/PG_DAY),per=periodoTxt(R.desde,R.hasta);
+  if(lun&&n===6){const w=semanaISO(R.desde);return {titulo:`Semana ${w} · ${per}`,corto:`semana ${w} de ${R.desde.slice(0,4)}`};}
+  return {titulo:`Período del ${per}`,corto:`${fmtD(R.desde)} al ${fmtD(R.hasta)}`};}
+const listaY=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" y "+a[a.length-1];
+const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const exH=(n,t,sub)=>`<h2>${n?`<i>${String(n).padStart(2,"0")}</i>`:""}${esc(t)}${sub?`<span>${esc(sub)}</span>`:""}</h2>`;
+/* estado de un contratista frente a su programa (desviación en pp) */
+const exEstProg=dev=>dev==null?{k:"na",t:"Sin dato"}:dev>=-2?{k:"ok",t:"En plazo"}:dev>=-10?{k:"low",t:"Atraso moderado"}:{k:"late",t:"Atraso significativo"};
+/* --- riesgos: alertas agrupadas por frente y tipo, con una acción sugerida --- */
+const EX_ORD=["prog_atraso","prog_termino","sin_liberacion","hito_vencido","no_apto","fin_vencido","inicio_vencido","prog_desact","hito_desplazado","bajo_prog","terreno","retroceso","sin_registros"];
+const EX_TEMA={prog_atraso:"Atraso frente al programa",prog_termino:"Término desplazado",prog_desact:"Programa sin actualizar",sin_liberacion:"Frentes sin liberación",hito_vencido:"Hitos vencidos",hito_desplazado:"Hitos desplazados",fin_vencido:"Tareas con término vencido",inicio_vencido:"Tareas que debieron iniciar",bajo_prog:"Tareas bajo lo programado",terreno:"Programa y terreno no calzan",no_apto:"Obra en elementos no liberados",retroceso:"Correcciones de registros",sin_registros:"Frentes sin registros"};
+const EX_ACC={prog_atraso:"Pedir un plan de recuperación con fechas comprometidas.",prog_termino:"Revisar la ruta crítica y las medidas de aceleración.",prog_desact:"Exigir el programa actualizado con fecha de estado vigente.",sin_liberacion:"Priorizar la liberación (PMF y servidumbre) o resecuenciar los frentes.",hito_vencido:"Confirmar el cumplimiento o reprogramar con el contratista.",hito_desplazado:"Evaluar el impacto en los hitos contractuales.",fin_vencido:"Revisar en la reunión semanal de programa.",inicio_vencido:"Revisar en la reunión semanal de programa.",bajo_prog:"Revisar rendimientos y recursos del contratista.",terreno:"Conciliar el avance informado con el registrado en terreno.",no_apto:"Confirmar la liberación antes de continuar la obra.",retroceso:"Verificar la corrección con el inspector.",sin_registros:"Verificar si el frente está detenido."};
+function exRiesgos(x){const rows=[],g=new Map(),o=t=>{const i=EX_ORD.indexOf(t);return i<0?99:i;},sinPref=t=>t.replace(/^[^:]+:\s*/,"");
+  for(const a of x.pgAl){const k=a.contr+"|"+a.tipo;if(!g.has(k))g.set(k,[]);g.get(k).push(a);}
+  for(const l of g.values()){const a=l[0],tp=a.tipo;
+    const nm=z=>trunc(z.n.trim(),48),det=tp==="prog_atraso"||tp==="prog_termino"?`${sinPref(a.titulo)}. ${a.det}`:tp==="prog_desact"?a.det:/^hito_/.test(tp)?`${nTxt(l.length,"hito","hitos")}: ${listaTxt(l.map(nm),2)}`:`${nTxt(l.length,"tarea","tareas")}: ${listaTxt(l.map(nm),2)}`;
+    rows.push({sev:l.some(z=>z.sev==="alta")?"alta":"media",tp,quien:a.prog,det,n:l.length});}
+  /* contratista de un elemento no apto (un vano va al de la estructura donde termina) */
+  const cn=z=>{const u=z.u,e=u.t==="vano"?estById(u.s.id,u.v.b):u.e;return (e&&e.contr)||"Sin contratista";},uniq=a=>[...new Set(a)].join(", ");
+  if(x.noApt.length)rows.push({sev:"alta",tp:"no_apto",quien:uniq(x.noApt.map(cn)),det:`${nTxt(x.noApt.length,"elemento","elementos")} con avance en el período: ${listaTxt(x.noApt.map(z=>(z.u.t==="vano"?"vano ":"")+z.u.lab),4)}`,n:x.noApt.length});
+  if(x.retro.length){const els=[...new Set(x.retro.map(z=>z.lab))];rows.push({sev:"media",tp:"retroceso",quien:uniq(x.retro.map(z=>contrDe(z.d))),det:`${nTxt(els.length,"elemento","elementos")} con menos avance que al inicio: ${listaTxt(els,3)}`,n:x.retro.length});}
+  if(x.sinReg.length)rows.push({sev:"media",tp:"sin_registros",quien:x.sinReg.join(", "),det:"Sin avance registrado en la app con fecha del período.",n:x.sinReg.length});
+  return rows.sort((a,b)=>(a.sev==="alta"?0:1)-(b.sev==="alta"?0:1)||o(a.tp)-o(b.tp)||b.n-a.n);}
+/* --- puntos clave redactados a partir de los datos (también van en el texto y en el envío a n8n) --- */
+function exPuntos(x){const P0=x.P0,P1=x.P1,T=x.T,LS=x.libSt,[acc,pat,fun,mon,vc]=x.prod,out=[];
+  out.push(`El proyecto alcanza ${fmtP(P1.total,1)} de avance físico (${ppTxt(P1.total-P0.total)} en el período): la línea va en ${fmtP(P1.lineaPct,1)} y la S/E Tineo en ${fmtP(P1.se.total,1)}.`);
+  const pr=[];if(fun.ter.length)pr.push(nTxt(fun.ter.length,"fundación","fundaciones"));if(mon.ter.length)pr.push(nTxt(mon.ter.length,"estructura montada","estructuras montadas"));
+  if(vc.ter.length)pr.push(`${nTxt(vc.ter.length,"vano","vanos")} con conductor tendido`);if(pat.ter.length)pr.push(nTxt(pat.ter.length,"malla de puesta a tierra","mallas de puesta a tierra"));if(acc.ter.length)pr.push(nTxt(acc.ter.length,"camino de acceso","caminos de acceso"));
+  const mt=T.c1p+T.c2p,sec=secs().filter(s=>P1.sec[s.id].has).map(s=>({s,d:P1.sec[s.id].pct-P0.sec[s.id].pct})).sort((a,b)=>b.d-a.d)[0];
+  out.push((pr.length?`En el período se completaron ${listaY(pr)}`:"En el período no se completaron fundaciones, estructuras ni vanos")+(mt>=1?`; se tendieron ${fmtM(mt)} de conductor (metros de circuito)`:"")+"."+(sec&&sec.d>=0.05?` El mayor avance fue en ${sec.s.nombre} (${ppTxt(sec.d)}).`:""));
+  const pg=x.pg.filter(z=>z.prog!=null&&z.real!=null);
+  if(pg.length){const atr=pg.filter(z=>z.real-z.prog<-2).sort((a,b)=>(a.real-a.prog)-(b.real-b.prog));
+    if(atr.length){const w=atr[0],R=w.M.root,dv=R?pgDias(R.F,R.bF):null;
+      const quien=pg.length===1?"El contratista con programa cargado está":atr.length===pg.length?"Todos los contratistas con programa cargado están":atr.length===1?`1 de los ${pg.length} contratistas con programa cargado está`:`${atr.length} de los ${pg.length} contratistas con programa cargado están`;
+      out.push(`${quien} por debajo de lo programado. ${pg.length===1?"Va en":`La mayor brecha es de ${progName(w.P.contr)}:`} ${fmtP(w.real,1)} de avance real frente a ${fmtP(w.prog,1)} programado (${ppTxt(w.real-w.prog)})${dv>0?`, con término ${dv} días después de la línea base`:""}.`);}
+    else out.push(`${pg.length===1?"El contratista con programa cargado avanza":`Los ${pg.length} contratistas con programa cargado avanzan`} según lo programado o adelantados (ninguno con más de 2 pp de atraso).`);}
+  out.push(`Liberaciones: ${x.libEv.length?`${nTxt(x.libEv.length,"cambio","cambios")} en el período (${nTxt(x.libN.ser,"servidumbre liberada","servidumbres liberadas")} y ${nTxt(x.libN.pmf,"PMF aprobado","PMF aprobados")})`:"sin cambios registrados en el período"}. Están aptas para construir ${LS.t.apta} de ${LS.t.n} torres y ${LS.v.apta} de ${LS.v.n} vanos (${fmtKm(LS.v.m)}).`);
+  const rk=exRiesgos(x).filter(r=>r.sev==="alta");
+  if(rk.length){const it=rk.slice(0,3).map(r=>EX_TEMA[r.tp].toLowerCase()+" ("+r.quien+")");if(rk.length>3)it.push(nTxt(rk.length-3,"asunto más","asuntos más"));
+    out.push(`Requieren atención (prioridad alta): ${listaY(it)}.`);}
+  return out;}
+/* --- modelos dibujados --- */
+/* Avance por frente: torre tipo de cada sector y pórtico de la S/E; lo construido se dibuja lleno y cada etapa lleva su % y la variación */
+function exFrentesSvg(x){const P0=x.P0,P1=x.P1,list=secs().filter(s=>P1.sec[s.id].has),CW=230,gy=196,H=116,W=CW*(list.length+1);let g="";
+  /* rótulo de etapa en la columna derecha del panel; la línea de llamada parte del elemento dibujado (px,py) */
+  const lab=(ox,y,name,v,dv,px,py)=>{const lx=ox+136;py=py==null?y:py;
+    return `<path class="ldr" d="M${f1(px)} ${f1(py)}${Math.abs(py-y)>0.5?`L${lx-8} ${f1(y)}`:""}H${lx-4}"/><circle cx="${f1(px)}" cy="${f1(py)}" r="1.6" style="fill:var(--ink-2)"/><text class="cap" x="${lx}" y="${f1(y-5)}" style="font-size:10.5px">${esc(name)}</text><text class="big" x="${lx}" y="${f1(y+10)}" style="font-size:16px">${fmtP(v,1)}</text><text class="tx" x="${lx}" y="${f1(y+21)}" style="font-size:10px">${ppTxt(dv)}</text>`;};
+  const head=(ox,name,v,dv,col)=>`<rect x="${ox+12}" y="10" width="9" height="9" style="fill:${col}"/><text class="cap" x="${ox+27}" y="18.5" style="font-size:11px;fill:var(--ink)">${esc(name)}</text><text class="big" x="${ox+12}" y="47" style="font-size:28px">${fmtP(v,1)}</text><text class="tx" x="${ox+12}" y="62" style="font-size:10.5px">${ppTxt(dv)} en el período</text>`;
+  const suelo=ox=>`<rect class="earth" x="${ox+10}" y="${gy}" width="${CW-20}" height="38"/><line class="gl" x1="${ox+10}" x2="${ox+CW-10}" y1="${gy}" y2="${gy}"/>`;
+  const sep=ox=>`<line x1="${ox}" x2="${ox}" y1="8" y2="${gy+66}" style="stroke:var(--line);stroke-width:1"/>`;
+  list.forEach((s,i)=>{const a=P0.sec[s.id],b=P1.sec[s.id],st=b.stg,s0=a.stg,ox=i*CW,cx=ox+66;
+    if(i>0)g+=sep(ox);
+    g+=head(ox,s.nombre,b.pct,b.pct-a.pct,secColor(s.id))+suelo(ox);
+    const pd=`M${cx-50} ${gy-2}H${cx+50}`;g+=`<path d="${pd}" style="stroke:var(--line-2);stroke-width:4;fill:none"/>`+(st.pre>0?`<path pathLength="100"${st.pre<99.95?` stroke-dasharray="${f1(st.pre)} 100"`:""} d="${pd}" style="stroke:var(--ink-2);stroke-width:4;fill:none"/>`:"");
+    const G=latticeGeom(cx,gy-4,H,22,6,5,false),ft=s.id==="cruce"?"cr":"zv";
+    g+=footModel(cx-22,gy,20,24,ft,st.fun)+footModel(cx+22,gy,20,24,ft,st.fun)+steelDraw(G.d,cx,gy-4,gy-4-H,G.reach,st.mon,1.1);
+    for(const sd of ["L","R"])G.arms[sd].forEach(p=>{g+=wireDraw(catD(p,{x:sd==="L"?ox+10:cx+52,y:p.y+7},3),st.ten);});
+    g+=wireDraw(catD(G.peak,{x:ox+10,y:G.peak.y+7},3),st.ten,"og");
+    const yT=G.arms.R[2].y+7;
+    g+=lab(ox,yT,"Tendido",st.ten,st.ten-s0.ten,cx+52)+lab(ox,142,"Montaje",st.mon,st.mon-s0.mon,cx+11)+lab(ox,180,"Preliminares",st.pre,st.pre-s0.pre,cx+50,gy-2)+lab(ox,gy+22,"Fundaciones",st.fun,st.fun-s0.fun,cx+32);});
+  /* S/E Tineo: pórtico de línea (dos columnas y viga en celosía) sobre sus fundaciones */
+  {const ox=list.length*CW,cx=ox+66,a=P0.se,b=P1.se,c=k=>b.cat[k].pct,d=k=>b.cat[k].pct-a.cat[k].pct,top=gy-4-104,cw=10;let pd="";
+    if(list.length)g+=sep(ox);
+    g+=head(ox,"S/E Tineo · "+SE_CONTRATISTA,b.total,b.total-a.total,"var(--c-se)")+suelo(ox);
+    for(const sx of [-1,1]){const x0=cx+sx*34-cw/2;pd+=`M${f1(x0)} ${gy-4}V${f1(top)}M${f1(x0+cw)} ${gy-4}V${f1(top)}`;
+      for(let q=0;q<6;q++){const y0=gy-4-(gy-4-top)*q/6,y1=gy-4-(gy-4-top)*(q+1)/6;pd+=`M${f1(x0)} ${f1(y0)}L${f1(x0+cw)} ${f1(y1)}M${f1(x0+cw)} ${f1(y0)}L${f1(x0)} ${f1(y1)}`;}}
+    const bx0=cx-46,bx1=cx+46;pd+=`M${bx0} ${f1(top)}H${bx1}M${bx0} ${f1(top+9)}H${bx1}`;for(let q=0;q<8;q++){const xa=bx0+(bx1-bx0)*q/8,xb=bx0+(bx1-bx0)*(q+1)/8;pd+=`M${f1(xa)} ${f1(top+9)}L${f1(xb)} ${f1(top)}`;}
+    g+=footDraw(cx-34,gy,26,24,c("fun"))+footDraw(cx+34,gy,26,24,c("fun"))+steelDraw(pd,cx,gy-4,top,52,c("est"),1);
+    g+=lab(ox,top+5,"Estructuras",c("est"),d("est"),bx1+2)+lab(ox,gy+22,"Fundaciones",c("fun"),d("fun"),cx+47,gy+14);
+    g+=`<text class="tx" x="${ox+14}" y="${gy+52}" style="font-size:10px">Canaletas <tspan style="font-weight:600;fill:var(--ink)">${fmtP(c("can"),1)}</tspan> · ${ppTxt(d("can"))}</text><text class="tx" x="${ox+14}" y="${gy+65}" style="font-size:10px">Drenajes <tspan style="font-weight:600;fill:var(--ink)">${fmtP(c("dre"),1)}</tspan> · ${ppTxt(d("dre"))}</text>`;}
+  return `<svg class="mdl" viewBox="0 0 ${W} ${gy+72}" role="img" aria-label="${esc("Avance por frente: "+list.map(s=>s.nombre+" "+fmtP(P1.sec[s.id].pct,1)).join(", ")+", S/E Tineo "+fmtP(P1.se.total,1))}">${g}</svg>`;}
+/* Perfil de toda la línea a escala de distancia (km desde la S/E Tineo), en dos filas a la misma escala: continente, y cruce
+   + isla. Cada torre se "monta" según su % de montaje (trazo fantasma = por montar) y bajo el terreno va su fundación;
+   entre torres, el conductor (lleno = 6 fases al 100 %, tenue = en tendido). Franja inferior: liberación de torres y
+   vanos. ▼ = avance registrado en el período. 2C y 3C no tienen coordenadas: se ubican junto a cada orilla del canal */
+/* torre mínima para el perfil: cuerpo, cúspide y una cruceta (punta en ±b·1,15, donde se amarra el conductor) */
+const exTorreD=(cx,gy,h,b)=>{const t=b*0.3,yW=gy-h*0.6,yA=gy-h*0.8;return `M${f1(cx-b)} ${f1(gy)}L${f1(cx-t)} ${f1(yW)}L${f1(cx)} ${f1(gy-h)}L${f1(cx+t)} ${f1(yW)}L${f1(cx+b)} ${f1(gy)}M${f1(cx-b*1.15)} ${f1(yA)}H${f1(cx+b*1.15)}`;};
+const exCruceAlta=t=>{const id=String(t.e.id).toUpperCase();return id==="2C"||id==="3C";};
+const exAlt=t=>exCruceAlta(t)?44:/ancl/i.test(t.e.tipo||"")?28:24;
+const exAnc=t=>exCruceAlta(t)?3.2:1.7;
+function exLineaSvg(x){
+  const P1=x.P1,g1=x.g1,its=[],CR=["1CA","1CB","2C","3C","4CB","4CA"],cro=e=>{const i=CR.indexOf(String(e.id).toUpperCase());return i<0?99:i;};
+  for(const s of secs())(s.id==="cruce"?[...estr(s.id)].sort((a,b)=>cro(a)-cro(b)):estr(s.id)).forEach(e=>{const a=asbGet(e.id);its.push({s:s.id,e,xy:a&&a.E!=null?a:null,st:P1.sec[s.id].byE[e.id]});});
+  if(its.length<2||!its[0].xy)return `<p class="exnota">Faltan coordenadas para dibujar el perfil de la línea.</p>`;
+  const N=its.length,pos=new Array(N).fill(null),kn=new Array(N).fill(false);pos[0]=0;kn[0]=true;let li=0;
+  for(let i=1;i<N;i++){const a=its[li],b=its[i];if(b.xy){pos[i]=pos[li]+Math.hypot(b.xy.E-a.xy.E,b.xy.N-a.xy.N);kn[i]=true;li=i;}}
+  for(let i=1;i<N;i++){if(kn[i])continue;let lo=i-1;while(!kn[lo])lo--;let hi=i+1;while(hi<N&&!kn[hi])hi++;
+    if(hi>=N){pos[i]=pos[lo]+380*(i-lo);continue;}const id=String(its[i].e.id).toUpperCase();pos[i]=pos[lo]+(pos[hi]-pos[lo])*(id==="2C"?0.2:id==="3C"?0.8:(i-lo)/(hi-lo));}
+  const ML0=59.2,MLN=67.7,iB=its.findIndex(t=>t.s!=="continente"),rows=iB>0?[{a:0,b:iB-1},{a:iB,b:N-1}]:[{a:0,b:N-1}];
+  for(const r of rows){r.m0=r.a===0?-ML0:pos[r.a]-160;r.m1=r.b===N-1?pos[r.b]+MLN:pos[r.b]+160;}
+  const X0=60,W=880,k=(W-X0-14)/Math.max(...rows.map(r=>r.m1-r.m0)),RH=118,lc=g=>LIB_GEN[g].h;let g="",nE=0,nV=0;
+  rows.forEach((r,j)=>{const y0=6+j*RH,gy=y0+80,xm=m=>X0+(m-r.m0)*k,R=its.slice(r.a,r.b+1),xs=R.map((t,i)=>xm(pos[r.a+i]));
+    /* sectores: banda de color, nombre y avance */
+    for(let i0=0;i0<R.length;){let i1=i0;while(i1+1<R.length&&R[i1+1].s===R[i0].s)i1++;
+      const sid=R[i0].s,xa=xs[i0]-3,xb=xs[i1]+3,p1=P1.sec[sid].pct,p0=x.P0.sec[sid].pct;
+      g+=`<line x1="${f1(xa)}" x2="${f1(xb)}" y1="${y0+3}" y2="${y0+3}" style="stroke:${secColor(sid)};stroke-width:3"/><text class="cap" x="${f1(xa)}" y="${y0+16}" style="font-size:10.5px;fill:var(--ink)">${esc(secName(sid))}</text><text class="tx" x="${f1(xa)}" y="${y0+29}" style="font-size:10.5px"><tspan style="font-weight:600;fill:var(--ink)">${fmtP(p1,1)}</tspan>${xb-xa>170?` · ${ppTxt(p1-p0)} en el período`:""}</text>`;
+      i0=i1+1;}
+    /* terreno, con el canal de Chacao entre 2C y 3C */
+    const i2=R.findIndex(t=>String(t.e.id).toUpperCase()==="2C"),i3=R.findIndex(t=>String(t.e.id).toUpperCase()==="3C"),xg0=xm(r.m0),xg1=xm(r.m1);
+    if(i2>=0&&i3>i2){const wa=xs[i2]+5,wb=xs[i3]-5;g+=`<rect class="water" x="${f1(wa)}" y="${gy}" width="${f1(Math.max(1,wb-wa))}" height="9"/><line class="gl" x1="${f1(xg0)}" x2="${f1(wa)}" y1="${gy}" y2="${gy}"/><line class="gl" x1="${f1(wb)}" x2="${f1(xg1)}" y1="${gy}" y2="${gy}"/><text class="cap" x="${f1((wa+wb)/2)}" y="${gy+44}" text-anchor="middle" style="font-size:9px">Canal de Chacao</text>`;}
+    else g+=`<line class="gl" x1="${f1(xg0)}" x2="${f1(xg1)}" y1="${gy}" y2="${gy}"/>`;
+    /* subestaciones en los extremos (pórtico), rotuladas hacia afuera para no tapar las primeras torres */
+    const se=(xx,lab,izq)=>`<path class="steel" style="stroke-width:1" d="M${f1(xx-4)} ${gy}V${gy-15}M${f1(xx+4)} ${gy}V${gy-15}M${f1(xx-6.5)} ${gy-15}H${f1(xx+6.5)}M${f1(xx-6.5)} ${gy-11}H${f1(xx+6.5)}"/><text class="tx" x="${f1(izq?xx-9:xx+9)}" y="${gy-3}" text-anchor="${izq?"end":"start"}" style="font-size:9px">${lab}</text>`;
+    if(r.a===0)g+=se(xm(-ML0),"S/E Tineo",true);
+    if(r.b===N-1)g+=se(xm(pos[N-1]+MLN),"S/E Nueva Ancud",false);
+    /* vanos: franja de liberación y conductor */
+    const idx=new Map(R.map((t,i)=>[t.s+"|"+t.e.id,i]));
+    for(const sid of new Set(R.map(t=>t.s)))for(const v of vanos(sid)){const ia=idx.get(sid+"|"+v.a),ib=idx.get(sid+"|"+v.b);if(ia==null||ib==null)continue;
+      const A=R[ia],B=R[ib],xa=xs[ia],xb=xs[ib],dir=xb>=xa?1:-1,pa={x:xa+dir*exAnc(A)*1.15,y:gy-exAlt(A)*0.8},pb={x:xb-dir*exAnc(B)*1.15,y:gy-exAlt(B)*0.8};
+      const c1=circPct(v.key,"1",g1),c2=circPct(v.key,"2",g1),full=c1>=99.95&&c2>=99.95;
+      g+=`<rect x="${f1(Math.min(xa,xb))}" y="${gy+8}" width="${f1(Math.abs(xb-xa))}" height="3" style="fill:${lc(libGen(kLibV(sid,v.a,v.b)))}"/>`;
+      if(c1+c2>0.01)g+=`<path d="${catD(pa,pb,Math.min(6,Math.abs(pb.x-pa.x)*0.05))}" style="fill:none;stroke:var(--steel);stroke-width:.9${full?"":";opacity:.3"}"/>`;
+      if(x.chgV.has(v.key)){nV++;const mx=(pa.x+pb.x)/2,my=Math.min(pa.y,pb.y)-5;g+=`<path d="M${f1(mx-2.2)} ${f1(my-4)}H${f1(mx+2.2)}L${f1(mx)} ${f1(my)}Z" style="fill:var(--accent)"/>`;}}
+    /* torres, fundaciones, liberación de cada torre, marca de avance y zona sensible con su ficha */
+    R.forEach((t,i)=>{const cx=xs[i],h=exAlt(t),b=exAnc(t),st=t.st,top=gy-h,lg=libGen(kLibE(t.s,t.e.id)),ch=x.chgE.has(t.s+"|"+t.e.id);
+      g+=steelDraw(exTorreD(cx,gy,h,b),cx,gy,top,b*1.5,st.mon,0.8);
+      g+=`<rect x="${f1(cx-1.7)}" y="${gy+1.2}" width="3.4" height="3.4" class="${st.fun>=99.95?"conc":st.fun>0?"concp":"padg"}"/><rect x="${f1(cx-1.6)}" y="${gy+6.5}" width="3.2" height="6" style="fill:${lc(lg)};stroke:var(--surface);stroke-width:.5"/>`;
+      if(ch){nE++;g+=`<path d="M${f1(cx-2.4)} ${f1(top-7.5)}H${f1(cx+2.4)}L${f1(cx)} ${f1(top-3)}Z" style="fill:var(--accent)"/>`;}
+      const xl=i>0?(xs[i-1]+cx)/2:cx-4,xr=i<R.length-1?(cx+xs[i+1])/2:cx+4;
+      const tip=`${secName(t.s)} · Estructura ${t.e.id}${t.e.contr?" · "+t.e.contr:""}\nFundación ${fmtP(st.fun)} · Montaje ${fmtP(st.mon)} · Tendido en torre ${fmtP(st.tto)}\nLiberación: ${LIB_GEN[lg].t.toLowerCase()}${ch?"\nCon avance registrado en el período":""}\nkm ${((pos[r.a+i]+ML0)/1000).toFixed(1).replace(".",",")} desde la S/E Tineo`;
+      g+=`<rect class="hit" x="${f1(xl)}" y="${f1(top-9)}" width="${f1(Math.max(2,xr-xl))}" height="${f1(h+22)}" data-open="${esc(t.s)}|${esc(t.e.id)}" data-tip="${esc(tip)}"/>`;});
+    /* eje en km */
+    for(let km=Math.ceil((r.m0+ML0)/5000)*5;km<=Math.floor((r.m1+ML0)/5000)*5;km+=5){const xx=xm(km*1000-ML0);g+=`<line x1="${f1(xx)}" x2="${f1(xx)}" y1="${gy+15}" y2="${gy+19}" style="stroke:var(--line-2);stroke-width:1"/><text class="tx" x="${f1(xx)}" y="${gy+29}" text-anchor="middle" style="font-size:9px;fill:var(--muted)">km ${km}</text>`;}
+    /* cifras al cierre, en el espacio libre de la última fila (a la derecha del rótulo de la S/E Nueva Ancud) */
+    if(j===rows.length-1){const xe=xm(r.m1)+(r.b===N-1?100:30),xv=Math.min(W-16,xe+290);if(xv-xe>=230){const [,,fun,mon,vc]=x.prod,LS=x.libSt,yy=q=>y0+36+q*16;
+      const ln=[["Estructuras montadas",`${mon.acum} de ${mon.n}`],["Fundaciones terminadas",`${fun.acum} de ${fun.n}`],["Vanos con conductor (6 fases)",`${vc.acum} de ${vc.n}`],["Torres aptas para construir",`${LS.t.apta} de ${LS.t.n}`]];
+      g+=`<text class="cap" x="${f1(xe)}" y="${y0+16}" style="font-size:10.5px">Al ${fmtD(S.rep.hasta)}</text>`+ln.map((l,q)=>`<text class="tx" x="${f1(xe)}" y="${yy(q)}" style="font-size:11px">${esc(l[0])}</text><text class="tx" x="${f1(xv)}" y="${yy(q)}" text-anchor="end" style="font-size:11px;font-weight:600;fill:var(--ink)">${esc(l[1])}</text><line x1="${f1(xe)}" x2="${f1(xv)}" y1="${yy(q)+5}" y2="${yy(q)+5}" style="stroke:var(--line);stroke-width:1"/>`).join("")
+        +`<path d="M${f1(xe)} ${yy(4)-8}H${f1(xe+4.8)}L${f1(xe+2.4)} ${yy(4)-3.5}Z" style="fill:var(--accent)"/><text class="tx" x="${f1(xe+9)}" y="${yy(4)}" style="font-size:11px">Avance en el período</text><text class="tx" x="${f1(xv)}" y="${yy(4)}" text-anchor="end" style="font-size:11px;font-weight:600;fill:var(--ink)">${nTxt(nE,"estructura","estructuras")} · ${nTxt(nV,"vano","vanos")}</text>`;}}});
+  return `<svg class="mdl" viewBox="0 0 ${W} ${6+rows.length*RH+12}" role="img" aria-label="${esc(`Perfil de la línea al ${fmtD(S.rep.hasta)}: ${x.prod[3].acum} de ${x.prod[3].n} estructuras montadas, ${x.prod[2].acum} fundaciones terminadas y ${x.prod[4].acum} vanos con conductor`)}">${g}</svg>`;}
+function exLegLinea(){const ic=(w,h,c)=>`<svg class="mdl" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:inline-block;width:${w}px;height:${h}px;flex:none" aria-hidden="true">${c}</svg>`,T=exTorreD(8,17,15,3.2);
+  const it=[[ic(16,18,`<path class="steel" style="stroke-width:.9" d="${T}"/>`),"Estructura montada"],[ic(16,18,`<path class="ghost" d="${T}"/><clipPath id="exlg"><rect x="0" y="10" width="16" height="8"/></clipPath><path class="steel" style="stroke-width:.9" clip-path="url(#exlg)" d="${T}"/>`),"En montaje"],[ic(16,18,`<path class="ghost" d="${T}"/>`),"Por montar"],
+    [ic(14,10,`<rect class="conc" x="2" y="2" width="10" height="6"/>`),"Fundación terminada"],[ic(14,10,`<rect class="concp" x="2" y="2" width="10" height="6"/>`),"Fundación en ejecución"],
+    [ic(26,10,`<path d="M1 3Q13 7 25 3" style="fill:none;stroke:var(--steel);stroke-width:1.2"/>`),"Conductor tendido (6 fases)"],[ic(26,10,`<path d="M1 3Q13 7 25 3" style="fill:none;stroke:var(--steel);stroke-width:1.2;opacity:.3"/>`),"En tendido"],
+    [ic(12,10,`<path d="M1.5 2H10.5L6 8Z" style="fill:var(--accent)"/>`),"Con avance en el período"],[ic(26,10,`<rect class="water" x="1" y="1" width="24" height="8"/>`),"Canal de Chacao"]];
+  return `<div class="mlegend">${it.map(([a,b])=>`<span>${a}${b}</span>`).join("")}</div><div class="mlegend"><span class="lbl">Franja inferior · liberación</span>${Object.values(LIB_GEN).map(v=>`<span><i class="lsym sq" style="--g:${v.h}"></i>${esc(v.t)}</span>`).join("")}<span class="muted">Horizontal a escala (km desde la S/E Tineo); alturas sin escala</span></div>`;}
+/* --- hitos y lo que viene, desde los programas cargados --- */
+function exHitos(){const now=Date.now(),out=[];
+  for(const P of progs()){const M=pgModel(P);for(const t of M.ms){if(M.rv.get(t.o)>=100)continue;const F0=pgMs(t.F);if(!isFinite(F0)||F0>now+30*PG_DAY)continue;out.push({P,t,F0,dv:pgDias(t.F,t.bF),venc:F0<=now});}}
+  return out;}
+function exProximas(){const now=Date.now(),lim=now+14*PG_DAY,out=[];
+  for(const P of progs()){const M=pgModel(P),mz=new Map(M.meas.map(r=>[r.t.o,r])),L=[];let nb=0;
+    for(const t of M.leaves){if(t.m)continue;const S0=pgMs(t.S);if(!(S0>now&&S0<=lim))continue;const r=mz.get(t.o),lb=r?pgLibBad(r):{n:0,bad:[]};if(lb.bad.length)nb++;L.push({t,r,lb});}
+    if(L.length)out.push({P,M,L:L.sort((a,b)=>pgMs(a.t.S)-pgMs(b.t.S)),nb});}
+  return out;}
+/* --- secciones del documento --- */
+function exRotulo(x,nota,sem){const R=S.rep,c=S.cfg||{},ed=R.notaEd,firma=(ed&&String(ed.firma||"").trim())||(nota&&nota.firma)||S.userName||"—";
+  return `<header class="exrot"><div class="m"><span class="k">${esc(c.codigo||"STN4324")} · ${esc(c.tension||"Línea de transmisión")}</span><h1>Resumen ejecutivo</h1><span class="s">${esc(c.nombre||"Línea Tineo – Ancud")} · ${esc(sem.titulo)}</span></div>
+  <div class="c"><div><span>Período</span><b>${fmtD(R.desde)} al ${fmtD(R.hasta)}</b></div><div><span>Emisión</span><b>${fmtD(today())}</b></div><div><span>Comparado con</span><b>${fmtD(x.f0)}</b></div><div><span>Elaboró</span><b>${esc(firma)}</b></div></div></header>`;}
+function exSecGeneral(x,n){const P0=x.P0,P1=x.P1,T=x.T,LS=x.libSt,[,,fun,mon,vc]=x.prod,pc=(a,b)=>b?fmtP(a/b*100):"—",mas=(k,u)=>k?`+${k} en el período`:`sin ${u} en el período`;
+  const kp=(t,a,b,s1,s2)=>`<div><span class="exl">${esc(t)}</span><b>${a} <small>de ${b}</small></b><span>${s1}</span>${s2?`<span class="exm">${s2}</span>`:""}</div>`;
+  return `<section class="exsec">${exH(n,"Situación general",`al ${fmtD(S.rep.hasta)}`)}<div class="exhero">
+  <div class="exbig"><span class="exl">Avance físico del proyecto</span><b>${fmtP(P1.total,1).replace("%","")}<small>%</small></b><span class="exd">${ppHtml(P1.total-P0.total)} en el período <span class="exm">· ${fmtP(P0.total,1)} al ${fmtD(x.f0)}</span></span>
+  <span class="exprog" aria-hidden="true"><i style="width:${f1(clamp(P1.total,0,100))}%"></i></span>
+  <span class="exs">Línea <b>${fmtP(P1.lineaPct,1)}</b> (${ppTxt(P1.lineaPct-P0.lineaPct)}) · S/E Tineo <b>${fmtP(P1.se.total,1)}</b> (${ppTxt(P1.se.total-P0.se.total)})</span></div>
+  <div class="exkpis">${kp("Estructuras montadas",mon.acum,mon.n,`${pc(mon.acum,mon.n)} · ${mas(mon.ter.length,"nuevas")}`)}${kp("Fundaciones terminadas",fun.acum,fun.n,`${pc(fun.acum,fun.n)} · ${mas(fun.ter.length,"nuevas")}`)}${kp("Vanos con conductor",vc.acum,vc.n,`${pc(vc.acum,vc.n)} · ${mas(vc.ter.length,"nuevos")}`,T.c1p+T.c2p>=1?`${fmtM(T.c1p+T.c2p)} de circuito tendidos en el período`:"")}${kp("Torres aptas para construir",LS.t.apta,LS.t.n,`${pc(LS.t.apta,LS.t.n)} · ${LS.v.apta} de ${LS.v.n} vanos aptos`,`${nTxt(x.libEv.length,"cambio","cambios")} de liberación en el período`)}</div></div></section>`;}
+function exSecPuntos(x,n,pts,nota){const R=S.rep,ed=R.notaEd,adm=S.canAdmin,txt=ed?String(ed.texto||""):(nota&&nota.texto)||"";
+  let h=`<section class="exsec">${exH(n,"Puntos clave del período")}<ol class="expts">${pts.map(p=>`<li>${esc(p)}</li>`).join("")}</ol>`;
+  if(adm&&ed)h+=`<div class="exed noprint"><label for="ex-nota">Comentario de la administración del contrato (se imprime con el resumen)</label><textarea id="ex-nota" rows="4" maxlength="2000">${esc(ed.texto||"")}</textarea>
+    <div class="row" style="gap:8px;align-items:flex-end"><div class="field" style="flex:1;min-width:180px"><label for="ex-firma">Elaboró (aparece en el rótulo)</label><input id="ex-firma" type="text" maxlength="120" value="${esc(ed.firma||"")}"></div><button class="btn small primary" id="ex-nota-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar comentario"}</button><button class="btn small ghost" data-exnota="0">Cancelar</button></div></div>`;
+  if(txt.trim())h+=`<div class="excom${adm&&ed?" print-only":""}"><span class="exl">Comentario de la administración del contrato</span><p>${esc(txt.trim()).replace(/\n/g,"<br>")}</p></div>`;
+  if(adm&&!ed)h+=`<button class="btn small ghost noprint" data-exnota="1" style="align-self:flex-start">${nota&&nota.texto?"Editar comentario y firma":"Agregar comentario y firma"}</button>`;
+  return h+`</section>`;}
+function exSecFrentes(x,n){return `<section class="exsec">${exH(n,"Avance por frente","torre tipo de cada sector y pórtico de la S/E; lo construido se dibuja lleno")}<div class="exfig">${exFrentesSvg(x)}</div><p class="exnota">En cada etapa, la cifra grande es el avance al cierre y la chica, la variación del período. Las etapas ponderan ${etapas().map(e=>`${e.nombre.toLowerCase()} ${fmtP(num(e.peso,0))}`).join(", ")}.</p></section>`;}
+function exSecProgramas(x,n){
+  const bar=z=>{const tip=`${progName(z.P.contr)}\n${fmtP(z.real,1)} avance real (Texto27)\n${fmtP(z.prog,1)} programado (Texto28)\nFecha de estado ${pgD(z.P.estado)}`,pr=z.prog!=null?f1(clamp(z.prog,0,100)*3):null;
+    return `<svg class="exbul-g" viewBox="0 0 300 26" role="img" aria-label="${esc(tip.replace(/\n/g,", "))}" data-tip="${esc(tip)}">${[25,50,75].map(v=>`<line x1="${v*3}" x2="${v*3}" y1="4" y2="22" style="stroke:var(--line);stroke-width:1"/>`).join("")}<rect x="0" y="9" width="300" height="8" rx="2" style="fill:var(--surface-3)"/>${z.real>0?`<rect x="0" y="9" width="${f1(clamp(z.real,0,100)*3)}" height="8" rx="2" style="fill:var(--sv-1)"/>`:""}${pr!=null?`<line x1="${pr}" x2="${pr}" y1="3" y2="23" style="stroke:var(--ink);stroke-width:2.5"/>`:""}</svg>`;};
+  const rows=x.pg.map(z=>{const R=z.M.root,dv=R?pgDias(R.F,R.bF):null,dev=z.prog!=null&&z.real!=null?z.real-z.prog:null;
+    return `<div class="exbul-r"><div class="exbul-n"><b>${esc(progName(z.P.contr))}</b><span title="${esc(z.P.titulo||"")}">${esc(z.P.titulo||"")}</span><span>Estado al ${pgD(z.P.estado)}</span></div>${bar(z)}<div class="exbul-v"><b>${fmtP(z.real,1)}</b><span>prog. ${fmtP(z.prog,1)}</span></div><div class="exbul-e">${dev!=null?ppHtml(dev):"—"}${pgChip(exEstProg(dev))}</div><div class="exbul-t"><span>Término vigente</span><b>${R&&R.F?pgD(R.F):"—"}</b>${dv?`<span class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</span>`:`<span>según línea base</span>`}</div></div>`;}).join("");
+  return `<section class="exsec">${exH(n,"Programado vs real por contratista","a la fecha de estado de cada programa")}<div class="exbul"><div class="exbul-h"><span>Contratista · programa</span><span class="exleg"><svg width="22" height="10" aria-hidden="true"><rect x="0" y="2" width="22" height="6" rx="1.5" style="fill:var(--sv-1)"/></svg>Avance real<svg width="8" height="14" aria-hidden="true"><line x1="4" x2="4" y1="0" y2="14" style="stroke:var(--ink);stroke-width:2.5"/></svg>Programado</span><span style="text-align:right">Real</span><span>Desviación</span><span>Término</span></div>${rows}</div>
+  <p class="exnota">Avance real = Texto27 y programado = Texto28 de cada programa MS Project. En plazo: hasta −2 pp; atraso moderado: hasta −10 pp; atraso significativo: más de −10 pp.</p></section>`;}
+function exSecLinea(x,n){return `<section class="exsec">${exH(n,"Estado de la línea",`perfil modelado de la traza al ${fmtD(S.rep.hasta)}`)}<div class="exfig">${exLineaSvg(x)}</div>${exLegLinea()}</section>`;}
+function exSecProduccion(x,n){const T=x.T,[acc,pat,fun,mon,vc]=x.prod,pc=p=>p.n?p.acum/p.n*100:0,mt=T.c1p+T.c2p;
+  const tile=(kind,t,p,u1,u2,extra)=>`<div class="extile" data-tip="${esc(`${t}\n${p.ter.length} en el período${p.ter.length?": "+listaTxt(p.ter,12):""}\n${p.acum} de ${p.n} en total`)}"><svg class="mdl" viewBox="0 0 92 62" aria-hidden="true">${kpiIcon(kind,pc(p))}</svg><span class="exl">${esc(t)}</span><b>${p.ter.length?"+"+p.ter.length:"0"}</b><span>${esc(p.ter.length===1?u1:u2)} en el período</span><span class="exm">${p.acum} de ${p.n} en total · ${fmtP(pc(p))}</span>${extra||""}</div>`;
+  const cor=T.cor.length?`<p class="exnota">Correcciones de registro: ${esc(listaTxt(T.cor.map(c=>"vano "+c.v),6))} ${T.cor.length===1?"termina":"terminan"} el período con menos tendido que al inicio (${fmtM(-T.cor.reduce((a,c)=>a+c.m,0))} en total). Esa baja no se resta: los metros informados son solo tendido nuevo.</p>`:"";
+  return `<section class="exsec">${exH(n,"Producción del período","lo completado en el período; el dibujo muestra el acumulado")}<div class="extiles">${tile("acc","Caminos de acceso",acc,"camino terminado","caminos terminados")}${tile("pat","Mallas de puesta a tierra",pat,"malla instalada","mallas instaladas")}${tile("fun","Fundaciones",fun,"fundación terminada","fundaciones terminadas")}${tile("mon","Montaje",mon,"estructura montada","estructuras montadas")}${tile("ten","Tendido de conductor",vc,"vano con sus 6 fases","vanos con sus 6 fases",mt>=1?`<span class="exm">${fmtM(mt)} de circuito</span>`:"")}</div>${cor}</section>`;}
+function exSecLib(x,n){const LS=x.libSt,pc=(a,b)=>b?fmtP(a/b*100):"—",fr=libFrentes(libUnits()).sort((a,b)=>b.m-a.m).slice(0,4),nr=LS.t.res+LS.v.res;
+  const fg=(t,v,s,cls)=>`<div${cls?` class="${cls}"`:""}><span class="exl">${esc(t)}</span><b>${v}</b><span>${s}</span></div>`;
+  return `<section class="exsec">${exH(n,"Liberaciones",`estado al ${fmtD(today())}`)}<div class="exfig4">${fg("Torres aptas para construir",`${LS.t.apta} de ${LS.t.n}`,`${pc(LS.t.apta,LS.t.n)} de las torres`)}${fg("Vanos aptos",`${LS.v.apta} de ${LS.v.n}`,`${fmtKm(LS.v.m)} de ${fmtKm(LS.v.mT)} de línea`)}${fg("Restringidas",String(nr),`${LS.t.res} torres · ${LS.v.res} vanos`,nr?"crit":"")}${fg("PMF aprobados",`${LS.cod.ok} de ${LS.cod.n}`,`${LS.cod.res} restringidos · ${LS.cod.pend+LS.cod.tram} por confirmar`)}</div>
+  <p class="exnota">En el período: ${x.libEv.length?`${nTxt(x.libEv.length,"cambio registrado","cambios registrados")} (${nTxt(x.libN.ser,"servidumbre liberada","servidumbres liberadas")}, ${nTxt(x.libN.pmf,"PMF aprobado","PMF aprobados")} y ${nTxt(x.libN.res,"restricción","restricciones")})`:"sin cambios registrados"}.${fr.length?` Tramos continuos más largos aptos para construir: ${esc(fr.map(r=>`${r.a}–${r.b} (${fmtKm(r.m)})`).join(", "))}.`:""}</p></section>`;}
+function exSecRiesgos(x,n){const rows=exRiesgos(x),top=rows.slice(0,6);
+  return `<section class="exsec">${exH(n,"Riesgos y alertas principales","ordenados por prioridad")}${top.length?`<table class="exrisk"><thead><tr><th>Prioridad</th><th>Frente</th><th>Alerta</th><th>Acción sugerida</th></tr></thead><tbody>${top.map(r=>`<tr><td>${pgChip(r.sev==="alta"?{k:"late",t:"Alta"}:{k:"low",t:"Media"})}</td><td><b>${esc(r.quien)}</b></td><td><b>${esc(EX_TEMA[r.tp]||r.tp)}</b><span>${esc(cap1(r.det))}</span></td><td>${esc(EX_ACC[r.tp]||"")}</td></tr>`).join("")}</tbody></table>${rows.length>top.length?`<p class="exnota">${nTxt(rows.length-top.length,"alerta más","alertas más")} en el detalle técnico y en la pestaña Programas.</p>`:""}`:`<p class="exnota">Sin alertas en el período.</p>`}</section>`;}
+function exSecHitos(x,n){const L=exHitos(),venc=L.filter(z=>z.venc).sort((a,b)=>b.F0-a.F0),prox=L.filter(z=>!z.venc).sort((a,b)=>a.F0-b.F0),R=[...venc.slice(0,4),...prox.slice(0,4)];
+  return `<section class="exsec">${exH(n,"Hitos","vencidos sin cumplir y próximos 30 días")}${R.length?`<table><thead><tr><th>Fecha vigente</th><th>Hito</th><th>Contratista</th><th class="r">Línea base</th><th class="r">Desplazamiento</th><th>Estado</th></tr></thead><tbody>${R.map(z=>`<tr><td class="num">${pgD(z.t.F)}</td><td>${esc(z.t.n.trim())}</td><td>${esc(progName(z.P.contr))}</td><td class="r num">${pgD(z.t.bF)}</td><td class="r num">${z.dv?`<span class="${z.dv>0?"crit":""}">${z.dv>0?"+":""}${z.dv} días</span>`:"—"}</td><td>${pgChip(z.venc?{k:"late",t:"Vencido"}:{k:"low",t:"Próximo"})}</td></tr>`).join("")}</tbody></table>${venc.length>4||prox.length>4?`<p class="exnota">${nTxt(venc.length,"hito vencido","hitos vencidos")} y ${nTxt(prox.length,"próximo","próximos")} en total; el detalle está en la pestaña Programas.</p>`:""}`:`<p class="exnota">Sin hitos vencidos ni próximos en los programas cargados.</p>`}</section>`;}
+function exSecProximas(x,n){const L=exProximas(),nom=(z,q)=>(q.r?`${q.r.ml} · ${q.r.sl}`:`${((z.M.byO.get(pgPar(q.t.o))||{}).n||"").trim()} · ${q.t.n.trim()}`)+` (${pgD(q.t.S)})`;
+  return `<section class="exsec">${exH(n,"Próximas dos semanas","tareas de los programas que inician en los próximos 14 días")}${L.length?`<table><thead><tr><th>Contratista</th><th class="r">Tareas que inician</th><th class="r">Sin liberación</th><th>Primeras en iniciar</th></tr></thead><tbody>${L.map(z=>`<tr><td><b>${esc(progName(z.P.contr))}</b></td><td class="r num">${z.L.length}</td><td class="r num">${z.nb?`<b class="crit">${z.nb}</b>`:"0"}</td><td>${esc(listaTxt(z.L.map(q=>trunc(nom(z,q),80)),2))}</td></tr>`).join("")}</tbody></table>`:`<p class="exnota">Ningún programa tiene tareas que inicien en los próximos 14 días.</p>`}</section>`;}
+function exSecNotas(x){const sp=secs().filter(s=>x.P1.sec[s.id].has);
+  return `<section class="exsec exnotas"><h3>Notas</h3><ul><li>Avance físico global: ${esc(sp.map(s=>`${s.nombre} ${fmtP(pesoShare(s.peso))}`).join(", "))} y S/E Tineo ${fmtP(pesoShare(pesoSE()))}. En la línea, cada etapa pondera ${esc(etapas().map(e=>`${e.nombre.toLowerCase()} ${fmtP(num(e.peso,0))}`).join(", "))}.</li>
+  <li>Fuente: registros de los inspectores en la app (${nTxt(x.insp.length,"inspector","inspectores")} y ${nTxt(x.regs.length,"registro","registros")} en el período) y cargas de las matrices de avance. El avance a cada fecha se rehace con el historial de registros.</li>
+  ${x.pg.length?`<li>Programado y avance real de los contratistas: Texto28 y Texto27 de su programa MS Project, a su fecha de estado (${esc(x.pg.map(z=>`${progName(z.P.contr)} ${pgD(z.P.estado)}`).join("; "))}).</li>`:""}
+  <li>Liberaciones: estado de PMF y servidumbre de cada torre y vano según el control de liberaciones de la app.</li></ul></section>`;}
+function exDoc(x){const R=S.rep,c=S.cfg||{},sem=exSemana(R),nota=(S.rnotas||{})[R.desde+"_"+R.hasta]||null,hp=x.pg.length>0;let k=0;const nx=()=>++k;
+  const hojas=[exRotulo(x,nota,sem)+exSecGeneral(x,nx())+exSecPuntos(x,nx(),exPuntos(x),nota)+exSecFrentes(x,nx()),
+    (hp?exSecProgramas(x,nx()):"")+exSecLinea(x,nx())+exSecProduccion(x,nx())+exSecLib(x,nx()),
+    exSecRiesgos(x,nx())+(hp?exSecHitos(x,nx())+exSecProximas(x,nx()):"")+exSecNotas(x)];
+  return `<div class="exdoc">${hojas.map((b,i)=>`<article class="exhoja" aria-label="Hoja ${i+1} de ${hojas.length}">${b}<footer class="expie"><span>${esc(c.codigo||"STN4324")} · Resumen ejecutivo · ${esc(sem.corto)}</span><span>Hoja ${i+1} de ${hojas.length}</span></footer></article>`).join("")}</div>`;}
+/* comentario de la administración del contrato: uno por período, en config "rep_notas" (solo administradores) */
+async function exGuardarNota(){const R=S.rep,ed=R.notaEd;if(!ed||S.saving)return;
+  {const ti=$("#ex-nota"),fi=$("#ex-firma");if(ti)ed.texto=ti.value;if(fi)ed.firma=fi.value;}
+  const k=R.desde+"_"+R.hasta,data=Object.assign({},S.rnotas||{}),t=String(ed.texto||"").trim(),fm=String(ed.firma||"").trim();
+  if(t||fm)data[k]={texto:t.slice(0,2000),firma:fm.slice(0,120),por:S.userName,ts:Date.now()};else delete data[k];
+  S.saving=true;render();
+  try{await setConfig("rep_notas",data);R.notaEd=null;toast("Comentario guardado: queda en el resumen ejecutivo de este período.");}
+  catch(e){toast(e&&e.code==="denied"?"Solo un administrador puede guardar el comentario.":"No se pudo guardar el comentario. Intenta de nuevo.",true);}
+  S.saving=false;render();}
 function vReporte(){
   const R=S.rep;if(!R.desde||!R.hasta)Object.assign(R,repPeriodo(R.modo||"7d"));
-  const x=repCalc(),P0=x.P0,P1=x.P1,T=x.T,LS=x.libSt,n8=S.cfg&&S.cfg.n8n&&S.cfg.n8n.url;const nAl=x.noApt.length+x.retro.length+x.sinReg.length+x.pgAl.length;
+  const x=repCalc(),ej=R.vista!=="detalle";
+  let h=`<div class="stack">`+repBarra(x,ej);
+  if(ej){h+=exDoc(x);if(R.anexo)h+=`<div class="exanexo stack"><h2 class="exanexo-t">Anexo · detalle técnico</h2>${repDetalle(x)}</div>`;}
+  else h+=repDetalle(x);
+  return h+`</div>`;}
+/* barra de herramientas (no se imprime): formato, período y salidas */
+function repBarra(x,ej){const R=S.rep,n8=S.cfg&&S.cfg.n8n&&S.cfg.n8n.url;
+  return `<section class="panel stack noprint"><div class="spread"><div class="stack" style="gap:2px"><h2>Reporte semanal</h2><span class="small muted">Del <b>${fmtD(R.desde)}</b> al <b>${fmtD(R.hasta)}</b> · comparado con el avance al cierre del ${fmtD(x.f0)}</span></div>
+   <div class="row" style="gap:6px"><button class="btn small${ej?"":" ghost"}" data-rpprint="1">${ej?"Imprimir o guardar PDF":"Imprimir detalle"}</button><button class="btn small ghost" data-rpcsv="1">Descargar CSV</button><button class="btn small ghost" data-rpcopy="1">Copiar texto</button>${n8?`<button class="btn small ghost" data-rpsend="1" ${R.env?"disabled":""}>${R.env?"Enviando…":"Enviar a n8n"}</button>`:""}</div></div>
+   <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Formato</label><div class="seg" role="group" aria-label="Formato">${[["ejecutivo","Resumen ejecutivo"],["detalle","Detalle técnico"]].map(([k,t])=>`<button data-rpvista="${k}" aria-pressed="${(ej?"ejecutivo":"detalle")===k}">${t}</button>`).join("")}</div></div>
+   <div class="field" style="flex:0 0 auto;min-width:0"><label>Período</label><div class="seg" role="group" aria-label="Período">${REP_MODOS.map(([k,t])=>`<button data-rpmodo="${k}" aria-pressed="${R.modo===k}">${t}</button>`).join("")}</div></div>
+   <div class="field" style="flex:0 1 170px"><label for="rp-desde">Desde</label><input id="rp-desde" type="date" max="${today()}" value="${esc(R.desde)}"></div><div class="field" style="flex:0 1 170px"><label for="rp-hasta">Hasta</label><input id="rp-hasta" type="date" max="${today()}" value="${esc(R.hasta)}"></div>
+   ${ej?`<label class="row small" style="gap:6px;flex:0 0 auto;align-self:center;padding-top:18px"><input type="checkbox" id="rp-anexo" ${R.anexo?"checked":""}> Incluir el detalle técnico como anexo</label>`:""}</div>
+   ${ej?`<p class="small muted" style="margin:0">Formato para directorio en hojas A4. Para emitirlo: «Imprimir o guardar PDF» → destino «Guardar como PDF», tamaño A4, márgenes predeterminados, con «Gráficos de fondo» activado y sin encabezados ni pies de página del navegador. Para una semana calendario, usa «Semana anterior».</p>`:""}</section>`;}
+/* detalle técnico: todas las tablas del período (también va como anexo del resumen ejecutivo) */
+function repDetalle(x){
+  const R=S.rep,P0=x.P0,P1=x.P1,T=x.T,LS=x.libSt;const nAl=x.noApt.length+x.retro.length+x.sinReg.length+x.pgAl.length;
   const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;
   const ids=(a,n)=>a.length?esc(listaTxt(a,n)):`<span class="muted">—</span>`;const f0=fmtD(x.f0),f1=fmtD(R.hasta);
-  let h=`<div class="stack"><section class="panel stack"><div class="spread"><div class="stack" style="gap:2px"><h2>Reporte semanal</h2><span class="small muted">Del <b>${fmtD(R.desde)}</b> al <b>${f1}</b> · comparado con el avance al cierre del ${f0} · emitido el ${fmtD(today())} por ${esc(S.userName)}</span></div>
-   <div class="row noprint" style="gap:6px"><button class="btn small ghost" data-rpprint="1">Imprimir o guardar PDF</button><button class="btn small ghost" data-rpcsv="1">Descargar CSV</button><button class="btn small ghost" data-rpcopy="1">Copiar texto</button>${n8?`<button class="btn small" data-rpsend="1" ${R.env?"disabled":""}>${R.env?"Enviando…":"Enviar a n8n"}</button>`:""}</div></div>
-   <div class="filters noprint"><div class="field" style="flex:0 0 auto;min-width:0"><label>Período</label><div class="seg" role="group" aria-label="Período">${REP_MODOS.map(([k,t])=>`<button data-rpmodo="${k}" aria-pressed="${R.modo===k}">${t}</button>`).join("")}</div></div>
-   <div class="field" style="flex:0 1 170px"><label for="rp-desde">Desde</label><input id="rp-desde" type="date" max="${today()}" value="${esc(R.desde)}"></div><div class="field" style="flex:0 1 170px"><label for="rp-hasta">Hasta</label><input id="rp-hasta" type="date" max="${today()}" value="${esc(R.hasta)}"></div></div>
-   <div class="tmfig">${fig("Avance del proyecto",fmtP(P1.total,1),`${ppTxt(P1.total-P0.total)} en el período · ${fmtP(P0.total,1)} al ${f0}`)}${fig("Línea",fmtP(P1.lineaPct,1),`${ppTxt(P1.lineaPct-P0.lineaPct)} en el período`)}${fig("S/E Tineo",fmtP(P1.se.total,1),`${ppTxt(P1.se.total-P0.se.total)} en el período`)}${fig("Registros en terreno",String(x.regs.length),`${nTxt(x.insp.length,"inspector","inspectores")} · ${nTxt(x.nEl,"elemento","elementos")}${x.cargas?` · ${nTxt(x.cargas,"carga","cargas")} de Excel`:""}`)}${fig("Conductor tendido",fmtM(T.c1+T.c2),`de circuito (C1 + C2) · OPGW ${fmtM(T.og)}`)}${fig("Alertas",String(nAl),nAl?"ver la sección Alertas":"sin alertas en el período",nAl?"crit":"")}</div></section>`;
+  let h=`<section class="panel stack"><div class="stack" style="gap:2px"><h2>Reporte semanal · detalle técnico</h2><span class="small muted">Del <b>${fmtD(R.desde)}</b> al <b>${f1}</b> · comparado con el avance al cierre del ${f0} · emitido el ${fmtD(today())}</span></div>
+   <div class="tmfig">${fig("Avance del proyecto",fmtP(P1.total,1),`${ppTxt(P1.total-P0.total)} en el período · ${fmtP(P0.total,1)} al ${f0}`)}${fig("Línea",fmtP(P1.lineaPct,1),`${ppTxt(P1.lineaPct-P0.lineaPct)} en el período`)}${fig("S/E Tineo",fmtP(P1.se.total,1),`${ppTxt(P1.se.total-P0.se.total)} en el período`)}${fig("Registros en terreno",String(x.regs.length),`${nTxt(x.insp.length,"inspector","inspectores")} · ${nTxt(x.nEl,"elemento","elementos")}${x.cargas?` · ${nTxt(x.cargas,"carga","cargas")} de Excel`:""}`)}${fig("Conductor tendido",fmtM(T.c1p+T.c2p),`de circuito (C1 + C2) · OPGW ${fmtM(T.ogp)}${T.cor.length?` · correcciones en ${nTxt(T.cor.length,"vano","vanos")}`:""}`)}${fig("Alertas",String(nAl),nAl?"ver la sección Alertas":"sin alertas en el período",nAl?"crit":"")}</div></section>`;
   /* avance físico: partes del proyecto y etapas de la línea */
   {const list=secs().filter(s=>P1.sec[s.id].has),WS=list.reduce((a,s)=>a+s.peso,0)||1,lin=(P,et)=>list.reduce((a,s)=>a+s.peso*(P.sec[s.id].stg[et]||0),0)/WS;
    const fila=(t,c,a,b,w)=>`<tr><td>${c?`<span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${c}"></span>${esc(t)}</span>`:`<b>${esc(t)}</b>`}</td><td class="r num">${w!=null?fmtP(w,1):""}</td><td class="r num">${fmtP(a,1)}</td><td class="r num"><b>${fmtP(b,1)}</b></td><td class="r num">${ppHtml(b-a)}</td><td class="r num">${w!=null?ppTxt(w/100*(b-a)):""}</td></tr>`;
@@ -2740,8 +3073,9 @@ function vReporte(){
   /* producción */
   h+=`<section class="panel stack"><h2>Producción del período</h2><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Indicador</th><th class="r">Al 100 % en el período</th><th class="r">Con primer avance</th><th class="r">Acumulado al ${f1}</th><th>N° que llegan al 100 % en el período</th></tr></thead><tbody>
   ${x.prod.map(p=>`<tr><td>${esc(p.t)}<small>${esc(p.u)}</small></td><td class="r num"><b>${p.ter.length}</b></td><td class="r num">${p.ini?p.ini.length:"—"}</td><td class="r num">${p.acum} / ${p.n}</td><td class="rp-ids">${ids(p.ter,80)}</td></tr>`).join("")}</tbody></table></div>
-  <div class="tmfig">${fig("Conductor circuito 1",fmtM(T.c1),"tendido en el período")}${fig("Conductor circuito 2",fmtM(T.c2),"tendido en el período")}${fig("OPGW",fmtM(T.og),"tendido en el período")}${fig("Vanos con conductor",String(x.prod[4].ter.length),"llegan a las seis fases al 100 %")}</div>
-  <p class="small muted" style="margin:0">Fundación y montaje se miden como en el Resumen. Tendido en metros = longitud del vano × variación del avance de cada cable (conductor: promedio de sus tres fases). Los vanos sin longitud (cruce) no suman metros.</p></section>`;
+  <div class="tmfig">${fig("Conductor circuito 1",fmtM(T.c1p),"tendido en el período")}${fig("Conductor circuito 2",fmtM(T.c2p),"tendido en el período")}${fig("OPGW",fmtM(T.ogp),"tendido en el período")}${fig("Vanos con conductor",String(x.prod[4].ter.length),"llegan a las seis fases al 100 %")}</div>
+  ${T.cor.length?`<p class="small" style="margin:0"><b>Correcciones:</b> ${esc(listaTxt(T.cor.map(c=>"vano "+c.v+" ("+fmtM(c.m).replace(/^-/,"−")+")"),12))}. Terminan el período con menos tendido que al inicio; ese tramo no se descuenta de los metros del período.</p>`:""}
+  <p class="small muted" style="margin:0">Fundación y montaje se miden como en el Resumen. Tendido en metros = longitud del vano × aumento del avance de cada cable (conductor: promedio de sus tres fases); una baja se informa aparte como corrección. Los vanos sin longitud (cruce) no suman metros.</p></section>`;
   /* subestación */
   h+=`<section class="panel stack"><div class="spread"><h2>Subestación Tineo · ${SE_CONTRATISTA}</h2><span class="small muted">${nTxt(x.seRegs,"registro","registros")} en terreno en el período</span></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Partida</th><th class="r">Al ${f0}</th><th class="r">Al ${f1}</th><th class="r">Período</th><th class="r">Al 100 % en el período</th><th class="r">Acumulado</th><th>ID que llegan al 100 % en el período</th></tr></thead><tbody>
   ${x.se.map(z=>`<tr><td>${esc(z.c.nombre)}</td><td class="r num">${fmtP(z.p0,1)}</td><td class="r num"><b>${fmtP(z.p1,1)}</b></td><td class="r num">${ppHtml(z.p1-z.p0)}</td><td class="r num"><b>${z.ter.length}</b></td><td class="r num">${z.acum} / ${z.n}</td><td class="rp-ids">${ids(z.ter,40)}</td></tr>`).join("")}
@@ -2770,17 +3104,19 @@ function vReporte(){
   h+=`<section class="panel stack"><div class="spread"><h2>Registros en terreno</h2><span class="small muted">${nTxt(x.regs.length,"registro","registros")} con fecha del período · no incluye las cargas de Excel</span></div>
   ${x.insp.length?`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Inspector</th><th class="r">Registros</th><th class="r">Elementos</th><th class="r">Último registro</th></tr></thead><tbody>${x.insp.map(i=>`<tr><td>${esc(i.nombre)}</td><td class="r num"><b>${i.n}</b></td><td class="r num">${i.el.size}</td><td class="r num">${fmtD(i.ult)}</td></tr>`).join("")}</tbody></table></div>
   <details class="noprint"><summary class="small" style="cursor:pointer;color:var(--ink-2)">Ver ${x.regs.length>300?"los 300 más recientes":"los "+x.regs.length+" registros"}</summary>${feedHtml(x.regs.slice(0,300))}</details>`:`<p class="muted" style="margin:0">No hay registros en terreno con fecha del período.</p>`}</section>`;
-  return h+`</div>`;}
+  return h;}
 /* Texto plano del reporte, para correo o mensaje (también va en el envío a n8n) */
 function repTexto(x){const R=S.rep,P0=x.P0,P1=x.P1,T=x.T,c=S.cfg||{},LS=x.libSt,L=[];const pr=(a,b)=>fmtP(b,1)+" ("+ppTxt(b-a)+")";
   L.push("REPORTE SEMANAL · "+(c.codigo||"STN4324")+" "+(c.nombre||"Línea Tineo – Ancud"));
   L.push("Período: "+fmtD(R.desde)+" al "+fmtD(R.hasta)+" · comparado con el avance al "+fmtD(x.f0));
+  L.push("","PUNTOS CLAVE");exPuntos(x).forEach((p,i)=>L.push((i+1)+". "+p));
+  {const n=(S.rnotas||{})[R.desde+"_"+R.hasta];if(n&&n.texto)L.push("","COMENTARIO DE LA ADMINISTRACIÓN DEL CONTRATO",n.texto+(n.firma?"\n— "+n.firma:""));}
   L.push("","AVANCE FÍSICO AL CIERRE (variación del período)","- Proyecto: "+pr(P0.total,P1.total),"- Línea: "+pr(P0.lineaPct,P1.lineaPct));
   for(const s of secs())if(P1.sec[s.id].has)L.push("  · "+s.nombre+": "+pr(P0.sec[s.id].pct,P1.sec[s.id].pct));
   L.push("- S/E Tineo: "+pr(P0.se.total,P1.se.total));
   L.push("","PRODUCCIÓN DEL PERÍODO");
   for(const p of x.prod)L.push("- "+p.t+": "+p.ter.length+" al 100 %"+(p.ter.length?" ("+listaTxt(p.ter,25)+")":"")+" · acumulado "+p.acum+" de "+p.n+" "+p.u);
-  L.push("- Conductor tendido: "+fmtM(T.c1+T.c2)+" de circuito (C1 "+fmtM(T.c1)+" · C2 "+fmtM(T.c2)+") · OPGW "+fmtM(T.og));
+  L.push("- Conductor tendido: "+fmtM(T.c1p+T.c2p)+" de circuito (C1 "+fmtM(T.c1p)+" · C2 "+fmtM(T.c2p)+") · OPGW "+fmtM(T.ogp)+(T.cor.length?" · correcciones de registro (bajas) en "+listaTxt(T.cor.map(c=>"vano "+c.v),8):""));
   for(const z of x.se)if(z.ter.length||Math.abs(z.p1-z.p0)>=0.05)L.push("- S/E, "+z.c.nombre.toLowerCase()+": "+pr(z.p0,z.p1)+(z.ter.length?" · al 100 %: "+listaTxt(z.ter,20):""));
   L.push("","LIBERACIONES","- Cambios registrados: "+x.libEv.length+" ("+x.libN.ser+" servidumbres liberadas, "+x.libN.pmf+" PMF aprobados, "+x.libN.res+" restricciones)");
   L.push("- Estado al "+fmtD(today())+": torres aptas "+LS.t.apta+" de "+LS.t.n+" · vanos aptos "+LS.v.apta+" de "+LS.v.n+" · restringidas "+(LS.t.res+LS.v.res));
@@ -2798,7 +3134,10 @@ function repPayload(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T,c=S.cfg||{
     avance:{proyecto:tri(P0.total,P1.total),linea:tri(P0.lineaPct,P1.lineaPct),se:tri(P0.se.total,P1.se.total),
       sectores:secs().filter(s=>P1.sec[s.id].has).map(s=>Object.assign({id:s.id,nombre:s.nombre},tri(P0.sec[s.id].pct,P1.sec[s.id].pct)))},
     produccion:x.prod.map(p=>({indicador:p.t,unidad:p.u,al100:p.ter,conPrimerAvance:p.ini?p.ini.length:null,acumulado:p.acum,total:p.n})),
-    tendido_m:{conductorC1:Math.round(T.c1),conductorC2:Math.round(T.c2),opgw:Math.round(T.og)},
+    puntosClave:exPuntos(x),comentario:((S.rnotas||{})[R.desde+"_"+R.hasta]||{}).texto||"",
+    riesgos:exRiesgos(x).slice(0,8).map(r=>({prioridad:r.sev,tema:EX_TEMA[r.tp]||r.tp,frente:r.quien,detalle:r.det,accion:EX_ACC[r.tp]||""})),
+    /* solo tendido nuevo; las bajas de registro van en correcciones */
+    tendido_m:{conductorC1:Math.round(T.c1p),conductorC2:Math.round(T.c2p),opgw:Math.round(T.ogp),correcciones:T.cor.map(c=>({vano:c.v,metros:Math.round(c.m)}))},
     se:x.se.map(z=>({partida:z.c.nombre,inicio:r1(z.p0),cierre:r1(z.p1),al100:z.ter,acumulado:z.acum,total:z.n})),
     contratistas:x.contr.map(r=>({nombre:r.c,estructuras:r.n,registros:r.regs,elementosConAvance:r.el.size,fundaciones:r.fun,montaje:r.mon,vanosConductor:r.ten,avanceMedio:r1(r.t1/r.n)})),
     liberaciones:{cambios:x.libEv.length,servidumbresLiberadas:x.libN.ser,pmfAprobados:x.libN.pmf,restricciones:x.libN.res,torresAptas:x.libSt.t.apta,torres:x.libSt.t.n,vanosAptos:x.libSt.v.apta,vanos:x.libSt.v.n},
@@ -2817,7 +3156,8 @@ function repCSV(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T;const L=[];
   row(["Línea",f(P0.lineaPct),f(P1.lineaPct),f(P1.lineaPct-P0.lineaPct)]);row(["S/E Tineo",f(P0.se.total),f(P1.se.total),f(P1.se.total-P0.se.total)]);row(["Proyecto (global ponderado)",f(P0.total),f(P1.total),f(P1.total-P0.total)]);
   L.push("");row(["PRODUCCIÓN DEL PERÍODO","Al 100 % en el período","Con primer avance","Acumulado","Total","Unidad","N° que llegan al 100 % en el período"]);
   for(const p of x.prod)row([p.t,p.ter.length,p.ini?p.ini.length:"",p.acum,p.n,p.u,p.ter.join(", ")]);
-  L.push("");row(["TENDIDO DEL PERÍODO","Conductor C1 m","Conductor C2 m","OPGW m"]);row(["",f(T.c1),f(T.c2),f(T.og)]);
+  L.push("");row(["TENDIDO DEL PERÍODO","Conductor C1 m","Conductor C2 m","OPGW m","Vanos"]);row(["Tendido nuevo",f(T.c1p),f(T.c2p),f(T.ogp),""]);
+  if(T.cor.length)row(["Correcciones de registro (bajas)",f(T.c1-T.c1p),f(T.c2-T.c2p),f(T.og-T.ogp),T.cor.map(c=>c.v).join(", ")]);
   L.push("");row(["SUBESTACIÓN TINEO","Al "+fmtD(x.f0)+" %","Al "+fmtD(R.hasta)+" %","Período pp","Al 100 % en el período","Acumulado","Total","ID que llegan al 100 % en el período"]);
   for(const z of x.se)row([z.c.nombre,f(z.p0),f(z.p1),f(z.p1-z.p0),z.ter.length,z.acum,z.n,z.ter.join(", ")]);
   L.push("");row(["CONTRATISTA","Estructuras","Registros en terreno","Elementos con avance","Fundaciones al 100 %","Estructuras montadas","Vanos con conductor","Avance medio %","Período pp"]);
@@ -2914,7 +3254,7 @@ async function guardarN8n(){if(S.saving)return;
   S.saving=false;render();}
 
 /* ---------- Respaldo JSON ---------- */
-function exportarRespaldo(){descargar("respaldo-avance-tineo-ancud-"+today()+".json",JSON.stringify({version:1,exportado:new Date().toISOString(),config:{proyecto:S.cfg,unidades:S.uni,se:S.se,programas:Object.fromEntries(S.prog)},avance:Object.fromEntries(S.av)}),"application/json");toast("Respaldo descargado.");}
+function exportarRespaldo(){descargar("respaldo-avance-tineo-ancud-"+today()+".json",JSON.stringify({version:1,exportado:new Date().toISOString(),config:{proyecto:S.cfg,unidades:S.uni,se:S.se,programas:Object.fromEntries(S.prog),notas:S.rnotas},avance:Object.fromEntries(S.av)}),"application/json");toast("Respaldo descargado.");}
 async function importarRespaldo(){
   const f=$("#b-file").files[0];if(!f){toast("Selecciona el archivo de respaldo (.json).",true);return;}
   let j;try{j=JSON.parse(await f.text());}catch(e){toast("El archivo no es un respaldo válido (JSON).",true);return;}
@@ -2925,6 +3265,7 @@ async function importarRespaldo(){
     if(j.config.proyecto)await setConfig("proyecto",Object.assign({},j.config.proyecto,{importPendiente:false}));
     if(j.config.unidades)await setConfig("unidades",j.config.unidades);
     if(j.config.se)await setConfig("se",j.config.se);
+    if(j.config.notas&&typeof j.config.notas==="object")await setConfig("rep_notas",j.config.notas);
     for(const [id,d] of Object.entries(j.config.programas||{}))if(/^prog__[A-Za-z0-9_.~:@+-]{1,80}$/.test(id)&&d&&Array.isArray(d.T))await setConfig(id,d);
     S.imp.msg="Guardando avances";
     for(let i=0;i<rows.length;i+=200){const ch=rows.slice(i,i+200);await withRetry(async()=>{const {error}=await sb.from("avance").upsert(ch);if(error)throw mapErr(error);});S.imp.done+=ch.length;schedule();}
@@ -3120,7 +3461,11 @@ document.addEventListener("click",ev=>{
   if(ds.pgdel){pgQuitar(ds.pgdel);return;}
   if(b.id==="pg-load"){pgCargar();return;}
   /* reporte semanal */
-  if(ds.rpmodo){Object.assign(S.rep,{modo:ds.rpmodo},repPeriodo(ds.rpmodo));render();return;}
+  if(ds.rpmodo){Object.assign(S.rep,{modo:ds.rpmodo,notaEd:null},repPeriodo(ds.rpmodo));render();return;}
+  if(ds.rpvista){S.rep.vista=ds.rpvista;render();return;}
+  if(ds.exnota){const R=S.rep;if(ds.exnota==="1"){const n=(S.rnotas||{})[R.desde+"_"+R.hasta]||{};R.notaEd={texto:n.texto||"",firma:n.firma||S.userName||""};}else R.notaEd=null;render();
+    if(R.notaEd){const ta=$("#ex-nota");if(ta)ta.focus();}return;}
+  if(b.id==="ex-nota-save"){exGuardarNota();return;}
   if(ds.rpprint){window.print();return;}
   if(ds.rpcsv){repCSV();return;}
   if(ds.rpcopy){copiarTexto(repTexto(repCalc())).then(ok=>toast(ok?"Texto del reporte copiado: pégalo en un correo o mensaje.":"No se pudo copiar el texto.",!ok));return;}
@@ -3190,6 +3535,7 @@ document.addEventListener("click",ev=>{
 document.addEventListener("input",ev=>{
   const t=ev.target,ds=t.dataset;
   if(t.id==="pg-q"){S.pg.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
+  if(t.id==="ex-nota"||t.id==="ex-firma"){if(S.rep.notaEd)S.rep.notaEd[t.id==="ex-nota"?"texto":"firma"]=t.value;return;}
   if(t.id==="n8n-url"||t.id==="n8n-key"){if(!S.n8nDraft)S.n8nDraft=Object.assign({url:"",clave:""},(S.cfg&&S.cfg.n8n)||{});S.n8nDraft[t.id==="n8n-url"?"url":"clave"]=t.value;return;}
   if(t.id==="lib-q"){S.lib.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
   if(S.drw&&S.drw.lib){const f=S.drw.f;if(f&&t.id==="lib-fecha"){f.fecha=t.value;return;}if(f&&t.id==="lib-ref"){f.ref=t.value;return;}if(f&&t.id==="lib-obs"){f.obs=t.value;return;}if(f&&t.id==="lib-cod"){f.cod=t.value;return;}if(t.id==="lib-nota"){S.drw.nota=t.value;return;}}
@@ -3221,7 +3567,8 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="pg-contr"){S.pg.contr=t.value;return;}
   if(t.id==="pg-prof")return set(()=>{S.pg.prof=+t.value||3;});
   if(t.id==="rp-desde"||t.id==="rp-hasta")return set(()=>{const R=S.rep;let v=t.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;if(v>today())v=today();
-    R[t.id==="rp-desde"?"desde":"hasta"]=v;if(R.desde>R.hasta){const z=R.desde;R.desde=R.hasta;R.hasta=z;}R.modo="";});
+    R[t.id==="rp-desde"?"desde":"hasta"]=v;if(R.desde>R.hasta){const z=R.desde;R.desde=R.hasta;R.hasta=z;}R.modo="";R.notaEd=null;});
+  if(t.id==="rp-anexo")return set(()=>{S.rep.anexo=t.checked;});
   if(t.id==="r-tt")return set(()=>{S.reg.tt=t.value;});
   if(t.id==="r-all")return set(()=>{S.reg.verTodas=t.checked;});
   if(t.id==="m-sec")return set(()=>{S.map.sec=t.value;S.map.tt="";});
@@ -3239,6 +3586,8 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="t-tt")return set(()=>{S.tbl.tt=t.value;});
   if(t.id==="t-est")return set(()=>{S.tbl.est=t.value;});
   if(t.id==="q-pct"||t.id==="q-fecha"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
+/* al imprimir el reporte se redibuja: el comentario que se está escribiendo (y su firma) sale en la hoja aunque no se haya guardado */
+window.addEventListener("beforeprint",()=>{if(S.state==="ok"&&S.tab==="reporte"){pendingRender=false;render();}});
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&S.state==="ok"&&Date.now()-S.lastLoad>120000){try{await conSesion(loadAll);render();}catch(e){}}});
 
 /* ---------- inicio ---------- */
@@ -3251,7 +3600,7 @@ async function handleSession(session,force){
   /* (solo con usuario: sin sesión hay que mostrar siempre el ingreso, aunque la página parta en "cargando") */
   if(!force&&uid===S.me&&(S.state==="ok"||S.state==="setpass"||(uid&&S.state==="loading")))return;
   S.me=uid;S.authErr="";
-  if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.prog=new Map();S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
+  if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.prog=new Map();S.rnotas={};S.rep.notaEd=null;S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
   const u=session.user;S.userEmail=u.email||"";S.userName=(u.user_metadata&&(u.user_metadata.nombre||u.user_metadata.full_name||u.user_metadata.name))||S.userEmail;
   if(S.authMode==="setpass"){S.state="setpass";render();return;}
   S.state="loading";render();vigilarCarga();
