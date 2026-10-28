@@ -1338,6 +1338,13 @@ function kpiIcon(kind,p){let g="";
   else if(kind==="acc"){const rd="M30 60L43 6H49L62 60Z";g=`<path d="M2 60L30 60M62 60L90 60" style="stroke:var(--ink-2);stroke-width:1;fill:none"/><path class="padg" d="${rd}"/>`+clipUp(`<path d="${rd}" style="fill:var(--steel)"/><path d="M46 58V8" style="stroke:var(--surface);stroke-width:1.2;stroke-dasharray:4 4"/>`,28,6,36,54,p)+`<path d="${rd}" style="fill:none;stroke:var(--ink-2);stroke-width:.8"/>`;}
   else if(kind==="pat"){let d="";for(let i=0;i<=4;i++){d+=`M${22+i*12} 6V54M22 ${6+i*12}H70`;}let rods="";for(const [x,y] of [[22,6],[70,6],[22,54],[70,54],[46,30]])rods+=`<circle cx="${x}" cy="${y}" r="2.4"/>`;
     g=`<path class="ghost" d="${d}"/><g style="fill:none;stroke:var(--line-2)">${rods}</g>`+clipUp(`<path d="${d}" style="stroke:var(--steel);stroke-width:1.1;fill:none"/><g style="fill:var(--steel)">${rods}</g>`,16,2,60,56,p);}
+  /* tala y roce: la franja avanza de izquierda a derecha; lo talado queda en tocones (y el árbol como fantasma), lo pendiente en pie */
+  else if(kind==="tal"){const gy=56,xc=2+88*clamp(p,0,100)/100;let tr="",cu="";
+    for(const x of [12,29,46,63,80]){tr+=`M${x} ${gy}V${gy-12}M${x-8} ${gy-12}L${x} ${gy-42}L${x+8} ${gy-12}Z`;cu+=`M${x-2.5} ${gy}V${gy-5}H${x+2.5}V${gy}`;}
+    const a="ck"+(CLIPN++),b="ck"+(CLIPN++);
+    g=`<line class="gl" x1="2" x2="90" y1="${gy}" y2="${gy}"/><clipPath id="${a}"><rect x="0" y="0" width="${f1(xc)}" height="62"/></clipPath><clipPath id="${b}"><rect x="${f1(xc)}" y="0" width="${f1(92-xc)}" height="62"/></clipPath>`
+      +`<g clip-path="url(#${b})"><path class="steel" d="${tr}"/></g><g clip-path="url(#${a})"><path class="ghost" d="${tr}"/><path class="steel" style="stroke-width:1.2" d="${cu}"/></g>`
+      +(p>0&&p<99.95?`<line x1="${f1(xc)}" x2="${f1(xc)}" y1="8" y2="${gy}" style="stroke:var(--accent);stroke-width:.8;stroke-dasharray:2 2"/>`:"");}
   return g;}
 /* Elevación del cruce del canal de Chacao */
 function crossingSvg(){
@@ -1411,11 +1418,11 @@ function vResumen(){
 const cls3=(c,p)=>{c.n++;if(p>=99.95)c.ter++;else if(p>0)c.eje++;else c.sin++;};
 const cnt0=()=>({n:0,ter:0,eje:0,sin:0});
 function kpiData(){
-  const F=S.dashF;const P=S.P;const out={fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,opgw:0,mL:0,m1:0,m2:0,mP:0};
+  const F=S.dashF;const P=S.P;const out={tal:cnt0(),fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,opgw:0,mL:0,m1:0,m2:0,mP:0,talSum:0};
   for(const s of scopeSecs()){const r=P.sec[s.id];
     for(const e of estr(s.id)){if(F.contr&&e.contr!==F.contr)continue;if(F.tt&&e.tt!==F.tt)continue;
-      const st=r.byE[e.id];const k=kE(s.id,e.id);
-      cls3(out.fun,st.fun);cls3(out.mon,st.mon);cls3(out.acc,cur(k,"acc"));cls3(out.pat,patVal(s.id,e));}
+      const st=r.byE[e.id];const k=kE(s.id,e.id);const tl=cur(k,"tal");
+      cls3(out.tal,tl);out.talSum+=tl;cls3(out.fun,st.fun);cls3(out.mon,st.mon);cls3(out.acc,cur(k,"acc"));cls3(out.pat,patVal(s.id,e));}
     for(const v of vanos(s.id)){const eb=estById(s.id,v.b)||{};if(F.contr&&eb.contr!==F.contr)continue;if(F.tt&&v.tt!==F.tt)continue;
       cls3(out.ten,r.byV[v.key]||0);if(v.len!=null){out.mL+=v.len;out.mP+=v.len*(r.byV[v.key]||0)/100;out.m1+=v.len*circPct(v.key,"1")/100;out.m2+=v.len*circPct(v.key,"2")/100;}if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
   return out;}
@@ -1437,6 +1444,7 @@ function kpiSection(){
   <div class="field"><label for="k-contr">Contratista</label><select id="k-contr"><option value="">Todos</option>${contrs.map(c=>`<option ${F.contr===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
   ${F.contr||S.dash!=="total"?`<button class="btn small ghost" data-kclear="1">Quitar filtros</button>`:""}</div>
   <div class="kgrid">
+  ${kpiCard("Tala y roce",K.tal,"estructuras con tala y roce terminados","pre",K.tal.n?`Avance medio: <b>${fmtP(K.talSum/K.tal.n,1)}</b> (promedio de lo registrado en cada estructura).`:"","tal")}
   ${kpiCard("Caminos de acceso",K.acc,"caminos construidos","pic","","acc")}
   ${kpiCard("Mallas de puesta a tierra",K.pat,"mallas instaladas","pre",S.dash==="cruce"||S.dash==="total"?"En el cruce se toma la malla PAT de las patas.":"","pat")}
   ${kpiCard("Fundaciones",K.fun,"fundaciones hormigonadas","fun",S.dash==="cruce"||S.dash==="total"?"En el cruce se mide por pata (promedio de las 4).":"","fun")}
