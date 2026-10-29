@@ -574,6 +574,12 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 .exq tr.tot td{border-top:1.5px solid var(--ink-2);background:var(--surface-2)}
 .exq tr.se td{border-top:1px dashed var(--line-2)}
 .exbar{display:block;height:3px;margin:.3em 0 0 auto;max-width:5.5em;border-radius:1px;background:linear-gradient(90deg,var(--sv-1) var(--p),var(--surface-3) var(--p))}
+/* programado vs ejecutado: cuadros por frente en dos columnas */
+.expv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1em 1.4em;align-items:start}
+.expv h3{font-size:.95em;margin:0 0 .35em;display:flex;align-items:baseline;gap:.5em;flex-wrap:wrap}
+.expv h3 small{font-family:var(--f-body);font-size:.8em;font-weight:400;color:var(--muted)}
+.expv td:first-child{width:auto}
+.expv tr.sub td{font-family:var(--f-disp);font-size:.84em;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);background:var(--surface-2)}
 /* riesgos y próxima semana: listas cortas por frente */
 .exlst ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.25em}
 .exries td:last-child{width:27%;color:var(--ink-2)}
@@ -587,7 +593,7 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 /* colores y fondos del resumen se imprimen aunque el navegador tenga desactivados los «Gráficos de fondo» */
 .exdoc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 /* solo pantalla: en la impresión la hoja A4 mide ~700 px y no debe tomar el diseño de celular */
-@media screen and (max-width:760px){.exdoc{font-size:14px}.exhoja{padding:1.2em 1em}.exrot{grid-template-columns:1fr}.exrot .m{border-right:0;border-bottom:1.5px solid var(--ink)}.exstrip{grid-template-columns:1fr}.exstrip>div{border-left:0;border-top:1px solid var(--line)}.exstrip>div:first-child{border-top:0}}
+@media screen and (max-width:760px){.exdoc{font-size:14px}.exhoja{padding:1.2em 1em}.exrot{grid-template-columns:1fr}.exrot .m{border-right:0;border-bottom:1.5px solid var(--ink)}.exstrip{grid-template-columns:1fr}.exstrip>div{border-left:0;border-top:1px solid var(--line)}.exstrip>div:first-child{border-top:0}.expv{grid-template-columns:1fr}}
 /* Impresión (PDF): solo el contenido, en claro, sin menú ni paneles laterales */
 @media print{
   @page{size:A4;margin:12mm}
@@ -2868,9 +2874,9 @@ function libEvTxt(h){const d=S.av.get(h.k)||{};const pm=d.tipo==="pmf";
   return {pm,el:pm?"Código "+d.unidad:(d.tipo==="vano"?"Vano ":"Estructura ")+(d.unidad||""),
     cam:h.a==="obs"?"Observación":pm?"PMF: "+estTxt("pmf",h.est):(h.a==="ser"?"Servidumbre: ":"PMF: ")+estTxt(h.a,h.est)};}
 /* ---------- Resumen ejecutivo para directorio ---------- */
-/* Dos hojas A4, todo por frente (sector) y contratista: cantidades ejecutadas en la semana, cantidades totales al cierre,
-   riesgos y alertas principales, y actividades de la semana siguiente según los programas. Se imprime o se guarda en PDF
-   desde el navegador; el detalle técnico puede ir como anexo */
+/* Tres hojas A4, todo por frente (sector) y contratista: cantidades ejecutadas en la semana, cantidades totales al cierre,
+   programado vs ejecutado, riesgos y alertas principales, y actividades de la semana siguiente según los programas. Se
+   imprime o se guarda en PDF desde el navegador; el detalle técnico puede ir como anexo */
 const MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 function semanaISO(s){const [y,m,d]=s.split("-").map(Number),t=new Date(Date.UTC(y,m-1,d));t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7)+3);
   const f=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-f)/864e5-3+((f.getUTCDay()+6)%7))/7);}
@@ -2971,6 +2977,42 @@ function exAlcance(q,f){if(f.se)return listaTxt([...q.sl],2);
   const ord=new Map(estr(f.s.id).map((e,i)=>[String(e.id),i])),E=[...q.E].sort((p,r)=>(ord.get(p)||0)-(ord.get(r)||0)),V=[...q.V];
   if(E.length)return E.length<=3?(E.length===1?"estructura ":"estructuras ")+E.join(", "):`${E.length} estructuras (${E[0]} a ${E[E.length-1]})`;
   return V.length?(V.length<=2?(V.length===1?"vano ":"vanos ")+V.join(", "):`${V.length} vanos (${V[0]} a ${V[V.length-1]})`):"";}
+/* --- programado vs ejecutado por frente, a la fecha de corte: en la línea, fundaciones y montaje en estructuras y tendido
+   de conductor en km de línea (promedio de los dos circuitos); en el cruce, % por actividad de fundación en la torre de
+   suspensión y en los anclajes de cada lado (las que avanzaron en el período, están en ejecución o atrasadas).
+   Programado = línea base de las tareas del programa del contratista; si un elemento tiene varias tareas, valen las de
+   alcance más acotado y, entre ellas, la menos avanzada --- */
+const EX_PV_T={fun:p=>p.t==="fun"||p.t==="fs",mon:p=>p.t==="a"&&p.on==="e"&&p.ids.some(id=>/^mo_(mon|gir|tor)$/.test(id)),ten:p=>p.t==="tva"||(p.t==="a"&&p.on==="v"&&p.ids.includes("@cond"))};
+function exPvE(x){if(x.pve)return x.pve;
+  const R=S.rep,tm=pgEnd(R.hasta),tm0=pgEnd(x.f0),D=exCantX(x),out={lin:[],cru:[]},pl=(r,t)=>{const [a,b]=pgLB(r.t);return pgPlan(a,b,t);};
+  const prog=(M,tipo,sid)=>{const m=new Map();
+    for(const r of M.meas){if(!r.parts.some(EX_PV_T[tipo]))continue;const v=pl(r,tm);if(v==null)continue;const ten=tipo==="ten",n=ten?r.V.length:r.E.length;
+      for(const k of ten?r.V.filter(y=>y.s===sid).map(y=>y.v.key):r.E.filter(y=>y.s===sid).map(y=>String(y.e.id))){const z=m.get(k);if(!z||n<z.n)m.set(k,{n,v});else if(n===z.n&&v<z.v)z.v=v;}}
+    return m;};
+  for(const r of D.rows){const f=r.f;if(f.se||f.s.id==="cruce")continue;const P=progs().find(P=>P.contr===f.c);if(!P)continue;
+    const M=pgModel(P),sid=f.s.id,ids=new Set(f.E.map(e=>String(e.id))),q=r.q;
+    const est=tipo=>{let s=0,n=0;for(const [k,z] of prog(M,tipo,sid))if(ids.has(k)){s+=z.v/100;n++;}return n?s:null;};
+    const mt=prog(M,"ten",sid);let km=null;for(const v of f.V){const z=mt.get(v.key);if(z&&v.len!=null)km=(km||0)+v.len*z.v/100000;}
+    const rows=[{t:"Fundaciones",u:"un",p:est("fun"),e:q.fun.t},{t:"Montaje estructuras",u:"un",p:est("mon"),e:q.mon.t},{t:"Tendido conductor",u:"km",p:km,e:(q.con.t1+q.con.t2)/2000}];
+    if(rows.some(z=>(z.p||0)>0.005||z.e>0.005))out.lin.push({f,rows,rng:f.E.length>1?f.E[0].id+"–"+f.E[f.E.length-1].id:""});}
+  /* cruce: por lado, la torre de suspensión (2C o 3C) y los anclajes; cada actividad, promedio de sus patas */
+  const fc=D.rows.find(r=>!r.f.se&&r.f.s.id==="cruce");
+  if(fc){const P=progs().find(P=>P.contr===fc.f.c),M=P&&pgModel(P),suf=id=>id.slice(id.indexOf("_")+1),up=id=>String(id).toUpperCase();
+    const pAct=(ids,a,t)=>{if(!M)return null;const v=[];
+      for(const r of M.meas)if(r.E.some(y=>y.s==="cruce"&&ids.includes(up(y.e.id)))&&r.parts.some(p=>(p.t==="fs"&&p.sfx.includes(suf(a.id)))||(p.t==="pat"&&a.id==="cr_pat"))){const z=pl(r,t);if(z!=null)v.push(z);}
+      return pgAvgN(v);};
+    const eAct=(ids,a,g)=>pgAvgN([].concat(...ids.map(id=>{const e=estById("cruce",id);return e?patas(e.id).map(p=>g(kP("cruce",e.id,p.pata),a.id)):[];})));
+    for(const L of CR_LADOS){const grs=[["Suspensión",L.ids.filter(id=>/^[23]C$/.test(id))],["Anclajes",L.ids.filter(id=>!/^[23]C$/.test(id))]].map(([t,ids])=>{const rows=[];
+        for(const a of actsG("cr")){const e1=eAct(ids,a,x.g1);if(e1==null)continue;const e0=eAct(ids,a,x.g0),p1=pAct(ids,a,tm),p0=pAct(ids,a,tm0);
+          /* avanzó (programado o ejecutado) en el período, está en ejecución o va atrasada */
+          if((p1!=null&&(p1-(p0||0)>0.01||(p1>0.01&&p1<99.95)||p1-e1>0.5))||e1-(e0||0)>0.01||(e1>0.01&&e1<99.95))rows.push({t:a.nombre,u:"%",p:p1,e:e1});}
+        return {t:t+" "+ids.join(" y "),rows:rows.slice(0,5)};});
+      if(grs.some(g=>g.rows.length))out.cru.push({L,f:fc.f,grs});}}
+  return x.pve=out;}
+/* valor y desviación (ejecutado − programado) de una fila del cuadro */
+const exPvV=(v,u)=>v==null?"—":u==="km"?v.toFixed(2).replace(".",","):u==="%"?fmtP(v):String(Math.round(v));
+function exPvD(r){if(r.p==null)return "—";const d=r.u==="un"?r.e-Math.round(r.p):r.e-r.p;if(r.u==="%")return ppTxt(d);
+  const a=Math.abs(d);if(a<(r.u==="km"?0.005:0.5))return "0";return (d>0?"+":"−")+(r.u==="km"?a.toFixed(2).replace(".",","):String(Math.round(a)));}
 /* --- secciones del documento --- */
 function exRotulo(x,nota,sem){const R=S.rep,c=S.cfg||{},ed=R.notaEd,firma=(ed&&String(ed.firma||"").trim())||(nota&&nota.firma)||S.userName||"—";
   return `<header class="exrot"><div class="m"><span class="k">${esc(c.codigo||"STN4324")} · ${esc(c.tension||"Línea de transmisión")}</span><h1>Resumen ejecutivo</h1><span class="s">${esc(c.nombre||"Línea Tineo – Ancud")} · ${esc(sem.titulo)}</span></div>
@@ -2995,6 +3037,13 @@ function exTablaCant(D,modo){const sem=modo==="sem",nada=`<span class="muted">�
   const se=D.rows.find(r=>r.f.se);
   return `<div class="exqw"><table class="exq"><thead><tr><th>Frente · contratista</th>${EX_Q.map(c=>`<th class="r">${esc(c.t)}${c.m?`<small>${sem?"metros":"km"}${c.k==="con"?" por circuito":""}</small>`:""}</th>`).join("")}</tr></thead><tbody>
   ${D.rows.filter(r=>!r.f.se).map(r=>fila(r.f.s.nombre,r.f.c,r.q)).join("")}${fila("Total línea","",D.tot,"tot")}${se?fila("S/E Tineo",SE_CONTRATISTA+exT(se.ex),se.q,"se"):""}</tbody></table></div>`;}
+/* cuadro programado vs ejecutado: uno por frente de la línea y uno por lado del cruce, en dos columnas */
+function exSecPvE(x,n){const D=exPvE(x);
+  const fila=r=>{const d=exPvD(r);return `<tr><td>${esc(r.t)} (${r.u})</td><td class="r num">${exPvV(r.p,r.u)}</td><td class="r num"><b>${exPvV(r.e,r.u)}</b></td><td class="r num${/^−/.test(d)?" crit":""}">${d}</td></tr>`;};
+  const tabla=c=>`<table><thead><tr><th>Actividad</th><th class="r">Programado</th><th class="r">Ejecutado</th><th class="r">Desviación</th></tr></thead><tbody>${c}</tbody></table>`;
+  const lin=D.lin.map(z=>`<div><h3>${esc(z.f.s.nombre)} · ${esc(z.f.c)}${z.rng?`<small>estructuras ${esc(z.rng)}</small>`:""}</h3>${tabla(z.rows.map(fila).join(""))}</div>`);
+  const cru=D.cru.map(z=>`<div><h3>Cruce ${esc(z.L.id)} · ${esc(z.f.c)}</h3>${tabla(z.grs.map(g=>`<tr class="sub"><td colspan="4">${esc(g.t)}</td></tr>`+(g.rows.length?g.rows.map(fila).join(""):`<tr><td colspan="4" class="muted">Sin actividades en el período</td></tr>`)).join(""))}</div>`);
+  return `<section class="exsec">${exH(n,"Programado vs ejecutado",`al ${fmtD(S.rep.hasta)} · programado según la línea base de cada programa`)}${lin.length||cru.length?`<div class="expv">${lin.join("")}${cru.join("")}</div>`:`<p class="exnota">Sin programas cargados con actividades a la fecha.</p>`}</section>`;}
 function exSecRiesgos(x,n){const L=exRiesgos(x),sin=exFrentes().filter(f=>!L.some(z=>z.f.key===f.key));
   const li=i=>`<li><span class="exsev ${i.sev==="alta"?"a":"m"}">${i.sev==="alta"?"Alta":"Media"}</span><b>${esc(EX_TEMA[i.tp]||i.tp)}</b> · ${esc(i.txt)}</li>`;
   const nota=!L.length?"Sin alertas en el período.":sin.length?`Sin alertas: ${sin.map(exFrenteTxt).join("; ")}.`:"";
@@ -3021,7 +3070,8 @@ function exDoc(x){const R=S.rep,c=S.cfg||{},sem=exSemana(R),nota=(S.rnotas||{})[
   const hojas=[exRotulo(x,nota,sem)+exSecAvance(x,sem.per)
       +`<section class="exsec">${exH(1,"Cantidades ejecutadas en "+sem.per,"por frente y contratista")}${exTablaCant(D,"sem")}</section>`
       +`<section class="exsec">${exH(2,"Cantidades totales al cierre",`acumulado al ${fmtD(R.hasta)}, sobre el alcance de cada frente`)}${exTablaCant(D,"tot")}</section>`,
-    exSecRiesgos(x,3)+exSecSiguiente(x,4)+exSecComentario(nota)+exNotas(x,sem.per)];
+    exSecPvE(x,3)+exSecRiesgos(x,4),
+    exSecSiguiente(x,5)+exSecComentario(nota)+exNotas(x,sem.per)];
   return `<div class="exdoc">${hojas.map((b,i)=>`<article class="exhoja" aria-label="Hoja ${i+1} de ${hojas.length}">${b}<footer class="expie"><span>${esc(c.codigo||"STN4324")} · Resumen ejecutivo · ${esc(sem.corto)}</span><span>Hoja ${i+1} de ${hojas.length}</span></footer></article>`).join("")}</div>`;}
 /* comentario de la administración del contrato: uno por período, en config "rep_notas" (solo administradores) */
 async function exGuardarNota(){const R=S.rep,ed=R.notaEd;if(!ed||S.saving)return;
@@ -3115,9 +3165,14 @@ function repTexto(x){const R=S.rep,P0=x.P0,P1=x.P1,c=S.cfg||{},sem=exSemana(R),D
   L.push("","2. CANTIDADES TOTALES AL "+fmtD(R.hasta));
   for(const r of D.rows)if(!r.f.se)fr(exFrenteTxt(r.f),r.q,null,"tot");
   fr("Total línea",D.tot,null,"tot");for(const r of D.rows)if(r.f.se)fr(exFrenteTxt(r.f),r.q,r.ex,"tot");
-  L.push("","3. RIESGOS Y ALERTAS PRINCIPALES");if(!RK.length)L.push("- Sin alertas en el período.");
+  {const PV=exPvE(x),it=rows=>rows.map(r=>`${r.t.toLowerCase()} ${exPvV(r.e,r.u)} de ${exPvV(r.p,r.u)} (${exPvD(r)})`).join("; ");
+    L.push("","3. PROGRAMADO VS EJECUTADO AL "+fmtD(R.hasta)+" (ejecutado de programado, desviación; programado según la línea base)");
+    if(!PV.lin.length&&!PV.cru.length)L.push("- Sin programas cargados con actividades a la fecha.");
+    for(const z of PV.lin)L.push("- "+exFrenteTxt(z.f)+(z.rng?" ("+z.rng+")":"")+": "+it(z.rows));
+    for(const z of PV.cru)for(const g of z.grs)if(g.rows.length)L.push("- Cruce "+z.L.id+" · "+z.f.c+" · "+g.t+": "+it(g.rows));}
+  L.push("","4. RIESGOS Y ALERTAS PRINCIPALES");if(!RK.length)L.push("- Sin alertas en el período.");
   for(const z of RK)L.push("- "+exFrenteTxt(z.f)+": "+z.it.slice(0,3).map(i=>"["+(i.sev==="alta"?"Alta":"Media")+"] "+(EX_TEMA[i.tp]||i.tp)+" · "+i.txt).join("; ")+(z.it.length>3?"; y "+nTxt(z.it.length-3,"alerta más","alertas más"):"")+". Acción: "+(EX_ACC[z.it[0].tp]||""));
-  L.push("","4. PRÓXIMA SEMANA ("+fmtD(G.a)+" al "+fmtD(G.b)+")");
+  L.push("","5. PRÓXIMA SEMANA ("+fmtD(G.a)+" al "+fmtD(G.b)+")");
   for(const z of G.rows){const gs=[...z.g.values()].sort((a,b)=>a.S-b.S);
     L.push("- "+exFrenteTxt(z.f)+": "+(gs.length?gs.slice(0,3).map(q=>{const al=exAlcance(q,z.f);return q.ml+(al?" ("+al+")":"");}).join("; ")+(gs.length>3?"; y "+nTxt(gs.length-3,"actividad más","actividades más"):""):z.prog?"sin tareas programadas":"sin programa cargado")+(z.nb?" · "+nTxt(z.nb,"tarea","tareas")+" sin liberación":""));}
   {const n=(S.rnotas||{})[R.desde+"_"+R.hasta];if(n&&n.texto)L.push("","COMENTARIO DE LA ADMINISTRACIÓN DEL CONTRATO",n.texto+(n.firma?"\n— "+n.firma:""));}
@@ -3137,6 +3192,9 @@ function repPayload(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T,c=S.cfg||{
         semana:ob((z,c)=>c.k==="con"?{c1Metros:Math.round(z.s1),c2Metros:Math.round(z.s2),vanosSinLongitud:z.vs}:c.m?{metros:Math.round(z.s),vanosSinLongitud:z.vs}:{terminadas:z.s,conAvance:z.a}),
         total:ob((z,c)=>c.k==="con"?{c1Metros:Math.round(z.t1),c2Metros:Math.round(z.t2),largoLineaMetros:Math.round(z.n),vanosSinLongitud:z.vt,alcanceVanos:z.vn}:c.m?{metros:Math.round(z.t),alcanceMetros:Math.round(z.n),vanosSinLongitud:z.vt,alcanceVanos:z.vn}:{terminadas:z.t,alcance:z.n}),
         partidasSE:r.ex?{canaletas:{semana:r.ex.can.s,total:r.ex.can.t,alcance:r.ex.can.n},drenajes:{semana:r.ex.dre.s,total:r.ex.dre.t,alcance:r.ex.dre.n}}:undefined};}),
+    programadoVsEjecutado:(PV=>{const fil=r=>({actividad:r.t,unidad:r.u,programado:r.p==null?null:Math.round(r.p*100)/100,ejecutado:Math.round(r.e*100)/100});
+      return {fecha:R.hasta,base:"línea base de cada programa",linea:PV.lin.map(z=>({frente:z.f.s.nombre,contratista:z.f.c,estructuras:z.rng,actividades:z.rows.map(fil)})),
+        cruce:PV.cru.map(z=>({lado:z.L.id,contratista:z.f.c,grupos:z.grs.map(g=>({grupo:g.t,actividades:g.rows.map(fil)}))}))};})(exPvE(x)),
     riesgos:exRiesgos(x).map(z=>({frente:z.f.s.nombre,contratista:z.f.c,alertas:z.it.map(i=>({prioridad:i.sev,tema:EX_TEMA[i.tp]||i.tp,detalle:i.txt})),accion:EX_ACC[z.it[0].tp]||""})),
     proximaSemana:(G=>({desde:G.a,hasta:G.b,frentes:G.rows.map(z=>({frente:z.f.s.nombre,contratista:z.f.c,conPrograma:z.prog,tareasSinLiberacion:z.nb,
       actividades:[...z.g.values()].sort((a,b)=>a.S-b.S).map(q=>({actividad:q.ml,alcance:exAlcance(q,z.f)})),otrasTareas:[...new Set(z.otras)]}))}))(exSiguiente(x)),
@@ -3161,6 +3219,10 @@ function repCSV(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T;const L=[];
         if(c.k==="con"){for(const i of ["1","2"])row([r.f.s.nombre,r.f.c,"Conductor C"+i,Math.round(z["s"+i]),"",Math.round(z["t"+i]),Math.round(z.n),z.vn?z.vt+" / "+z.vn:""]);continue;}
         row([r.f.s.nombre,r.f.c,c.t,c.m?Math.round(z.s):z.s,c.m?"":z.a,c.m?Math.round(z.t):z.t,c.m?Math.round(z.n):z.n,z.vn?z.vt+" / "+z.vn:""]);}
       if(r.ex)for(const [k,t] of [["can","Canaletas"],["dre","Drenajes"]]){const z=r.ex[k];row([r.f.s.nombre,r.f.c,t,z.s,z.a,z.t,z.n,""]);}}
+    {const PV=exPvE(x),fv=(v,u)=>v==null?"":u==="un"?Math.round(v):String(Math.round(v*100)/100).replace(".",",");
+      L.push("");row(["PROGRAMADO VS EJECUTADO al "+fmtD(R.hasta)+" (línea base)","Contratista","Grupo","Actividad","Unidad","Programado","Ejecutado","Desviación"]);
+      for(const z of PV.lin)for(const r of z.rows)row([z.f.s.nombre,z.f.c,z.rng?"Estructuras "+z.rng:"",r.t,r.u,fv(r.p,r.u),fv(r.e,r.u),exPvD(r)]);
+      for(const z of PV.cru)for(const g of z.grs)for(const r of g.rows)row(["Cruce "+z.L.id,z.f.c,g.t,r.t,"%",fv(r.p,r.u),fv(r.e,r.u),exPvD(r)]);}
     L.push("");row(["PRÓXIMA SEMANA ("+fmtD(G.a)+" al "+fmtD(G.b)+")","Contratista","Actividad","Alcance","Tareas sin liberación"]);
     for(const z of G.rows){const gs=[...z.g.values()].sort((a,b)=>a.S-b.S);if(!gs.length&&!z.otras.length)row([z.f.s.nombre,z.f.c,z.prog?"Sin tareas programadas":"Sin programa cargado","",""]);
       for(const q of gs)row([z.f.s.nombre,z.f.c,q.ml,exAlcance(q,z.f),z.nb]);for(const t of new Set(z.otras))row([z.f.s.nombre,z.f.c,t,"(sin equivalencia en la app)",""]);}}
