@@ -569,6 +569,8 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 .exq{min-width:600px}
 .exq td b{font-family:var(--f-disp);font-size:1.12em;font-weight:700}
 .exq td.exna{color:var(--line-2)}
+.exq .exc{display:flex;justify-content:flex-end;align-items:baseline;gap:.4em}
+.exq .exc small{display:inline;font-family:var(--f-disp);font-weight:600;letter-spacing:.04em}
 .exq tr.tot td{border-top:1.5px solid var(--ink-2);background:var(--surface-2)}
 .exq tr.se td{border-top:1px dashed var(--line-2)}
 .exbar{display:block;height:3px;margin:.3em 0 0 auto;max-width:5.5em;border-radius:1px;background:linear-gradient(90deg,var(--sv-1) var(--p),var(--surface-3) var(--p))}
@@ -2893,10 +2895,12 @@ function exFrentes(){const out=[];
 const exFrenteDe=(F,contr)=>contr===PG_SE||contr===SE_CONTRATISTA?F.find(f=>f.se):F.filter(f=>!f.se&&f.c===contr).sort((a,b)=>b.E.length-a.E.length)[0]||null;
 const exFrenteTxt=f=>f.s.nombre+" · "+f.c;
 /* --- cantidades: elementos que llegan al 100 % (en el período y al cierre, sobre su alcance) y cable tendido en metros
-   (conductor C1 + C2 y OPGW, con la longitud de cada vano; los vanos sin longitud, del cruce, se cuentan por vano) --- */
+   (conductor por circuito, C1 y C2, y OPGW, con la longitud de cada vano y sobre el largo de la línea; los vanos sin
+   longitud, del cruce, se cuentan por vano) --- */
 const EX_Q=[{k:"tal",t:"Tala y roce",j:"talaRoce"},{k:"acc",t:"Caminos",j:"caminos"},{k:"pat",t:"Mallas PAT",j:"mallasPAT"},{k:"fun",t:"Fundaciones",j:"fundaciones"},{k:"mon",t:"Montaje",j:"montaje"},{k:"con",t:"Conductor",j:"conductor",m:true},{k:"opg",t:"OPGW",j:"opgw",m:true}];
-function exCant(x){const g0=x.g0,g1=x.g1,P0=x.P0,P1=x.P1,z=()=>({s:0,a:0,t:0,n:0,vs:0,vt:0,vn:0});
-  /* s = terminadas en el período, a = avanzaron sin terminar, t = terminadas al cierre, n = alcance */
+function exCant(x){const g0=x.g0,g1=x.g1,P0=x.P0,P1=x.P1,z=()=>({s:0,a:0,t:0,n:0,vs:0,vt:0,vn:0,s1:0,s2:0,t1:0,t2:0});
+  /* s = terminadas en el período, a = avanzaron sin terminar, t = terminadas al cierre, n = alcance (en cables, metros de
+     línea); el conductor va por circuito: s1/s2 en el período y t1/t2 al cierre */
   const cnt=(q,p0,p1)=>{q.n++;if(p1>=99.95){q.t++;if(p0<99.95)q.s++;}else if(p1>p0+0.01)q.a++;};
   const rows=exFrentes().map(f=>{const q=Object.fromEntries(EX_Q.map(c=>[c.k,z()]));
     if(f.se){const sc=cat=>{const o=z();for(const it of seItems(cat)){const k=it.cat+"|"+it.id;cnt(o,P0.se.byI[k]||0,P1.se.byI[k]||0);}return o;};
@@ -2905,7 +2909,7 @@ function exCant(x){const g0=x.g0,g1=x.g1,P0=x.P0,P1=x.P1,z=()=>({s:0,a:0,t:0,n:0
     for(const e of f.E){const k=kE(sid,e.id),a=P0.sec[sid].byE[e.id],b=P1.sec[sid].byE[e.id];
       cnt(q.tal,g0(k,"tal"),g1(k,"tal"));cnt(q.acc,g0(k,"acc"),g1(k,"acc"));cnt(q.pat,patVal(sid,e,g0),patVal(sid,e,g1));cnt(q.fun,a.fun,b.fun);cnt(q.mon,a.mon,b.mon);}
     for(const v of f.V){const a1=circPct(v.key,"1",g0),b1=circPct(v.key,"1",g1),a2=circPct(v.key,"2",g0),b2=circPct(v.key,"2",g1),ao=g0(v.key,"tv_opg"),bo=g1(v.key,"tv_opg");
-      if(v.len!=null){const L=v.len/100;q.con.n+=2*v.len;q.con.t+=L*(b1+b2);q.con.s+=L*(Math.max(0,b1-a1)+Math.max(0,b2-a2));q.opg.n+=v.len;q.opg.t+=L*bo;q.opg.s+=L*Math.max(0,bo-ao);}
+      if(v.len!=null){const L=v.len/100;q.con.n+=v.len;q.con.t1+=L*b1;q.con.t2+=L*b2;q.con.s1+=L*Math.max(0,b1-a1);q.con.s2+=L*Math.max(0,b2-a2);q.opg.n+=v.len;q.opg.t+=L*bo;q.opg.s+=L*Math.max(0,bo-ao);}
       else{const c0=a1>=99.95&&a2>=99.95,c1=b1>=99.95&&b2>=99.95;q.con.vn++;if(c1){q.con.vt++;if(!c0)q.con.vs++;}
         q.opg.vn++;if(bo>=99.95){q.opg.vt++;if(ao<99.95)q.opg.vs++;}}}
     return {f,q,ex:null};});
@@ -2917,8 +2921,10 @@ const exCantX=x=>x.cant||(x.cant=exCant(x));
 /* cantidades de un frente en una línea de texto (correo y n8n) */
 function exCantTxt(q,ex,modo){const sem=modo==="sem",out=[];
   for(const c of EX_Q){const z=q[c.k];if(!z.n&&!z.vn)continue;const t=c.t.toLowerCase();
-    if(c.m){if(sem){if(z.s>=1)out.push(`${t} ${fmtM(z.s)}`);if(z.vs)out.push(`${t} +${nTxt(z.vs,"vano","vanos")}`);}
-      else{if(z.n)out.push(`${t} ${fmtKm(z.t)} de ${fmtKm(z.n)}`);if(z.vn)out.push(`${t} ${z.vt}/${z.vn} vanos`);}}
+    if(c.m){const con=c.k==="con";
+      if(sem){if(con?z.s1>=1||z.s2>=1:z.s>=1)out.push(con?`${t} C1 ${fmtM(z.s1)} y C2 ${fmtM(z.s2)}`:`${t} ${fmtM(z.s)}`);if(z.vs)out.push(`${t} +${nTxt(z.vs,"vano","vanos")}`);}
+      else if(z.n)out.push(con?`${t} C1 ${fmtKm(z.t1)} y C2 ${fmtKm(z.t2)} de ${fmtKm(z.n)}`:`${t} ${fmtKm(z.t)} de ${fmtKm(z.n)}`);
+      else out.push(`${t} ${z.vt}/${z.vn} vanos`);}
     else if(sem){if(z.s||z.a)out.push(`${t} ${z.s?"+"+z.s:"0"}${z.a?` (${z.a} con avance)`:""}`);}
     else out.push(`${t} ${z.t}/${z.n}`);}
   if(ex)for(const [k,t] of [["can","canaletas"],["dre","drenajes"]]){const z=ex[k];if(sem){if(z.s||z.a)out.push(`${t} ${z.s?"+"+z.s:"0"}${z.a?` (${z.a} con avance)`:""}`);}else out.push(`${t} ${z.t}/${z.n}`);}
@@ -2975,15 +2981,19 @@ function exSecAvance(x,per){const P0=x.P0,P1=x.P1,f=(t,a,b)=>`<div><span class="
 /* tabla de cantidades por frente y contratista: «sem» = terminadas en el período (y las que avanzaron sin terminar);
    «tot» = terminadas al cierre sobre su alcance, con una barra fina del % */
 function exTablaCant(D,modo){const sem=modo==="sem",nada=`<span class="muted">—</span>`,bar=p=>`<i class="exbar" style="--p:${f1(clamp(p,0,100))}%"></i>`;
+  /* conductor: una línea por circuito, cada uno sobre el largo de la línea (igual que el OPGW) */
+  const cir=(a,b)=>`<span class="exc"><small>C1</small><b>${a}</b></span><span class="exc"><small>C2</small><b>${b}</b></span>`;
   const cel=(c,z)=>{if(!z.n&&!z.vn)return `<td class="r exna">·</td>`;
-    if(c.m){if(sem){const v=[];if(z.n&&z.s>=1)v.push(`<b>${fmtM(z.s)}</b>`);if(z.vs)v.push(`<b>+${z.vs}</b><small>${z.vs===1?"vano":"vanos"}</small>`);return `<td class="r">${v.join("")||nada}</td>`;}
-      return z.n?`<td class="r"><b>${fmtKm(z.t)}</b><small>de ${fmtKm(z.n)}${z.vn?` · ${z.vt}/${z.vn} vanos sin longitud`:""}</small>${bar(z.t/z.n*100)}</td>`:`<td class="r"><b>${z.vt}</b><small>de ${z.vn} vanos</small>${bar(z.vt/z.vn*100)}</td>`;}
+    if(c.m){const con=c.k==="con";
+      if(sem){const v=[];if(z.n&&(con?z.s1>=1||z.s2>=1:z.s>=1))v.push(con?cir(z.s1>=1?fmtM(z.s1):"—",z.s2>=1?fmtM(z.s2):"—"):`<b>${fmtM(z.s)}</b>`);
+        if(z.vs)v.push(`<b>+${z.vs}</b><small>${z.vs===1?"vano":"vanos"}</small>`);return `<td class="r">${v.join("")||nada}</td>`;}
+      return z.n?`<td class="r">${con?cir(fmtKm(z.t1),fmtKm(z.t2)):`<b>${fmtKm(z.t)}</b>`}<small>de ${fmtKm(z.n)}</small>${bar((con?(z.t1+z.t2)/2:z.t)/z.n*100)}</td>`:`<td class="r"><b>${z.vt}</b><small>de ${z.vn} vanos</small>${bar(z.vt/z.vn*100)}</td>`;}
     if(sem)return `<td class="r">${z.s?`<b>+${z.s}</b>`:nada}${z.a?`<small>${z.a} con avance</small>`:""}</td>`;
     return `<td class="r"><b>${z.t}</b><small>de ${z.n} · ${fmtP(z.t/z.n*100)}</small>${bar(z.t/z.n*100)}</td>`;};
   const exT=ex=>{const o=(t,z)=>sem?`${t} ${z.s?"+"+z.s:"—"}`:`${t} ${z.t}/${z.n}`;return ex?" · "+o("canaletas",ex.can)+" · "+o("drenajes",ex.dre):"";};
   const fila=(lab,sub,q,cls)=>`<tr${cls?` class="${cls}"`:""}><td><b>${esc(lab)}</b>${sub?`<small>${esc(sub)}</small>`:""}</td>${EX_Q.map(c=>cel(c,q[c.k])).join("")}</tr>`;
   const se=D.rows.find(r=>r.f.se);
-  return `<div class="exqw"><table class="exq"><thead><tr><th>Frente · contratista</th>${EX_Q.map(c=>`<th class="r">${esc(c.t)}${c.m?`<small>${sem?"metros":"km"}</small>`:""}</th>`).join("")}</tr></thead><tbody>
+  return `<div class="exqw"><table class="exq"><thead><tr><th>Frente · contratista</th>${EX_Q.map(c=>`<th class="r">${esc(c.t)}${c.m?`<small>${sem?"metros":"km"}${c.k==="con"?" por circuito":""}</small>`:""}</th>`).join("")}</tr></thead><tbody>
   ${D.rows.filter(r=>!r.f.se).map(r=>fila(r.f.s.nombre,r.f.c,r.q)).join("")}${fila("Total línea","",D.tot,"tot")}${se?fila("S/E Tineo",SE_CONTRATISTA+exT(se.ex),se.q,"se"):""}</tbody></table></div>`;}
 function exSecRiesgos(x,n){const L=exRiesgos(x),sin=exFrentes().filter(f=>!L.some(z=>z.f.key===f.key));
   const li=i=>`<li><span class="exsev ${i.sev==="alta"?"a":"m"}">${i.sev==="alta"?"Alta":"Media"}</span><b>${esc(EX_TEMA[i.tp]||i.tp)}</b> · ${esc(i.txt)}</li>`;
@@ -3006,7 +3016,7 @@ function exSecComentario(nota){const R=S.rep,ed=R.notaEd,adm=S.canAdmin,txt=ed?S
   return h+`</section>`;}
 /* nota de método al pie */
 function exNotas(x,per){const T=x.T;
-  return `<p class="exnota">Cantidades: elementos que llegan al 100 % en ${per} («con avance»: avanzaron sin terminar) y cable tendido según la longitud de cada vano (conductor C1 + C2 en metros de circuito; OPGW en metros); los vanos del cruce, sin longitud, se cuentan por vano. Un vano cuenta para el contratista de la estructura donde termina.${T.cor.length?` Las bajas de registro (${esc(listaTxt(T.cor.map(c=>"vano "+c.v),4))}) no se restan.`:""} Riesgos y próxima semana: alertas de la app y de los programas MS Project${x.pg.length?`, a su fecha de estado (${esc(x.pg.map(z=>`${progName(z.P.contr)} ${pgD(z.P.estado)}`).join("; "))})`:""}.</p>`;}
+  return `<p class="exnota">Cantidades: elementos que llegan al 100 % en ${per} («con avance»: avanzaron sin terminar) y cable tendido según la longitud de cada vano, sobre el largo de la línea (conductor por circuito, C1 y C2; OPGW); los vanos del cruce, sin longitud, se cuentan por vano. Un vano cuenta para el contratista de la estructura donde termina.${T.cor.length?` Las bajas de registro (${esc(listaTxt(T.cor.map(c=>"vano "+c.v),4))}) no se restan.`:""} Riesgos y próxima semana: alertas de la app y de los programas MS Project${x.pg.length?`, a su fecha de estado (${esc(x.pg.map(z=>`${progName(z.P.contr)} ${pgD(z.P.estado)}`).join("; "))})`:""}.</p>`;}
 function exDoc(x){const R=S.rep,c=S.cfg||{},sem=exSemana(R),nota=(S.rnotas||{})[R.desde+"_"+R.hasta]||null,D=exCantX(x);
   const hojas=[exRotulo(x,nota,sem)+exSecAvance(x,sem.per)
       +`<section class="exsec">${exH(1,"Cantidades ejecutadas en "+sem.per,"por frente y contratista")}${exTablaCant(D,"sem")}</section>`
@@ -3124,8 +3134,8 @@ function repPayload(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T,c=S.cfg||{
     /* resumen ejecutivo por frente y contratista: cantidades de la semana y al cierre, riesgos y próxima semana */
     frentes:exCantX(x).rows.map(r=>{const cols=EX_Q.filter(c=>r.q[c.k].n||r.q[c.k].vn),ob=fn=>Object.fromEntries(cols.map(c=>[c.j,fn(r.q[c.k],c)]));
       return {frente:r.f.s.nombre,contratista:r.f.c,
-        semana:ob((z,c)=>c.m?{metros:Math.round(z.s),vanosSinLongitud:z.vs}:{terminadas:z.s,conAvance:z.a}),
-        total:ob((z,c)=>c.m?{metros:Math.round(z.t),alcanceMetros:Math.round(z.n),vanosSinLongitud:z.vt,alcanceVanos:z.vn}:{terminadas:z.t,alcance:z.n}),
+        semana:ob((z,c)=>c.k==="con"?{c1Metros:Math.round(z.s1),c2Metros:Math.round(z.s2),vanosSinLongitud:z.vs}:c.m?{metros:Math.round(z.s),vanosSinLongitud:z.vs}:{terminadas:z.s,conAvance:z.a}),
+        total:ob((z,c)=>c.k==="con"?{c1Metros:Math.round(z.t1),c2Metros:Math.round(z.t2),largoLineaMetros:Math.round(z.n),vanosSinLongitud:z.vt,alcanceVanos:z.vn}:c.m?{metros:Math.round(z.t),alcanceMetros:Math.round(z.n),vanosSinLongitud:z.vt,alcanceVanos:z.vn}:{terminadas:z.t,alcance:z.n}),
         partidasSE:r.ex?{canaletas:{semana:r.ex.can.s,total:r.ex.can.t,alcance:r.ex.can.n},drenajes:{semana:r.ex.dre.s,total:r.ex.dre.t,alcance:r.ex.dre.n}}:undefined};}),
     riesgos:exRiesgos(x).map(z=>({frente:z.f.s.nombre,contratista:z.f.c,alertas:z.it.map(i=>({prioridad:i.sev,tema:EX_TEMA[i.tp]||i.tp,detalle:i.txt})),accion:EX_ACC[z.it[0].tp]||""})),
     proximaSemana:(G=>({desde:G.a,hasta:G.b,frentes:G.rows.map(z=>({frente:z.f.s.nombre,contratista:z.f.c,conPrograma:z.prog,tareasSinLiberacion:z.nb,
@@ -3147,7 +3157,9 @@ function repCSV(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T;const L=[];
   row(["REPORTE SEMANAL","Del "+fmtD(R.desde)+" al "+fmtD(R.hasta),"Comparado con el avance al "+fmtD(x.f0)]);
   /* resumen ejecutivo: cantidades por frente y contratista (cables en metros) y actividades de la semana siguiente */
   {const D=exCantX(x),G=exSiguiente(x);L.push("");row(["CANTIDADES POR FRENTE Y CONTRATISTA","Contratista","Actividad","Terminadas en el período (m en cables)","Con avance sin terminar","Total al cierre (m en cables)","Alcance (m en cables)","Vanos sin longitud: terminados / alcance"]);
-    for(const r of D.rows){for(const c of EX_Q){const z=r.q[c.k];if(!z.n&&!z.vn)continue;row([r.f.s.nombre,r.f.c,c.t,c.m?Math.round(z.s):z.s,c.m?"":z.a,c.m?Math.round(z.t):z.t,c.m?Math.round(z.n):z.n,z.vn?z.vt+" / "+z.vn:""]);}
+    for(const r of D.rows){for(const c of EX_Q){const z=r.q[c.k];if(!z.n&&!z.vn)continue;
+        if(c.k==="con"){for(const i of ["1","2"])row([r.f.s.nombre,r.f.c,"Conductor C"+i,Math.round(z["s"+i]),"",Math.round(z["t"+i]),Math.round(z.n),z.vn?z.vt+" / "+z.vn:""]);continue;}
+        row([r.f.s.nombre,r.f.c,c.t,c.m?Math.round(z.s):z.s,c.m?"":z.a,c.m?Math.round(z.t):z.t,c.m?Math.round(z.n):z.n,z.vn?z.vt+" / "+z.vn:""]);}
       if(r.ex)for(const [k,t] of [["can","Canaletas"],["dre","Drenajes"]]){const z=r.ex[k];row([r.f.s.nombre,r.f.c,t,z.s,z.a,z.t,z.n,""]);}}
     L.push("");row(["PRÓXIMA SEMANA ("+fmtD(G.a)+" al "+fmtD(G.b)+")","Contratista","Actividad","Alcance","Tareas sin liberación"]);
     for(const z of G.rows){const gs=[...z.g.values()].sort((a,b)=>a.S-b.S);if(!gs.length&&!z.otras.length)row([z.f.s.nombre,z.f.c,z.prog?"Sin tareas programadas":"Sin programa cargado","",""]);
