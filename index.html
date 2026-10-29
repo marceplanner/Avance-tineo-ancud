@@ -644,7 +644,7 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 "use strict";
 const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"Cruce"},{id:"isla",nombre:"Isla"}];
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
-const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"config",t:"Configuración",admin:true}];
+const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"config",t:"Configuración",admin:true}];
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -814,7 +814,8 @@ const S={me:null,userName:"",userEmail:"",canWrite:false,canAdmin:false,
   se:null,SE:null,seCat:"fun",seDraft:null,
   rep:{modo:"7d",desde:"",hasta:"",env:false,vista:"ejecutivo",anexo:false,notaEd:null},n8nDraft:null,rnotas:{},n8n:null,
   prog:new Map(),pg:{sel:"",contr:"",vista:"alertas",prof:3,pref:"",q:"",open:new Set()},
-  lib:{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:"",sel:new Set(),base:"sat",bulk:{v:"ser",est:"lib",fecha:"",ref:"",obs:""}},pmfEd:null};
+  lib:{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:"",sel:new Set(),base:"sat",bulk:{v:"ser",est:"lib",fecha:"",ref:"",obs:""}},pmfEd:null,
+  tr:{a:"",b:"",lista:null}};
 
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -1012,7 +1013,7 @@ function render(){
     else html+=`<div class="panel empty stack" style="align-items:center"><h2>La app aún no tiene datos cargados</h2><p>${S.canAdmin?"Ve a <b>Configuración</b> e importa el respaldo de la app anterior (archivo JSON).":"Un administrador debe cargar los datos del proyecto."}</p>${S.canAdmin?`<button class="btn primary" data-tab="config">Ir a Configuración</button>`:""}</div>`;
     m.innerHTML=html;$("#drawer").innerHTML="";restoreFocus(fid,selS);return;}
   {const tb=TABS.find(t=>t.id===S.tab);if(tb&&tb.admin&&!S.canAdmin)S.tab="resumen";}
-  html+=({resumen:vResumen,reporte:vReporte,programas:vProgramas,linea:vLinea,cruce:vCruce,se:vSE,registrar:vRegistrar,liberaciones:vLiberaciones,estructuras:vEstructuras,config:vConfig}[S.tab]||vResumen)();
+  html+=({resumen:vResumen,reporte:vReporte,programas:vProgramas,linea:vLinea,cruce:vCruce,se:vSE,registrar:vRegistrar,liberaciones:vLiberaciones,estructuras:vEstructuras,herramientas:vHerramientas,config:vConfig}[S.tab]||vResumen)();
   /* las tablas con scroll propio (data-keep-scroll) conservan su posición al redibujar */
   const keep=[...document.querySelectorAll("[data-keep-scroll]")].map(el=>[el.id,el.scrollTop]);
   m.innerHTML=html;
@@ -1876,6 +1877,93 @@ async function guardar(){
 }
 
 /* ---------- Estructuras (tabla) ---------- */
+/* ---------- Herramientas ---------- */
+/* Distancia entre dos estructuras por la traza: suma de los vanos del listado As Built (si un vano no trae largo, se mide
+   entre las coordenadas UTM de sus torres). Los extremos de la línea son los marcos de línea de las S/E. En el cruce, los
+   anclajes de cada orilla van en paralelo (1CA/1CB y 4CA/4CB) y el canal se mide de anclaje a anclaje, porque 2C y 3C no
+   tienen coordenadas ni largo de vano en el listado */
+const TR_SE0=59.197,TR_SEN=67.678;   /* S/E Tineo–E1 y E245–S/E Nueva Ancud, m (listado de distancias) */
+function trTraza(){const c=gc();if(c.m.trz)return c.m.trz;
+  const xy=id=>{const a=asbGet(id);return a&&a.E!=null?{E:a.E,N:a.N}:null;},d=(p,q)=>p&&q&&p.xy&&q.xy?Math.hypot(q.xy.E-p.xy.E,q.xy.N-p.xy.N):null;
+  const media=a=>{const v=a.filter(z=>z!=null);return v.length?v.reduce((s,z)=>s+z,0)/v.length:null;};
+  const P=[],L=[],pt=o=>{P.push(o);return o;},est=(sid,e)=>({k:sid+"|"+e.id,sid,e,lab:String(e.id),xy:xy(e.id)});
+  /* un paso de la traza: largo del listado o, si no lo trae, entre coordenadas */
+  const paso=(prev,p,len)=>{let src=len!=null?"listado":null;if(len==null&&(len=d(prev,p))!=null)src="coordenadas";
+    p.pos=prev.pos+1;p.km=prev.km!=null&&len!=null?prev.km+len:null;L.push({a:prev,b:p,len,src,lab:prev.lab+"–"+p.lab});};
+  let prev=pt({k:"SE0",lab:"S/E Tineo",xy:{E:LIB_SE_PTS[0][1],N:LIB_SE_PTS[0][2]},km:0,pos:0});
+  /* largo del listado entre dos estructuras seguidas en él (también entre sectores, p. ej. 4CA–181) */
+  const lst=(p,q)=>p.e&&q.e?vanoLen({a:p.e.id,b:q.e.id}):null;
+  const tramo=sid=>{for(const e of estr(sid)){const p=pt(est(sid,e)),v=prev.sid===sid?vanoBetween(sid,prev.e.id,e.id):null;paso(prev,p,prev.k==="SE0"?TR_SE0:v&&v.len!=null?v.len:lst(prev,p));prev=p;}};
+  tramo("continente");
+  /* cruce: anclajes norte en paralelo, 2C y 3C sin ubicación, anclajes sur medidos desde el anclaje norte de su lado */
+  const cr=id=>{const e=estById("cruce",id);return e?pt(est("cruce",e)):null;},N=["1CA","1CB"].map(cr).filter(Boolean);
+  if(N.length){const p0=prev,par=p=>N.find(n=>n.lab.slice(-1)===p.lab.slice(-1))||N[0],lenN=p=>{const l=lst(p0,p);return l!=null?l:d(p0,p);};
+    for(const p of N){const len=lenN(p);p.pos=p0.pos+1;p.km=p0.km!=null&&len!=null?p0.km+len:null;}
+    L.push({a:p0,b:N[0],len:media(N.map(lenN)),src:N.every(p=>lst(p0,p)!=null)?"listado":"coordenadas",lab:p0.lab+"–"+N.map(p=>p.lab).join(" / ")});
+    ["2C","3C"].map(cr).filter(Boolean).forEach((p,i)=>{p.pos=p0.pos+2+i;p.km=null;});
+    const Sx=["4CA","4CB"].map(cr).filter(Boolean);
+    if(Sx.length){for(const p of Sx){const q=par(p),len=d(q,p);p.pos=p0.pos+4;p.km=q.km!=null&&len!=null?q.km+len:null;}
+      L.push({a:N[0],b:Sx[0],len:media(Sx.map(p=>d(par(p),p))),src:"coordenadas",cruce:true,lab:N.map(p=>p.lab).join(" / ")+"–"+Sx.map(p=>p.lab).join(" / ")+" (canal, por 2C y 3C)"});
+      prev=Sx[0];}}
+  tramo("isla");
+  paso(prev,pt({k:"SEN",lab:"S/E Nueva Ancud",xy:{E:LIB_SE_PTS[1][1],N:LIB_SE_PTS[1][2]}}),TR_SEN);
+  return c.m.trz={P,L,d,by:new Map(P.map(p=>[p.k,p]))};}
+/* tramo entre dos puntos de la traza: distancia, vanos, estructuras incluidas y su avance de hoy */
+function trCalc(ka,kb){const T=trTraza(),A=T.by.get(ka),B=T.by.get(kb);if(!A||!B||A.km==null||B.km==null)return null;
+  const lo=Math.min(A.pos,B.pos),hi=Math.max(A.pos,B.pos),E=T.P.filter(p=>p.e&&p.pos>=lo&&p.pos<=hi),keys=new Set(E.map(p=>p.k));
+  const av={n:E.length,f:0,m:0,L:0,c1:0,c2:0,og:0};
+  for(const p of E){const st=S.P.sec[p.sid].byE[p.e.id];if(st.fun>=99.95)av.f++;if(st.mon>=99.95)av.m++;}
+  for(const s of secs())for(const v of vanos(s.id))if(v.len!=null&&keys.has(s.id+"|"+v.a)&&keys.has(s.id+"|"+v.b)){av.L+=v.len;av.c1+=v.len*circPct(v.key,"1")/100;av.c2+=v.len*circPct(v.key,"2")/100;av.og+=v.len*cur(v.key,"tv_opg")/100;}
+  return {A,B,dist:Math.abs(B.km-A.km),recta:T.d(A,B),vanos:hi-lo,links:T.L.filter(l=>l.a.pos>=lo&&l.b.pos<=hi),av};}
+function vHerramientas(){const T=trTraza(),R=S.tr,km=m=>"km "+(m/1000).toFixed(3).replace(".",",");
+  const opts=v=>{let h=`<option value="">Elige una estructura</option>`,g=null;
+    for(const p of T.P){const gl=p.sid?secName(p.sid):p.k==="SE0"?"Inicio de la línea":"Término de la línea";
+      if(gl!==g){h+=(g!==null?"</optgroup>":"")+`<optgroup label="${esc(gl)}">`;g=gl;}
+      h+=`<option value="${esc(p.k)}"${p.k===v?" selected":""}${p.km==null?" disabled":""}>${esc(p.sid?p.lab:p.lab+" · marco de línea")}${p.km==null?" (sin ubicación en el listado)":""}</option>`;}
+    return h+"</optgroup>";};
+  const r=R.a&&R.b?trCalc(R.a,R.b):null;
+  let h=`<div class="stack"><section class="panel stack"><div class="stack" style="gap:2px"><h2>Distancia entre estructuras</h2><span class="small muted">Elige dos estructuras para medir cualquier tramo. La distancia se calcula por la traza, sumando los vanos del listado As Built ${esc(ASB_DOC)}.</span></div>
+   <div class="filters"><div class="field"><label for="tr-a">Desde</label><select id="tr-a">${opts(R.a)}</select></div><button class="btn small ghost" data-trswap="1" title="Invertir desde y hasta" aria-label="Invertir desde y hasta" style="align-self:flex-end">⇄</button><div class="field"><label for="tr-b">Hasta</label><select id="tr-b">${opts(R.b)}</select></div></div>`;
+  if(!r)h+=`<p class="muted" style="margin:0">${R.a&&R.b?"No se puede medir ese tramo.":"Elige la estructura de inicio y la de término."}</p>`;
+  else{const fig=(t,v,sub)=>`<div><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`,[p,q]=r.A.km<=r.B.km?[r.A,r.B]:[r.B,r.A],a=r.av;
+    h+=`<div class="tmfig">${fig("Distancia por la traza",fmtKm(r.dist),`${Math.round(r.dist).toLocaleString("es-CL")} m · ${nTxt(r.vanos,"vano","vanos")}`)}${fig("En línea recta",r.recta!=null?fmtKm(r.recta):"—","entre las coordenadas UTM de los extremos")}${fig("Progresivas",`${km(p.km)} → ${km(q.km)}`,"desde el marco de línea de la S/E Tineo")}</div>`;
+    h+=`<p class="small" style="margin:0"><b>En este tramo hoy:</b> ${nTxt(a.n,"estructura","estructuras")} · ${a.f} con fundación terminada · ${a.m} montadas${a.L?` · conductor C1 ${fmtKm(a.c1)} y C2 ${fmtKm(a.c2)} de ${fmtKm(a.L)} · OPGW ${fmtKm(a.og)}`:""}.</p>`;
+    {const dup=trLista().some(z=>(z.a===R.a&&z.b===R.b)||(z.a===R.b&&z.b===R.a));
+      h+=`<div class="row"><button class="btn small" data-tradd="1"${dup?" disabled":""}>${dup?"Ya está en la lista":"Agregar a la lista"}</button></div>`;}
+    const xy=r.links.filter(l=>l.src==="coordenadas"&&!l.cruce),notas=[];
+    if(!r.vanos)notas.push("Son estructuras en paralelo: la distancia por la traza es 0 y vale la distancia en línea recta.");
+    if(r.links.some(l=>l.cruce))notas.push("El canal se mide de anclaje a anclaje (1CA / 1CB a 4CA / 4CB) con sus coordenadas: 2C y 3C no tienen coordenadas ni largo de vano en el listado.");
+    if(xy.length)notas.push(`${nTxt(xy.length,"vano sin largo en el listado se midió","vanos sin largo en el listado se midieron")} entre coordenadas UTM: ${listaTxt(xy.map(l=>l.lab),6)}.`);
+    if(notas.length)h+=`<p class="small muted" style="margin:0">${esc(notas.join(" "))}</p>`;
+    let acc=0;const filas=r.links.map(l=>{acc+=l.len||0;return `<tr><td>${esc(l.lab)}</td><td class="r num">${fmtM(l.len)}</td><td class="r num">${fmtM(acc)}</td><td class="small muted">${l.src==="listado"?"Listado As Built":l.src==="coordenadas"?"Coordenadas UTM":"Sin dato"}</td></tr>`;}).join("");
+    if(r.links.length)h+=`<details${r.links.length<=15?" open":""}><summary class="small" style="cursor:pointer;color:var(--ink-2)">Vanos del tramo (${r.links.length})</summary><div class="tbl-wrap" style="max-height:420px"><table class="tec"><thead><tr><th>Vano</th><th class="r">Largo</th><th class="r">Acumulado</th><th>Fuente</th></tr></thead><tbody>${filas}</tbody></table></div></details>`;}
+  return h+`</section>${vTramos()}</div>`;}
+/* tramos guardados (p. ej., tiros de tendido): se guardan desde, hasta y nombre en este navegador; la distancia se
+   recalcula siempre con los datos vigentes. El total avisa si hay tramos que se traslapan */
+const TR_LS="avance-tineo-ancud.tramos";
+function trLista(){const R=S.tr;
+  if(!R.lista){try{const v=JSON.parse(localStorage.getItem(TR_LS)||"[]");R.lista=Array.isArray(v)?v.filter(z=>z&&typeof z.a==="string"&&typeof z.b==="string").map(z=>({a:z.a,b:z.b,nombre:String(z.nombre||"").slice(0,60)})):[];}catch(e){R.lista=[];}}
+  return R.lista;}
+function trGuardar(){try{localStorage.setItem(TR_LS,JSON.stringify(trLista()));}catch(e){}}
+const trFilas=()=>trLista().map((z,i)=>{const r=trCalc(z.a,z.b);return {z,i,r,p:r?[Math.min(r.A.km,r.B.km),Math.max(r.A.km,r.B.km)]:null};});
+const trLab=k=>{const p=trTraza().by.get(k);return p?p.lab:"—";};
+function vTramos(){const L=trFilas(),km=m=>"km "+(m/1000).toFixed(3).replace(".",",");
+  if(!L.length)return `<section class="panel stack"><h2>Tramos guardados</h2><p class="muted" style="margin:0">Mide un tramo y presiona «Agregar a la lista» para ir sumando tramos, por ejemplo los tiros de tendido.</p></section>`;
+  const ok=L.filter(x=>x.r),tot=ok.reduce((s,x)=>s+x.r.dist,0),nv=ok.reduce((s,x)=>s+x.r.vanos,0);
+  const tras=ok.some((x,i)=>ok.slice(i+1).some(y=>x.p[0]<y.p[1]-0.5&&y.p[0]<x.p[1]-0.5));
+  const fila=x=>`<tr><td class="num">${x.i+1}</td><td><input type="text" data-trname="${x.i}" value="${esc(x.z.nombre)}" maxlength="60" aria-label="Nombre del tramo ${x.i+1}" style="min-width:130px"></td><td>${esc(trLab(x.z.a))}</td><td>${esc(trLab(x.z.b))}</td>${x.r?`<td class="r num"><b>${fmtKm(x.r.dist)}</b><small>${fmtM(x.r.dist)}</small></td><td class="r num">${x.r.vanos}</td><td class="r num small">${km(x.p[0])} → ${km(x.p[1])}</td>`:`<td colspan="3" class="muted">No se puede medir</td>`}<td class="r" style="white-space:nowrap"><button class="linkbtn" data-trver="${x.i}">Ver</button> <button class="btn small ghost" data-trdel="${x.i}" aria-label="Quitar el tramo ${x.i+1}">Quitar</button></td></tr>`;
+  return `<section class="panel stack"><div class="spread"><h2>Tramos guardados</h2><div class="row" style="gap:6px"><button class="btn small ghost" data-trcopy="1">Copiar tabla</button><button class="btn small ghost" data-trcsv="1">Descargar CSV</button><button class="btn small ghost" data-trclear="1">Vaciar lista</button></div></div>
+  <div class="tbl-wrap"><table class="tec rp"><thead><tr><th>N°</th><th>Nombre</th><th>Desde</th><th>Hasta</th><th class="r">Distancia</th><th class="r">Vanos</th><th class="r">Progresivas</th><th></th></tr></thead><tbody>${L.map(fila).join("")}
+  <tr><td></td><td><b>Total</b></td><td colspan="2" class="small muted">${nTxt(ok.length,"tramo","tramos")}</td><td class="r num"><b>${fmtKm(tot)}</b><small>${fmtM(tot)}</small></td><td class="r num"><b>${nv}</b></td><td></td><td></td></tr></tbody></table></div>
+  ${tras?`<p class="small warnline" style="margin:0">Hay tramos que se traslapan: el total suma dos veces la parte común.</p>`:""}
+  <p class="small muted" style="margin:0">La lista se guarda en este navegador. Las distancias se recalculan con los datos vigentes de la app.</p></section>`;}
+/* la lista como tabla de texto: con tabuladores para pegar en Excel, o con punto y coma para el CSV */
+function trTexto(sep){const f=n=>String(Math.round(n*10)/10).replace(".",","),k3=m=>(m/1000).toFixed(3).replace(".",",");let tot=0,nv=0;
+  const L=[["N°","Nombre","Desde","Hasta","Distancia (m)","Vanos","Progresiva inicio (km)","Progresiva término (km)"]];
+  for(const x of trFilas()){if(x.r){tot+=x.r.dist;nv+=x.r.vanos;}L.push([x.i+1,x.z.nombre,trLab(x.z.a),trLab(x.z.b),x.r?f(x.r.dist):"",x.r?x.r.vanos:"",x.p?k3(x.p[0]):"",x.p?k3(x.p[1]):""]);}
+  L.push(["","Total","","",f(tot),nv,"",""]);
+  const q=v=>{const s=String(v==null?"":v);return sep===";"?(/[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s):s.replace(/[\t\n]/g," ");};
+  return L.map(r=>r.map(q).join(sep)).join(sep===";"?"\r\n":"\n");}
 function vEstructuras(){
   const T=S.tbl;const sid=T.sec;const r=S.P.sec[sid];
   const tts=[...new Set(estr(sid).map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
@@ -3550,6 +3638,13 @@ document.addEventListener("click",ev=>{
   /* programas de los contratistas */
   if(ds.pgsel){S.pg.sel=ds.pgsel;S.pg.pref="";if(ds.tab){go(ds.tab);return;}render();return;}
   if(ds.tab){go(ds.tab);return;}
+  if(ds.trswap){const z=S.tr.a;S.tr.a=S.tr.b;S.tr.b=z;render();return;}
+  if(ds.tradd){const L=trLista();L.push({a:S.tr.a,b:S.tr.b,nombre:"Tramo "+(L.length+1)});trGuardar();render();return;}
+  if(ds.trdel!=null){trLista().splice(+ds.trdel,1);trGuardar();render();return;}
+  if(ds.trver!=null){const z=trLista()[+ds.trver];if(z){S.tr.a=z.a;S.tr.b=z.b;render();window.scrollTo({top:0,behavior:"smooth"});}return;}
+  if(ds.trclear){if(confirm("¿Vaciar la lista de tramos guardados?")){S.tr.lista=[];trGuardar();render();}return;}
+  if(ds.trcopy){copiarTexto(trTexto("\t")).then(ok=>toast(ok?"Tabla copiada: pégala en Excel o en un correo.":"No se pudo copiar la tabla.",!ok));return;}
+  if(ds.trcsv){descargar("tramos-"+today()+".csv","﻿"+trTexto(";"),"text/csv;charset=utf-8");toast("Tramos descargados.");return;}
   if(ds.pgvista){S.pg.vista=ds.pgvista;render();return;}
   if(ds.pgpref!=null){S.pg.pref=S.pg.pref===ds.pgpref?"":ds.pgpref;if(S.pg.pref&&S.pg.vista==="alertas")S.pg.vista="todas";render();return;}
   if(ds.pgal){const o=S.pg.open;o.has(ds.pgal)?o.delete(ds.pgal):o.add(ds.pgal);render();return;}
@@ -3630,6 +3725,7 @@ document.addEventListener("click",ev=>{
 document.addEventListener("input",ev=>{
   const t=ev.target,ds=t.dataset;
   if(t.id==="pg-q"){S.pg.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
+  if(ds.trname!=null){const z=trLista()[+ds.trname];if(z){z.nombre=t.value.slice(0,60);trGuardar();}return;}
   if(t.id==="ex-nota"||t.id==="ex-firma"){if(S.rep.notaEd)S.rep.notaEd[t.id==="ex-nota"?"texto":"firma"]=t.value;return;}
   if(t.id==="n8n-url"||t.id==="n8n-key"){if(!S.n8nDraft)S.n8nDraft=Object.assign({url:"",clave:""},n8nCfg()||{});S.n8nDraft[t.id==="n8n-url"?"url":"clave"]=t.value;return;}
   if(t.id==="lib-q"){S.lib.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
@@ -3660,6 +3756,7 @@ document.addEventListener("input",ev=>{const t=ev.target;if(t.dataset&&t.dataset
 document.addEventListener("change",ev=>{const t=ev.target;
   const set=fn=>{fn();if(ptrDown){pendingRender=true;return;}pendingRender=false;render();};
   if(t.id==="pg-contr"){S.pg.contr=t.value;return;}
+  if(t.id==="tr-a"||t.id==="tr-b")return set(()=>{S.tr[t.id==="tr-a"?"a":"b"]=t.value;});
   if(t.id==="pg-prof")return set(()=>{S.pg.prof=+t.value||3;});
   if(t.id==="rp-desde"||t.id==="rp-hasta")return set(()=>{const R=S.rep;let v=t.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;if(v>today())v=today();
     R[t.id==="rp-desde"?"desde":"hasta"]=v;if(R.desde>R.hasta){const z=R.desde;R.desde=R.hasta;R.hasta=z;}R.modo="";R.notaEd=null;});
