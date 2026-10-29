@@ -2989,12 +2989,13 @@ function exPvE(x){if(x.pve)return x.pve;
     for(const r of M.meas){if(!r.parts.some(EX_PV_T[tipo]))continue;const v=pl(r,tm);if(v==null)continue;const ten=tipo==="ten",n=ten?r.V.length:r.E.length;
       for(const k of ten?r.V.filter(y=>y.s===sid).map(y=>y.v.key):r.E.filter(y=>y.s===sid).map(y=>String(y.e.id))){const z=m.get(k);if(!z||n<z.n)m.set(k,{n,v});else if(n===z.n&&v<z.v)z.v=v;}}
     return m;};
-  for(const r of D.rows){const f=r.f;if(f.se||f.s.id==="cruce")continue;const P=progs().find(P=>P.contr===f.c);if(!P)continue;
-    const M=pgModel(P),sid=f.s.id,ids=new Set(f.E.map(e=>String(e.id))),q=r.q;
-    const est=tipo=>{let s=0,n=0;for(const [k,z] of prog(M,tipo,sid))if(ids.has(k)){s+=z.v/100;n++;}return n?s:null;};
-    const mt=prog(M,"ten",sid);let km=null;for(const v of f.V){const z=mt.get(v.key);if(z&&v.len!=null)km=(km||0)+v.len*z.v/100000;}
+  /* todos los frentes de la línea con programa cargado (aunque vayan en cero) y los que tengan algo ejecutado */
+  for(const r of D.rows){const f=r.f;if(f.se||f.s.id==="cruce")continue;const P=progs().find(P=>P.contr===f.c);
+    const M=P&&pgModel(P),sid=f.s.id,ids=new Set(f.E.map(e=>String(e.id))),q=r.q;
+    const est=tipo=>{if(!M)return null;let s=0,n=0;for(const [k,z] of prog(M,tipo,sid))if(ids.has(k)){s+=z.v/100;n++;}return n?s:null;};
+    let km=null;if(M){const mt=prog(M,"ten",sid);for(const v of f.V){const z=mt.get(v.key);if(z&&v.len!=null)km=(km||0)+v.len*z.v/100000;}}
     const rows=[{t:"Fundaciones",u:"un",p:est("fun"),e:q.fun.t},{t:"Montaje estructuras",u:"un",p:est("mon"),e:q.mon.t},{t:"Tendido conductor",u:"km",p:km,e:(q.con.t1+q.con.t2)/2000}];
-    if(rows.some(z=>(z.p||0)>0.005||z.e>0.005))out.lin.push({f,rows,rng:f.E.length>1?f.E[0].id+"–"+f.E[f.E.length-1].id:""});}
+    if(P||rows.some(z=>z.e>0.005))out.lin.push({f,rows,rng:exRangos(f)});}
   /* cruce: por lado, la torre de suspensión (2C o 3C) y los anclajes; cada actividad, promedio de sus patas */
   const fc=D.rows.find(r=>!r.f.se&&r.f.s.id==="cruce");
   if(fc){const P=progs().find(P=>P.contr===fc.f.c),M=P&&pgModel(P),suf=id=>id.slice(id.indexOf("_")+1),up=id=>String(id).toUpperCase();
@@ -3009,6 +3010,12 @@ function exPvE(x){if(x.pve)return x.pve;
         return {t:t+" "+ids.join(" y "),rows:rows.slice(0,5)};});
       if(grs.some(g=>g.rows.length))out.cru.push({L,f:fc.f,grs});}}
   return x.pve=out;}
+/* estructuras de un frente en tramos continuos de la línea («estructuras 1–14 y 42–180»); muy repartidas, solo la cantidad */
+function exRangos(f){const pos=new Map(estr(f.s.id).map((e,i)=>[e,i])),runs=[];if(!f.E.length)return "";
+  for(const e of f.E){const i=pos.get(e),r=runs[runs.length-1];if(r&&i===r.i+1){r.b=e;r.i=i;}else runs.push({a:e,b:e,i});}
+  if(f.E.length===1)return "estructura "+f.E[0].id;if(runs.length>3)return nTxt(f.E.length,"estructura","estructuras");
+  const t=runs.map(r=>r.a===r.b?String(r.a.id):r.a.id+"–"+r.b.id);
+  return "estructuras "+(t.length<2?t[0]:t.slice(0,-1).join(", ")+" y "+t[t.length-1]);}
 /* valor y desviación (ejecutado − programado) de una fila del cuadro */
 const exPvV=(v,u)=>v==null?"—":u==="km"?v.toFixed(2).replace(".",","):u==="%"?fmtP(v):String(Math.round(v));
 function exPvD(r){if(r.p==null)return "—";const d=r.u==="un"?r.e-Math.round(r.p):r.e-r.p;if(r.u==="%")return ppTxt(d);
@@ -3041,7 +3048,11 @@ function exTablaCant(D,modo){const sem=modo==="sem",nada=`<span class="muted">�
 function exSecPvE(x,n){const D=exPvE(x);
   const fila=r=>{const d=exPvD(r);return `<tr><td>${esc(r.t)} (${r.u})</td><td class="r num">${exPvV(r.p,r.u)}</td><td class="r num"><b>${exPvV(r.e,r.u)}</b></td><td class="r num${/^−/.test(d)?" crit":""}">${d}</td></tr>`;};
   const tabla=c=>`<table><thead><tr><th>Actividad</th><th class="r">Programado</th><th class="r">Ejecutado</th><th class="r">Desviación</th></tr></thead><tbody>${c}</tbody></table>`;
-  const lin=D.lin.map(z=>`<div><h3>${esc(z.f.s.nombre)} · ${esc(z.f.c)}${z.rng?`<small>estructuras ${esc(z.rng)}</small>`:""}</h3>${tabla(z.rows.map(fila).join(""))}</div>`);
+  /* un cuadro por sector; si el sector tiene más de un contratista (Continente: ELECNOR y Globaltec), cada uno va adentro
+     como subgrupo con su tramo, igual que la suspensión y los anclajes en el cruce */
+  const sec=[];for(const z of D.lin){let g=sec.find(g=>g.id===z.f.s.id);if(!g)sec.push(g={id:z.f.s.id,nombre:z.f.s.nombre,L:[]});g.L.push(z);}
+  const lin=sec.map(g=>g.L.length===1?`<div><h3>${esc(g.nombre)} · ${esc(g.L[0].f.c)}${g.L[0].rng?`<small>${esc(g.L[0].rng)}</small>`:""}</h3>${tabla(g.L[0].rows.map(fila).join(""))}</div>`
+    :`<div><h3>${esc(g.nombre)}</h3>${tabla(g.L.map(z=>`<tr class="sub"><td colspan="4">${esc(z.f.c)}${z.rng?` · ${esc(z.rng)}`:""}</td></tr>`+z.rows.map(fila).join("")).join(""))}</div>`);
   const cru=D.cru.map(z=>`<div><h3>Cruce ${esc(z.L.id)} · ${esc(z.f.c)}</h3>${tabla(z.grs.map(g=>`<tr class="sub"><td colspan="4">${esc(g.t)}</td></tr>`+(g.rows.length?g.rows.map(fila).join(""):`<tr><td colspan="4" class="muted">Sin actividades en el período</td></tr>`)).join(""))}</div>`);
   return `<section class="exsec">${exH(n,"Programado vs ejecutado",`al ${fmtD(S.rep.hasta)} · programado según la línea base de cada programa`)}${lin.length||cru.length?`<div class="expv">${lin.join("")}${cru.join("")}</div>`:`<p class="exnota">Sin programas cargados con actividades a la fecha.</p>`}</section>`;}
 function exSecRiesgos(x,n){const L=exRiesgos(x),sin=exFrentes().filter(f=>!L.some(z=>z.f.key===f.key));
@@ -3221,7 +3232,7 @@ function repCSV(){const x=repCalc(),R=S.rep,P0=x.P0,P1=x.P1,T=x.T;const L=[];
       if(r.ex)for(const [k,t] of [["can","Canaletas"],["dre","Drenajes"]]){const z=r.ex[k];row([r.f.s.nombre,r.f.c,t,z.s,z.a,z.t,z.n,""]);}}
     {const PV=exPvE(x),fv=(v,u)=>v==null?"":u==="un"?Math.round(v):String(Math.round(v*100)/100).replace(".",",");
       L.push("");row(["PROGRAMADO VS EJECUTADO al "+fmtD(R.hasta)+" (línea base)","Contratista","Grupo","Actividad","Unidad","Programado","Ejecutado","Desviación"]);
-      for(const z of PV.lin)for(const r of z.rows)row([z.f.s.nombre,z.f.c,z.rng?"Estructuras "+z.rng:"",r.t,r.u,fv(r.p,r.u),fv(r.e,r.u),exPvD(r)]);
+      for(const z of PV.lin)for(const r of z.rows)row([z.f.s.nombre,z.f.c,cap1(z.rng),r.t,r.u,fv(r.p,r.u),fv(r.e,r.u),exPvD(r)]);
       for(const z of PV.cru)for(const g of z.grs)for(const r of g.rows)row(["Cruce "+z.L.id,z.f.c,g.t,r.t,"%",fv(r.p,r.u),fv(r.e,r.u),exPvD(r)]);}
     L.push("");row(["PRÓXIMA SEMANA ("+fmtD(G.a)+" al "+fmtD(G.b)+")","Contratista","Actividad","Alcance","Tareas sin liberación"]);
     for(const z of G.rows){const gs=[...z.g.values()].sort((a,b)=>a.S-b.S);if(!gs.length&&!z.otras.length)row([z.f.s.nombre,z.f.c,z.prog?"Sin tareas programadas":"Sin programa cargado","",""]);
