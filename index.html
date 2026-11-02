@@ -669,6 +669,8 @@ const faseTxt=f=>FASE_TXT[String(f||"").toUpperCase()]||f;
 const OPG_TORRE=[{id:"op_ves",nombre:"Vestido OPGW",peso:20},{id:"op_eng",nombre:"Engrampado e instalación de amortiguadores OPGW",peso:5},{id:"op_baj",nombre:"Bajadas de OPGW, rollos de reserva y mufa",peso:5}];
 const OPG_VANO=[{id:"tv_opg",nombre:"Tendido OPGW",peso:40},{id:"op_fle",nombre:"Flechado y rematado OPGW",peso:20},{id:"op_des",nombre:"Instalación de desviadores de vuelo",peso:5},{id:"op_bal",nombre:"Instalación de balizas",peso:5}];
 const OPG_SHARE=100/3;
+/* desviadores de vuelo y balizas no se instalan en la llegada al marco de línea */
+const OPG_NO_ML=new Set(["op_des","op_bal"]);
 /* Remates de conductor en los marcos de línea de las S/E, por circuito (el del OPGW va en «Flechado y rematado OPGW»). El programa
    maestro no separa circuitos: los dos pesan igual. Frente al tendido, el remate pesa lo que en el programa maestro
    STN4324-DK-PM-C-0001, partida 4.3.2.1 (Texto30): Tendido Conductor 0,0288 y Flechado y Engrapado Conductor 0,0144, o sea 2/3 y 1/3 */
@@ -939,10 +941,13 @@ const vanosOf=(sec,id)=>vanos(sec).filter(v=>v.a===id||v.b===id);
 const vanoEst=(sec,v)=>estById(sec,v.b)||estById(sec,v.a);
 /* estructura cuya ficha muestra el vano */
 const vanoFicha=(sec,v)=>estById(sec,v.a)?v.a:v.b;
+/* actividades de OPGW que corresponden a un vano */
+const opgDeVano=v=>v.ml?actsG("opg").filter(a=>!OPG_NO_ML.has(a.id)):actsG("opg");
 function tenSplit(){const e=etapaById("ten")||{};const t=num(e.torre,30),v=num(e.vano,70),o=num(e.opgw,0);return {t,v,o,s:(t+v+o)||1};}
 const condActs=()=>actsG("tva").filter(a=>a.circ);
 
-function gPct(get,key,g){let W=0,P=0;for(const a of actsG(g)){const w=num(a.peso,0);W+=w;P+=w*get(key,a.id);}return W?P/W:0;}
+function lPct(get,key,L){let W=0,P=0;for(const a of L){const w=num(a.peso,0);W+=w;P+=w*get(key,a.id);}return W?P/W:0;}
+function gPct(get,key,g){return lPct(get,key,actsG(g));}
 function stE(get,sec,e){
   const k=kE(sec,e.id);const pre=gPct(get,k,"pre"),mon=gPct(get,k,"mon"),tto=gPct(get,k,"tto"),otT=gPct(get,k,"opt");let fun=0,fg=null;
   const ps=sec==="cruce"?patas(e.id):[];
@@ -967,7 +972,7 @@ function calcSec(get,sec){
   /* byV = conductor del vano (grupo tva); byO = OPGW del vano (grupo opg, carga aparte), los dos medidos por distancia.
      En los vanos a los marcos de línea, el conductor cuenta tendido (tva) y remates (rem) con los pesos del programa maestro (ML_REM) */
   let rs=0,rn=0;
-  for(const v of vs){const pt=gPct(get,v.key,"tva"),pr=v.ml?gPct(get,v.key,"rem"):0,p=v.ml?pt*(1-ML_REM)+pr*ML_REM:pt,po=gPct(get,v.key,"opg");if(v.ml){rs+=pr;rn++;}byV[v.key]=p;byO[v.key]=po;const w=v.len!=null?v.len:wDef;WV+=w;vs2+=w*p;vo2+=w*po;if(p>=99.95)vdone++;}
+  for(const v of vs){const pt=gPct(get,v.key,"tva"),pr=v.ml?gPct(get,v.key,"rem"):0,p=v.ml?pt*(1-ML_REM)+pr*ML_REM:pt,po=lPct(get,v.key,opgDeVano(v));if(v.ml){rs+=pr;rn++;}byV[v.key]=p;byO[v.key]=po;const w=v.len!=null?v.len:wDef;WV+=w;vs2+=w*p;vo2+=w*po;if(p>=99.95)vdone++;}
   /* OPGW del sector = torre (promedio de estructuras) y vano (por distancia), ponderados por el peso de sus actividades */
   const T=acc.tto/n,V=WV?vs2/WV:0,OT=acc.otT/n,OV=WV?vo2/WV:0;const sp=tenSplit(),hv=vs.length?1:0,ow=opgW(),owT=ow.t+hv*ow.v;
   const O=owT?(ow.t*OT+hv*ow.v*OV)/owT:0;
@@ -1475,7 +1480,7 @@ function drillHtml(et,list){
     else if(et==="ten"){rows.push({t:pre()+"Conductor en torre (promedio)",v:r.stg.tenT,c:s.id});for(const a of actsG("tto"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
       rows.push({t:pre()+"OPGW en torre (promedio)",v:r.stg.tenOT,c:s.id});for(const a of actsG("opt"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
       const vs=vanos(s.id);rows.push({t:pre()+"Conductor por vano ("+vs.length+" vanos, medido por distancia)",v:r.stg.tenV,c:s.id});for(const a of actsG("tva"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.map(v=>v.key),a.id),c:s.id});
-      rows.push({t:pre()+"OPGW en vano (medido por distancia)",v:r.stg.tenOV,c:s.id});for(const a of actsG("opg"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.map(v=>v.key),a.id),c:s.id});
+      rows.push({t:pre()+"OPGW en vano (medido por distancia)",v:r.stg.tenOV,c:s.id});for(const a of actsG("opg"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.filter(v=>!v.ml||!OPG_NO_ML.has(a.id)).map(v=>v.key),a.id),c:s.id});
       {const vm=vs.filter(v=>v.ml);if(vm.length){rows.push({t:pre()+"Remates en marco de línea",v:r.stg.tenR,c:s.id});for(const a of actsG("rem"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vm.map(v=>v.key),a.id),c:s.id});}}}
   }
   if(!rows.length)return `<p class="muted small">Sin actividades.</p>`;
@@ -1782,7 +1787,7 @@ function vDrawer(){
   h+=`<div class="agrp"><h3><span>Conductor en la torre</span><span class="num">${fmtP(st.tto,1)}</span></h3>${actRows(k,"tto")}</div>`;
   h+=`<div class="agrp"><h3><span>OPGW en la torre</span><span class="num">${fmtP(st.otT||0,1)}</span></h3>${actRows(k,"opt")}</div>`;
   for(const v of vs)h+=`<div class="agrp"><h3><span>Vano <span class="mono">${esc(v.label)}</span>${v.len!=null?` <span class="small muted num">· ${fmtM(v.len)}</span>`:""} · conductor${v.ml?" y remates":""}</span><span class="num">${fmtP(r.byV[v.key]||0,1)}</span></h3>${v.ml?`<span class="small muted">Vano al marco de línea de la ${esc(v.ml.se)}. Pesos del programa maestro: 2/3 tendido y 1/3 remates.</span>`:""}${actRows(v.key,"tva","var(--vano-hi)")}${v.ml?`<span class="lbl" style="margin-top:4px">Remates en el marco de línea · ${fmtP(gPct(cur,v.key,"rem"),1)}</span>${actRows(v.key,"rem","var(--vano-hi)")}`:""}</div>
-    <div class="agrp"><h3><span>Vano <span class="mono">${esc(v.label)}</span> · OPGW</span><span class="num">${fmtP(r.byO[v.key]||0,1)}</span></h3>${actRows(v.key,"opg","var(--vano-hi)")}</div>`;
+    <div class="agrp"><h3><span>Vano <span class="mono">${esc(v.label)}</span> · OPGW</span><span class="num">${fmtP(r.byO[v.key]||0,1)}</span></h3>${actRows(v.key,"opg","var(--vano-hi)",opgDeVano(v))}</div>`;
   const keys=new Set([k,...vs.map(v=>v.key),...patas(e.id).map(p=>kP(sec,e.id,p.pata))]);
   const hist=allHist(kk=>keys.has(kk)).filter(x=>!x.imp).slice(0,12);
   h+=`<div class="agrp"><h3><span>Historial en terreno</span></h3>${hist.length?`<div class="feed">${hist.map(x=>{const a=actById(x.a);return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w">${esc(x.lab)} · ${esc(a?a.nombre:x.a)}<div class="o">${esc(autor(x))}${x.obs?" — "+esc(x.obs):""}</div></div><span class="p num">${fmtP(num(x.pct,0))}</span></div>`;}).join("")}</div>`:`<span class="small muted">Sin registros en terreno. La carga del Excel (${esc(fmtD(S.cfg.importado&&S.cfg.importado.fecha))}) es la línea base.</span>`}</div>`;
@@ -1837,8 +1842,8 @@ function unitsFor(r,all){
   const q=(r.q||"").trim().toLowerCase();
   if(r.sec==="se"){const cat=r.grp.slice(3);let its=seItems(cat);if(!all&&q)its=its.filter(i=>i.id.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q));
     return its.map(i=>({uid:i.id,label:i.id,sub:SE_GRP[i.grp]||"",key:kSE(cat,i.id),meta:{kind:"se",unidad:i.id,cat}}));}
-  if(r.grp==="tva"||r.grp==="opg"||r.grp==="rem"){let vs=vanos(r.sec);if(r.grp==="rem")vs=vs.filter(v=>v.ml);if(!all){if(r.tt)vs=vs.filter(v=>v.tt===r.tt);if(q)vs=vs.filter(v=>v.label.toLowerCase().includes(q));}
-    return vs.map(v=>({uid:v.a+">"+v.b,label:v.label,sub:(v.tt||"").replace("Tramo ","T"),key:v.key,meta:{kind:"vano",unidad:v.label,a:v.a,b:v.b}}));}
+  if(r.grp==="tva"||r.grp==="opg"||r.grp==="rem"){let vs=vanos(r.sec);if(r.grp==="rem")vs=vs.filter(v=>v.ml);else if(OPG_NO_ML.has(r.act))vs=vs.filter(v=>!v.ml);if(!all){if(r.tt)vs=vs.filter(v=>v.tt===r.tt);if(q)vs=vs.filter(v=>v.label.toLowerCase().includes(q));}
+    return vs.map(v=>({uid:v.a+">"+v.b,label:v.label,sub:(v.tt||"").replace("Tramo ","T"),key:v.key,ml:!!v.ml,meta:{kind:"vano",unidad:v.label,a:v.a,b:v.b}}));}
   if(r.grp==="cr")return estr("cruce").flatMap(e=>patas(e.id).map(p=>({uid:e.id+"|"+p.pata,label:e.id+"·"+p.pata,sub:"Torre "+(e.torre||e.id),key:kP("cruce",e.id,p.pata),meta:{kind:"pata",unidad:e.id,pata:p.pata}})));
   let es=estr(r.sec);
   if(!all){if(FUNG.includes(r.grp)&&!r.verTodas)es=es.filter(e=>!e.fund||e.fund===r.grp);if(r.tt)es=es.filter(e=>e.tt===r.tt);if(q)es=es.filter(e=>String(e.id).toLowerCase().includes(q));}
@@ -1856,7 +1861,7 @@ function vRegistrar(){
       h+=`<div class="grp"><span class="lbl">Tipo de fundación</span><div class="opts">${FUNG.map(g=>{const n=es.filter(e=>e.fund===g).length;return `<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${esc(grupoById(g).nombre)}</span><span class="s">${n} estructura(s)${es.some(e=>!e.fund)?" + sin tipo definido":""}</span></button>`;}).join("")}</div></div>`;}
     if(r.etapa==="ten"){const o=(g,t,s,v)=>`<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${t}</span><span class="s">${s} · ${fmtP(v||0,1)}</span></button>`;
       h+=`<div class="grp"><span class="lbl">¿Dónde?</span><div class="opts">${o("tto","Conductor en la torre","Vestido, engrapado, puentes",stg.tenT)}${o("tva","Conductor en el vano","Cable piloto, conductor, flechado, separadores",stg.tenV)}${o("opt","OPGW en la torre","Vestido, engrampado y amortiguadores, bajadas, reserva y mufa",stg.tenOT)}${o("opg","OPGW en el vano","Tendido, flechado y rematado, desviadores de vuelo, balizas",stg.tenOV)}${vanos(r.sec).some(v=>v.ml)?o("rem","Remates en marco de línea","Remate de conductor por circuito, en el vano al marco de la S/E",stg.tenR):""}</div></div>`;}
-    if(r.grp){const us=unitsFor(r,true);const avgOf=ids=>us.length?us.reduce((x,u)=>x+curM(u.key,ids),0)/us.length:0;let condShown=false;
+    if(r.grp){const us=unitsFor(r,true);const avgOf=ids=>{const L=ids.some(i=>OPG_NO_ML.has(i))?us.filter(u=>!u.ml):us;return L.length?L.reduce((x,u)=>x+curM(u.key,ids),0)/L.length:0;};let condShown=false;
       h+=`<div class="grp"><span class="lbl">Actividad</span><div class="opts">${grpActs(r.grp).map(a=>{
         if(a.circ){if(condShown)return "";condShown=true;const cs=condActs();const w=cs.reduce((x,c)=>x+num(c.peso,0),0);
           return `<button class="opt" data-ract="__cond" aria-pressed="${r.act==="__cond"}"><span class="t">Tendido de conductor</span><span class="s num">2 circuitos × 3 fases · peso ${fmtP(w)} · ${[...new Set(cs.map(c=>c.circ))].sort().map(ci=>`C${ci} ${fmtP(avgOf(cs.filter(x=>x.circ===ci).map(x=>x.id)),0)}`).join(" · ")}</span></button>`;}
@@ -2706,7 +2711,7 @@ function pgPartVal(r,p,get){
   if(p.t==="se")return pgAvgN(p.its.map(it=>p.ids.length?pgAvg(get,kSE(it.cat,it.id),p.ids):seItemPct(get,it)));
   if(p.t==="lib"){const vals=[];if(!r.soloV)for(const x of r.E){const k=kLibE(x.s,x.e.id);if(libUnit(k))vals.push(pgLibVal(k,p.ser));}
     for(const y of r.V){const k=kLibV(y.s,y.v.a,y.v.b);if(libUnit(k))vals.push(pgLibVal(k,p.ser));}return pgAvgN(vals);}
-  if(p.on==="v"||p.t==="tva"){if(p.t==="a"&&!p.r.length)return null;return pgAvgN(r.V.map(y=>p.t==="tva"?gPct(get,y.v.key,"tva"):pgAvg(get,y.v.key,p.r)));}
+  if(p.on==="v"||p.t==="tva"){if(p.t==="a"&&!p.r.length)return null;const V=p.t==="a"&&p.r.every(id=>OPG_NO_ML.has(id))?r.V.filter(y=>!y.v.ml):r.V;return pgAvgN(V.map(y=>p.t==="tva"?gPct(get,y.v.key,"tva"):pgAvg(get,y.v.key,p.r)));}
   const vals=[];for(const x of r.E){const v=pgValE(get,p,x,r.pata);if(v!=null)vals.push(v);}return pgAvgN(vals);}
 function pgReal(r,get){const vs=[];for(const p of r.parts){const v=pgPartVal(r,p,get);if(v!=null)vs.push(v);}return pgAvgN(vs);}
 function pgPlan(a,b,t){const x=pgMs(a),y=pgMs(b);if(!isFinite(x)||!isFinite(y))return null;if(t>=y)return 100;if(t<=x)return 0;return (t-x)/(y-x)*100;}
@@ -3640,7 +3645,7 @@ function descargarCSV(){
   const L=["ESTADO POR ESTRUCTURA al "+fmtD(today()),"Sector;N° Estructura;Vértice;Zona;Tramo tendido;Tipo;Torre;Contratista;Obras preliminares %;Fundación %;Tipo fundación;Montaje %;Conductor en torre %;OPGW en torre %;Total estructura %;Estado"];
   for(const s of secs())for(const e of estr(s.id)){const st=S.P.sec[s.id].byE[e.id];L.push([s.nombre,e.id,vertice(e.id),e.zona,e.tt,e.tipo,e.torre,e.contr,f(st.pre),f(st.fun),st.fg?grupoById(st.fg).nombre:"",f(st.mon),f(st.tto),f(st.otT||0),f(totE(st)),EST_TXT[estado(st)]].map(q).join(";"));}
   L.push("");L.push("VANOS (longitudes según actualización de terreno, "+ASB_DOC+")");L.push("Sector;Vano;Tramo tendido;Longitud m;"+actsG("tva").map(a=>a.nombre+" %").join(";")+";Total conductor %;"+actsG("opg").map(a=>a.nombre+" %").join(";")+";Total OPGW %;"+actsG("rem").map(a=>a.nombre+" %").join(";")+";Conductor C1 tendido m;Conductor C2 tendido m;OPGW tendido m");
-  for(const s of secs())for(const v of vanos(s.id)){const p=S.P.sec[s.id].byV[v.key]||0,po=S.P.sec[s.id].byO[v.key]||0;const m=x=>v.len!=null?f(v.len*x/100):"";L.push([s.nombre,v.label,v.tt,v.len!=null?f(v.len):""].concat(actsG("tva").map(a=>f(cur(v.key,a.id))),[f(p)],actsG("opg").map(a=>f(cur(v.key,a.id))),[f(po)],actsG("rem").map(a=>v.ml?f(cur(v.key,a.id)):""),[m(circPct(v.key,"1")),m(circPct(v.key,"2")),m(cur(v.key,"tv_opg"))]).map(q).join(";"));}
+  for(const s of secs())for(const v of vanos(s.id)){const p=S.P.sec[s.id].byV[v.key]||0,po=S.P.sec[s.id].byO[v.key]||0;const m=x=>v.len!=null?f(v.len*x/100):"";L.push([s.nombre,v.label,v.tt,v.len!=null?f(v.len):""].concat(actsG("tva").map(a=>f(cur(v.key,a.id))),[f(p)],actsG("opg").map(a=>v.ml&&OPG_NO_ML.has(a.id)?"":f(cur(v.key,a.id))),[f(po)],actsG("rem").map(a=>v.ml?f(cur(v.key,a.id)):""),[m(circPct(v.key,"1")),m(circPct(v.key,"2")),m(cur(v.key,"tv_opg"))]).map(q).join(";"));}
   L.push("");L.push("RESUMEN");L.push("Sector;"+etapas().map(e=>e.nombre+" %").join(";")+";Total sector %");
   for(const s of secs()){const r=S.P.sec[s.id];L.push([s.nombre].concat(etapas().map(e=>f(r.stg[e.id]||0)),[f(r.pct)]).map(q).join(";"));}
   L.push(["LÍNEA (Continente + Cruce + Isla)"].concat(etapas().map(()=>""),[f(S.P.lineaPct)]).map(q).join(";"));
