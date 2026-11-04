@@ -2088,8 +2088,10 @@ function vEstructuras(){
    act.pmf / act.ser = estado vigente {est, fecha, ref, obs}; hist = bitácora (cambios de estado y observaciones).
    Una torre o vano queda apto para construcción con PMF y servidumbre liberados o "no aplica". */
 const LIB_VARS=[{id:"pmf",t:"PMF",h:"PMF"},{id:"ser",t:"Servidumbre",h:"Servidumbre (propietarios)"}];
-const LIB_EST={pend:{t:"Pendiente",c:"var(--lib-pend)",p:0},tram:{t:"En trámite",c:"var(--lib-tram)",p:50},lib:{t:"Liberado",c:"var(--lib-ok)",p:100},na:{t:"No aplica",c:"var(--lib-na)",p:100},res:{t:"Restringido",c:"var(--lib-res)",p:25}};
+const LIB_EST={pend:{t:"Pendiente",c:"var(--lib-pend)",p:0},tram:{t:"En trámite",c:"var(--lib-tram)",p:50},lib:{t:"Liberado",c:"var(--lib-ok)",p:100},na:{t:"No aplica",c:"var(--lib-na)",p:100},res:{t:"Restringido",c:"var(--lib-res)",p:25},obs:{t:"Aprobado con observación",c:"var(--lib-tram)",p:75}};
 const LIB_ORD=["pend","tram","lib","na","res"];
+/* PMF de un elemento: además, «con observación» (Medio Ambiente «Liberado con observación» en la planilla de control), que no lo deja apto */
+const LIB_ORD_PMF=["pend","tram","obs","lib","na","res"];
 const LIB_GEN={apta:{t:"Apta para construcción",c:"var(--lib-ok)",h:"#1f9d48"},proc:{t:"En proceso",c:"var(--lib-tram)",h:"#e8a317"},res:{t:"Restringida",c:"var(--lib-res)",h:"#d63b2f"},pend:{t:"Pendiente",c:"var(--lib-pend)",h:"#97a3ac"}};
 /* En el PMF el estado liberado se lee "Aprobado"; en la servidumbre, "Liberado" */
 const estTxt=(vid,e)=>e==="lib"?(vid==="pmf"?"Aprobado":vid==="ser"?"Liberado":"Liberado / aprobado"):(LIB_EST[e]||LIB_EST.pend).t;
@@ -2181,11 +2183,14 @@ function pmfAct(c){const d=S.av.get(kPmf(c));const r=(d&&d.act&&d.act.est)||null
 const pmfEst=c=>{const x=pmfAct(c);return x&&LIB_EST[x.est]?x.est:"pend";};
 /* PMF de un elemento con varios códigos: aprobado solo si todos lo están; con alguno restringido, restringido */
 function combPmf(cs){const e=new Set(cs.map(pmfEst));if(e.has("res"))return "res";if(e.has("pend"))return "pend";if(e.has("tram"))return "tram";return "lib";}
-const libEst=(k,vid)=>{if(vid==="pmf"){const cs=libCodes(k);if(cs.length)return combPmf(cs);}const x=libAct(k,vid);return x&&LIB_EST[x.est]?x.est:"pend";};
+/* El estado de la planilla de control (ctl) es del elemento y manda sobre sus códigos, salvo que un código tenga un registro posterior.
+   Los códigos no cambian: pueden cubrir vanos, y la planilla solo trae estructuras */
+function pmfCtl(k){const x=libAct(k,"pmf");return !!(x&&x.ctl)&&!libCodes(k).some(c=>{const y=pmfAct(c);return y&&y.fecha>x.fecha;});}
+const libEst=(k,vid)=>{if(vid==="pmf"){const cs=libCodes(k);if(cs.length&&!pmfCtl(k))return combPmf(cs);}const x=libAct(k,vid);return x&&LIB_EST[x.est]?x.est:"pend";};
 const libOk=e=>e==="lib"||e==="na";
 function libGen(k){const p=libEst(k,"pmf"),s=libEst(k,"ser");if(libOk(p)&&libOk(s))return "apta";if(p==="res"||s==="res")return "res";if(p!=="pend"||s!=="pend")return "proc";return "pend";}
 /* fecha del estado PMF de un elemento: la más reciente de sus códigos */
-function pmfFecha(k){const cs=libCodes(k);if(!cs.length){const x=libAct(k,"pmf");return x?x.fecha:"";}let m="";for(const c of cs){const x=pmfAct(c);if(x&&x.fecha>m)m=x.fecha;}return m;}
+function pmfFecha(k){const cs=libCodes(k);if(!cs.length){const x=libAct(k,"pmf");return x?x.fecha:"";}if(pmfCtl(k))return libAct(k,"pmf").fecha;let m="";for(const c of cs){const x=pmfAct(c);if(x&&x.fecha>m)m=x.fecha;}return m;}
 /* índice código → elementos que cubre (se rehace cuando cambian los datos) */
 let CIDX={av:null,g:null,m:null};
 function libCodeIdx(){const g=gc();if(CIDX.m&&CIDX.av===S.av&&CIDX.g===g)return CIDX.m;const m=new Map();for(const u of libUnits())for(const c of libCodes(u.key)){if(!m.has(c))m.set(c,[]);m.get(c).push(u);}CIDX={av:S.av,g,m};return m;}
@@ -2246,6 +2251,7 @@ function vLiberaciones(){
   const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;const nRes=st.t.res+st.v.res;
   let h=`<div class="stack"><section class="panel stack"><div class="spread"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción con el PMF aprobado (o sin PMF) y la servidumbre liberada.</span></div>
   <p class="small muted" style="margin:0">Estado inicial: planilla de estado PMF al ${fmtD(LIB_SEED_FECHA)} (PMF asociados, estado del PMF y propietarios). Cada código PMF se aprueba por separado y vale para todos los elementos que cubre. Cada cambio posterior se registra aquí y queda en la bitácora.</p>
+  ${S.canAdmin?libPcHtml():""}
   <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`)}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`)}${fig("PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`PMF distintos, sin repetir · ${st.cod.res} restringidos · ${st.cod.pend+st.cod.tram} por confirmar o en trámite`)}${fig("Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,"propietarios; no cuentan los que no aplican")}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Torres aptas</th><th class="r">Vanos aptos</th><th class="r">Línea apta</th><th class="r">En proceso</th><th class="r">Restringidas</th><th class="r">Pendientes</th></tr></thead><tbody>
   ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>
@@ -2273,7 +2279,7 @@ function vLiberaciones(){
     ${open?pmfForm(c):""}${hl.length>1?`<details><summary class="small">Bitácora de ${esc(c)} (${hl.length} registros)</summary><div class="feed">${hl.map(pmfHistItem).join("")}</div></details>`:""}</div>`;}
   if(S.canWrite&&F.sel.size)h+=`<div class="libbulk"><b>${F.sel.size} ${F.sel.size===1?"seleccionado":"seleccionados"}</b>
    <div class="field"><label for="lib-b-v">Variable</label><select id="lib-b-v">${[["ser","Servidumbre"],["pmf","PMF (solo elementos sin PMF asociado)"],["ambas","PMF y servidumbre"]].map(([k,t])=>`<option value="${k}" ${B.v===k?"selected":""}>${t}</option>`).join("")}</select></div>
-   <div class="field"><label for="lib-b-est">Nuevo estado</label><select id="lib-b-est">${LIB_ORD.map(k=>`<option value="${k}" ${B.est===k?"selected":""}>${estTxt(B.v==="ambas"?"":B.v,k)}</option>`).join("")}</select></div>
+   <div class="field"><label for="lib-b-est">Nuevo estado</label><select id="lib-b-est">${(B.v==="pmf"?LIB_ORD_PMF:LIB_ORD).map(k=>`<option value="${k}" ${B.est===k?"selected":""}>${estTxt(B.v==="ambas"?"":B.v,k)}</option>`).join("")}</select></div>
    <div class="field" style="max-width:170px"><label for="lib-b-fecha">Fecha</label><input id="lib-b-fecha" type="date" max="${today()}" value="${esc(B.fecha)}"></div>
    <div class="field"><label for="lib-b-ref">Referencia</label><input id="lib-b-ref" type="text" value="${esc(B.ref)}" placeholder="Resolución, escritura, rol…"></div>
    <div class="field" style="flex:2;min-width:220px"><label for="lib-b-obs">Observación</label><input id="lib-b-obs" type="text" value="${esc(B.obs)}" placeholder="Queda en la bitácora de cada elemento"></div>
@@ -2304,6 +2310,7 @@ function vDrawerLib(){
     h+=`<div class="agrp"><h3><span>PMF</span>${lchip(e,"pmf")}</h3>`;
     if(cs.length)h+=`<span class="small muted">${cs.length===1?"Un PMF asociado. Se aprueba como permiso y vale para todos los elementos que cubre.":cs.length+" PMF asociados. Cada uno se aprueba por separado; el elemento queda con PMF aprobado cuando todos lo están."}</span><div class="pmflist">${cs.map(c=>pmfRow(c,u)).join("")}</div>`;
     else h+=`<span class="small muted">${e==="na"?"Sin PMF asociado: no requiere.":"Sin PMF asociado registrado."}${x?" · desde "+fmtD(x.fecha)+(x.pn?" · "+esc(x.pn):""):""}</span>`;
+    if(x&&x.ctl&&(!cs.length||pmfCtl(u.key)))h+=`<span class="small muted">Estado según la planilla de control (Medio Ambiente), desde ${fmtD(x.fecha)}.${cs.length?" Manda sobre sus PMF asociados mientras ninguno tenga un registro posterior.":""}</span>`;
     if(x&&x.ref)h+=`<span class="small muted">PMF de referencia: ${esc(x.ref)}</span>`;
     if(x&&x.obs)h+=`<span class="small">${esc(x.obs)}</span>`;
     if(S.canWrite){if(D.ed==="pmfcod")h+=libCodForm(u);else if(D.ed==="pmf"&&!cs.length)h+=libForm(LIB_VARS[0],u);
@@ -2346,7 +2353,7 @@ function libCodForm(u){const f=S.drw.f;const nf=libNewer(u.key,["pmf"],f.fecha);
   ${nf?`<span class="warnline">El PMF vigente del elemento tiene fecha ${fmtD(nf)}. Con una fecha anterior el cambio queda en la bitácora, pero no se aplica.</span>`:""}
   <div class="row" style="gap:6px"><button class="btn primary" id="lib-cod-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar PMF asociados"}</button><button class="btn small ghost" data-libed="pmfcod">Cancelar</button></div></div>`;}
 function libForm(V,u){const f=S.drw.f;const nf=libNewer(u.key,[V.id],f.fecha);
-  return `<div class="qe"><b class="small">Nuevo estado de ${V.h}</b><div class="tabs2 lsel" role="group" aria-label="Estado">${LIB_ORD.map(k=>`<button data-libest="${k}" aria-pressed="${f.est===k}" style="--c:${LIB_EST[k].c}"><i class="ldot"></i>${estTxt(V.id,k)}</button>`).join("")}</div>
+  return `<div class="qe"><b class="small">Nuevo estado de ${V.h}</b><div class="tabs2 lsel" role="group" aria-label="Estado">${(V.id==="pmf"?LIB_ORD_PMF:LIB_ORD).map(k=>`<button data-libest="${k}" aria-pressed="${f.est===k}" style="--c:${LIB_EST[k].c}"><i class="ldot"></i>${estTxt(V.id,k)}</button>`).join("")}</div>
   <div class="form-grid"><div class="field"><label for="lib-fecha">Fecha</label><input id="lib-fecha" type="date" max="${today()}" value="${esc(f.fecha)}"></div><div class="field"><label for="lib-ref">${V.id==="pmf"?"PMF de referencia o resolución":"Referencia"}</label><input id="lib-ref" type="text" value="${esc(f.ref)}" placeholder="${V.id==="pmf"?"Ej.: PMF2, N° de resolución":"Escritura, contrato o rol"}"></div></div>
   <div class="field"><label for="lib-obs">Observación${f.est==="res"?" (obligatoria: describe la restricción)":""}</label><textarea id="lib-obs" rows="2">${esc(f.obs)}</textarea></div>
   ${nf?`<span class="warnline">El estado vigente de ${V.t} tiene fecha ${fmtD(nf)}. Con una fecha anterior el registro queda en la bitácora, pero no cambia el estado vigente.</span>`:""}
@@ -2428,6 +2435,75 @@ async function libBulkApply(){
   const vt=B.v==="ambas"?"PMF y servidumbre":LIB_VARS.find(x=>x.id===B.v).t;
   toast(`${vt} «${estTxt(B.v==="ambas"?"":B.v,B.est).toLowerCase()}» en ${ok} ${ok===1?"elemento":"elementos"}.${omit?` En ${omit} con PMF asociados no se cambió el PMF: se aprueba por código (filtro PMF o ficha).`:""}${atras?` En ${atras} ya había un registro con fecha posterior: quedó en la bitácora sin cambiar el estado vigente.`:""}`,!!(atras||omit));
   B.obs="";render();}
+/* --- Planilla de control (Medio Ambiente y Servidumbre por estructura, con comentarios y fechas). Su Medio Ambiente es el PMF del elemento.
+   Se lee el CSV, se revisa y recién entonces se carga. Cada carga agrega a la bitácora solo lo que cambió, así que la planilla se puede
+   volver a cargar en cada versión. Los vanos y los códigos PMF no cambian (los códigos pueden cubrir vanos).
+   Servidumbre «Liberada» con gestión pendiente («Revisar Servidumbre», p. ej. falta entregar a Elecnor) queda en trámite, como en el
+   «Estado automático» de la planilla. Fecha de cada registro: su «Última actualización»; sin ella, la fecha elegida para la planilla --- */
+const LIB_PC_REF="Planilla de control";
+function csvFilas(txt){const out=[];let row=[],cell="",q=false;const t=txt.replace(/^﻿/,"");
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}
+    else if(c==='"')q=true;
+    else if(c===";"){row.push(cell);cell="";}
+    else if(c==="\n"){row.push(cell.replace(/\r$/,""));out.push(row);row=[];cell="";}
+    else cell+=c;}
+  row.push(cell.replace(/\r$/,""));out.push(row);return out;}
+/* estado de la planilla → estado de la app; "" sin dato; null si no se reconoce */
+function libPcEst(txt,vid){const t=nrm(txt);if(!t)return "";if(/^liberad[oa] con observ/.test(t))return vid==="pmf"?"obs":"tram";if(/^liberad|^aprobad/.test(t))return "lib";if(/revision|tramite|\btpm\b/.test(t))return "tram";if(/restring/.test(t))return "res";if(/no aplica/.test(t))return "na";if(/pendiente/.test(t))return "pend";return null;}
+const libPcFecha=s=>{const m=/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.exec(String(s||"").trim());return m?`${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`:"";};
+function parseLibControl(txt,corte){
+  const rows=csvFilas(txt),hi=rows.findIndex(r=>nrm(r[0])==="estructura"&&r.some(c=>/medio ambiente/.test(nrm(c)))&&r.some(c=>/servidumbre/.test(nrm(c))));
+  if(hi<0)throw new Error("La planilla no tiene el formato esperado: falta la fila de títulos con Estructura, Medio Ambiente y Servidumbre. Revisa que el CSV use punto y coma.");
+  const H=rows[hi].map(nrm),col=re=>H.findIndex(c=>re.test(c)),C={ma:col(/^medio ambiente/),ser:col(/^servidumbre/),aut:col(/^estado/),obs:col(/^observaciones/),al:col(/^alerta/),re:col(/^responsable/),co:col(/compromiso/),ul:col(/ultima actualizacion/),cm:col(/^comentario/)};
+  const X=new Map(libUnits().filter(u=>u.t==="torre").map(u=>[String(u.e.id).toUpperCase(),u])),val=(r,c)=>c<0?"":String(r[c]||"").trim();
+  const z={ops:[],n:0,nPmf:0,nSer:0,nNota:0,sinCambio:0,atras:0,noApp:[],raros:[],dif:[]};
+  for(const r of rows.slice(hi+1)){const crudo=val(r,0);if(!crudo)continue;const id=crudo.replace(/^e\s*-?\s*/i,"").toUpperCase(),u=X.get(id);
+    if(!u){z.noApp.push(crudo);continue;}z.n++;
+    const al=nrm(val(r,C.al)),obsP=val(r,C.obs),txtMa=val(r,C.ma),txtSer=val(r,C.ser),ul=libPcFecha(val(r,C.ul)),co=val(r,C.co),re=val(r,C.re);
+    const revS=/revisar (ma y )?servidumbre/.test(al),revM=/revisar (medio ambiente|ma\b)/.test(al);
+    let pm=libPcEst(txtMa,"pmf"),ser=libPcEst(txtSer,"ser");
+    if(pm===null){z.raros.push(crudo+" (Medio Ambiente: «"+txtMa+"»)");pm="";}if(ser===null){z.raros.push(crudo+" (Servidumbre: «"+txtSer+"»)");ser="";}
+    if(pm==="lib"&&revM)pm="obs";if(ser==="lib"&&revS)ser="tram";
+    if(pm&&ser&&(libOk(pm)&&libOk(ser))!==/^liberado por ambas/.test(nrm(val(r,C.aut))))z.dif.push(`${crudo}: Medio Ambiente «${txtMa}», Servidumbre «${txtSer}», pero la planilla dice «${val(r,C.aut)}»`);
+    const fecha=ul&&fechaOk(ul)?ul:corte,set={};
+    const cm=val(r,C.cm).replace(/^vista autom[aá]tica de pendientes.*$/i,"").trim();
+    if(pm)set.pmf={est:pm,obs:cm};
+    if(ser)set.ser={est:ser,obs:ser==="lib"?"":[/^liberad/.test(nrm(txtSer))?"":txtSer,revS?obsP:""].filter(Boolean).join(" · ")};
+    /* lo demás de la fila queda como observación en la bitácora */
+    const nota=[revS?"":obsP,al&&al!=="sin alertas"?"Gestión: "+val(r,C.al):"",re?"Responsable: "+re:"",co?"Compromiso: "+co:"",val(r,C.ul)?"Última actualización: "+val(r,C.ul):""].filter(Boolean).join(" · ");
+    const op={u,fecha,set:{},nota:""};
+    for(const [vid,y] of Object.entries(set)){const x=libAct(u.key,vid);if(libEst(u.key,vid)===y.est&&((x&&x.obs)||"")===y.obs)continue;op.set[vid]=y;if(libNewer(u.key,[vid],fecha))z.atras++;if(vid==="pmf")z.nPmf++;else z.nSer++;}
+    const d=S.av.get(u.key);if(nota&&!Object.values((d&&d.hist)||{}).some(h=>h&&h.a==="obs"&&h.obs===nota)){op.nota=nota;z.nNota++;}
+    if(Object.keys(op.set).length||op.nota)z.ops.push(op);else z.sinCambio++;}
+  return z;}
+async function libPcLeer(){const fi=$("#lib-pc-file"),f=fi&&fi.files[0],ci=$("#lib-pc-fecha");
+  if(!f){toast("Selecciona el archivo CSV de la planilla.",true);return;}
+  const corte=(ci&&ci.value)||today();if(!fechaOk(corte)){toast("Revisa la fecha de la planilla: no puede ser futura.",true);return;}
+  try{const z=parseLibControl(await decodeBuf(await f.arrayBuffer()),corte);S.libPc=Object.assign(z,{archivo:f.name,corte});render();}
+  catch(e){toast((e&&e.message)||"No se pudo leer la planilla.",true);}}
+async function libPcAplicar(){const z=S.libPc;if(!z||S.saving||!S.canAdmin||(S.imp&&S.imp.running))return;
+  const ops=z.ops,ts=Date.now();S.saving=true;S.imp={running:true,title:"Cargando la planilla de control…",done:0,total:ops.length,msg:"Guardando en la bitácora"};render();
+  const uno=op=>{const rnd=Math.random().toString(36).slice(2,7),act={},hist={},refDe=y=>/\btpm\b/i.test(y.obs)?LIB_PC_REF+" · TPM":LIB_PC_REF;
+    /* PMF: conserva sus códigos y su PMF de referencia; la planilla como fuente queda en la bitácora */
+    for(const [vid,y] of Object.entries(op.set)){const pm=vid==="pmf",x=libAct(op.u.key,vid),e={pct:(LIB_EST[y.est]||LIB_EST.pend).p,est:y.est,fecha:op.fecha,ref:pm?(x&&x.ref)||"":refDe(y),obs:y.obs.slice(0,800),por:S.me,pn:S.userName,ts};
+      if(pm){e.ctl=true;e.cod=libCod(op.u.key);}act[vid]=e;hist["h"+ts+"_"+rnd+"_"+vid]=Object.assign({a:vid},e,{ref:pm?LIB_PC_REF:e.ref});}
+    /* la observación lleva ts+1 para quedar primero entre los registros de la misma fecha */
+    if(op.nota)hist["h"+ts+"_"+rnd+"_obs"]={a:"obs",pct:0,fecha:op.fecha,obs:op.nota.slice(0,800),por:S.me,pn:S.userName,ts:ts+1};
+    const base=libBase(op.u);return withRetry(()=>rpcAvance(op.u.key,base,act,hist)).then(()=>mergeLocal(op.u.key,base,act,hist));};
+  let i=0,hechos=0,err=null;const worker=async()=>{while(i<ops.length&&!err){const op=ops[i++];try{await uno(op);hechos++;S.imp.done=hechos;schedule();}catch(e){err=e;}}};
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  S.saving=false;S.libPc=null;
+  S.imp=err?{running:false,ok:false,msg:`Se guardaron ${hechos} de ${ops.length} estructuras. ${err.code==="denied"?"No tienes permiso de administrador.":(err.message||"Error al guardar.")} Vuelve a cargar la planilla: solo se agrega lo que falta.`}
+    :{running:false,ok:true,msg:`Planilla de control cargada: ${hechos} estructuras actualizadas (${z.nPmf} de PMF, ${z.nSer} de servidumbre y ${z.nNota} observaciones en la bitácora).`};
+  render();}
+function libPcHtml(){const z=S.libPc,lista=(t,a)=>a.length?`<div class="warnline"><b>${t} (${a.length}):</b> ${esc(a.join("; "))}</div>`:"";
+  if(!z)return `<details class="libpc"><summary class="small"><b>Cargar planilla de control</b> · Medio Ambiente (PMF) y Servidumbre por estructura, con comentarios y fechas a la bitácora</summary><div class="filters" style="margin-top:8px"><div class="field"><label for="lib-pc-file">Archivo CSV</label><input id="lib-pc-file" type="file" accept=".csv,text/csv"></div><div class="field" style="max-width:220px"><label for="lib-pc-fecha">Fecha de la planilla</label><input id="lib-pc-fecha" type="date" max="${today()}" value="${today()}"></div><button class="btn" id="lib-pc-read">Revisar planilla</button></div><span class="small muted">Se usa en las filas sin «Última actualización». Antes de guardar verás lo que va a cambiar.</span></details>`;
+  return `<div class="note stack" style="gap:6px"><b>Revisa la carga de ${esc(z.archivo)}</b>
+  <span>${z.n} estructuras leídas · ${z.ops.length} con cambios · ${z.sinCambio} sin cambios. Se registrarán <b>${z.nPmf}</b> estados de PMF (Medio Ambiente), <b>${z.nSer}</b> de servidumbre y <b>${z.nNota}</b> observaciones. Los vanos y los códigos PMF no cambian.</span>
+  ${z.atras?`<span class="warnline">${z.atras} ${z.atras===1?"registro queda":"registros quedan"} solo en la bitácora, porque ya hay un estado con fecha posterior.</span>`:""}
+  ${lista("No están en la app, no se cargan",z.noApp)}${lista("Estado no reconocido, no se cambia",z.raros)}${lista("La planilla se contradice; se usan las columnas de estado",z.dif)}
+  <div class="row" style="gap:6px"><button class="btn primary" id="lib-pc-apply" ${S.saving||!z.ops.length?"disabled":""}>${z.ops.length?"Cargar "+z.ops.length+" estructuras":"Nada que cargar"}</button><button class="btn small ghost" data-libpccancel="1">Cancelar</button></div></div>`;}
 /* --- Mapa (Leaflet, se carga solo al abrir la pestaña). El contenedor se reutiliza entre redibujos para no perder la vista --- */
 const LM={el:null,map:null,mk:new Map(),sp:new Map(),sig:new Map(),base:null,cur:null,hl:null,xy:null,failed:false,waiting:false};
 /* Marcos de línea de las subestaciones (listado de estructuras): extremos de la traza */
@@ -3780,6 +3856,9 @@ document.addEventListener("click",ev=>{
   if(b.id==="n8n-test"){repEnviar(true);return;}
   /* liberaciones */
   if(ds.libopen){openLib(ds.libopen);return;}
+  if(b.id==="lib-pc-read"){libPcLeer();return;}
+  if(b.id==="lib-pc-apply"){libPcAplicar();return;}
+  if(ds.libpccancel){S.libPc=null;render();return;}
   if(ds.libed){const D=S.drw;if(!D||!D.lib)return;if(D.ed===ds.libed){D.ed=null;D.f=null;}else{const x=libAct(D.key,ds.libed),e=libEst(D.key,ds.libed);D.ed=ds.libed;D.f={est:e==="pend"?"tram":e==="tram"?"lib":e,fecha:today(),ref:(x&&x.ref)||"",obs:"",cod:ds.libed==="pmf"||ds.libed==="pmfcod"?libCod(D.key):""};}render();return;}
   if(ds.pmfed){const c=ds.pmfed,src=ds.pmfsrc||"bar";if(S.pmfEd&&S.pmfEd.code===c&&S.pmfEd.src===src)S.pmfEd=null;else{const x=pmfAct(c),e=pmfEst(c);S.pmfEd={code:c,src,est:e==="pend"?"tram":e==="tram"?"lib":e==="na"?"lib":e,fecha:today(),ref:(x&&x.ref)||"",obs:""};}render();return;}
   if(ds.pmfest){if(S.pmfEd){S.pmfEd.est=ds.pmfest;render();}return;}
