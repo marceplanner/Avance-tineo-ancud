@@ -676,6 +676,17 @@ const OPG_NO_ML=new Set(["op_des","op_bal"]);
    STN4324-DK-PM-C-0001, partida 4.3.2.1 (Texto30): Tendido Conductor 0,0288 y Flechado y Engrapado Conductor 0,0144, o sea 2/3 y 1/3 */
 const REM_ACTS=[{id:"rm_c1",nombre:"Remate conductor circuito 1",peso:50},{id:"rm_c2",nombre:"Remate conductor circuito 2",peso:50}];
 const ML_REM=0.0144/(0.0288+0.0144);
+/* Fundación de la Gine Pole, una por sector del cruce, según «Avance físico al 01-11-2026» y el programa de CML (1.5.2.1.3.5 y 1.5.2.2.3.5).
+   En ese programa cuelga de «Construcción fundación torre suspensión» y su peso está dentro del de la suspensión. Por eso entra a las
+   fundaciones de su sector (no a las de la torre) con su peso del programa (Texto30) sobre el del sector, suspensión más anclajes:
+   norte 0,0044 / (0,07033 + 0,03218), sur 0,0044 / (0,09231 + 0,0471). No es una estructura: tiene documento de avance propio (kind "gp") */
+const GP_ACTS=[{id:"gp_exc",nombre:"Excavación",peso:25},{id:"gp_enf",nombre:"Enfierradura y moldaje",peso:25},{id:"gp_hor",nombre:"Hormigonado",peso:25},{id:"gp_ret",nombre:"Retiro de moldaje",peso:12.5},{id:"gp_rel",nombre:"Relleno y compactado",peso:12.5}];
+const GP_UNITS=[{id:"GP-N",lado:"norte",nombre:"Gine Pole norte",sector:"Sector norte · Continente",susp:"2C",w:0.0044/(0.07033+0.03218)},{id:"GP-S",lado:"sur",nombre:"Gine Pole sur",sector:"Sector sur · Isla de Chiloé",susp:"3C",w:0.0044/(0.09231+0.0471)}];
+const gpU=id=>GP_UNITS.find(u=>u.id===id);
+const gpLado=l=>GP_UNITS.find(u=>u.lado===l);
+const gpMix=(tor,gp,u)=>tor*(1-u.w)+gp*u.w;
+/* Avance de partida del adjunto; el sector sur está en 0 % y no necesita registro. Lo carga un administrador una vez, desde la pestaña Cruce */
+const GP_CARGA={u:"GP-N",fecha:"2026-11-01",obs:"Avance físico al 01-11-2026",ch:{gp_exc:100,gp_enf:76}};
 function normCfg(c){if(!c||!Array.isArray(c.actividades))return c;
   let A=c.actividades.map(a=>a&&a.circ?Object.assign({},a,{nombre:`Conductor circuito ${a.circ} · fase ${faseTxt(a.fase).toLowerCase()}`}):a),G=c.grupos||[],E=c.etapas||[];
   /* separadores del conductor (antes «espaciadores») */
@@ -689,7 +700,9 @@ function normCfg(c){if(!c||!Array.isArray(c.actividades))return c;
     E=E.map(e=>{if(!e||e.id!=="ten")return e;const t=num(e.torre,30);let v=num(e.vano,70);if(e.opgw==null&&W)v=v*(1-wo/W);
       const C=100-OPG_SHARE,tt=Math.round(C*t/((t+v)||1)*10)/10;return Object.assign({},e,{torre:tt,vano:Math.round((C-tt)*10)/10,opgw:Math.round(OPG_SHARE*10)/10});});}
   if(!A.some(a=>a&&a.g==="rem"))A=A.concat(REM_ACTS.map(x=>Object.assign({g:"rem"},x)));
-  G=G.filter(g=>g&&g.id!=="opg"&&g.id!=="opt"&&g.id!=="rem");
+  if(!A.some(a=>a&&a.g==="gp"))A=A.concat(GP_ACTS.map(x=>Object.assign({g:"gp"},x)));
+  G=G.filter(g=>g&&g.id!=="opg"&&g.id!=="opt"&&g.id!=="rem"&&g.id!=="gp");
+  {const i=G.findIndex(g=>g.id==="cr");G.splice(i<0?G.length:i+1,0,{id:"gp",nombre:"Fundación Gine Pole"});}
   {const i=G.findIndex(g=>g.id==="tto");G.splice(i<0?G.length:i+1,0,{id:"opt",nombre:"Tendido OPGW en la torre"});}
   {const i=G.findIndex(g=>g.id==="tva");G.splice(i<0?G.length:i+1,0,{id:"opg",nombre:"Tendido OPGW en el vano"},{id:"rem",nombre:"Remates en marco de línea"});}
   return Object.assign({},c,{actividades:A,grupos:G,etapas:E});}
@@ -920,6 +933,7 @@ const safeId=s=>String(s).replace(/[^A-Za-z0-9_\-.~:@+]/g,"_");
 const kE=(s,id)=>s+"__"+safeId(id);
 const kP=(s,id,p)=>kE(s,id)+"__"+safeId(p);
 const kV=(s,a,b)=>s+"__V__"+safeId(a)+"__"+safeId(b);
+const kGP=id=>kE("cruce",id);
 const cur=(k,a)=>{const d=S.av.get(k);const x=d&&d.act&&d.act[a];return x?num(x.pct,0):0;};
 /* Vanos de los extremos de la línea: de la primera y la última estructura al marco de línea de cada S/E (listado de distancias).
    Un extremo no es estructura: se registran como cualquier vano (conductor y OPGW), más sus remates (grupo "rem"). Se agregan
@@ -961,6 +975,10 @@ const opgW=()=>{const c=gc();return c.m.opgW||(c.m.opgW={t:actsG("opt").reduce((
 function tenTorre(st){const sp=tenSplit(),ow=opgW(),ot=(ow.t+ow.v)?sp.o*ow.t/(ow.t+ow.v):0;return (sp.t+ot)?(sp.t*st.tto+ot*(st.otT||0))/(sp.t+ot):st.tto;}
 function totE(st){const w={pre:pesoE("pre"),fun:pesoE("fun"),mon:pesoE("mon"),ten:pesoE("ten")};const W=w.pre+w.fun+w.mon+w.ten;return W?(w.pre*st.pre+w.fun*st.fun+w.mon*st.mon+w.ten*tenTorre(st))/W:0;}
 function estado(st){if(st.mon>=99.95)return "ter";if(st.pre+st.fun+st.mon+st.tto+(st.otT||0)<=0)return "sin";return "eje";}
+/* fundaciones del cruce: promedio de sus dos sectores, cada uno con sus torres y su Gine Pole */
+function crFunGP(get,byE,def){
+  const v=CR_LADOS.map(L=>{const u=gpLado(L.id),st=L.ids.map(id=>byE[id]).filter(Boolean);return u&&st.length?gpMix(st.reduce((x,s)=>x+s.fun,0)/st.length,gPct(get,kGP(u.id),"gp"),u):null;}).filter(x=>x!=null);
+  return v.length?v.reduce((a,b)=>a+b,0)/v.length:def;}
 function calcSec(get,sec){
   const es=estr(sec);const acc={pre:0,fun:0,mon:0,tto:0,otT:0};const cnt={sin:0,eje:0,ter:0};const byE={};const ind={per:0,acc:0,fun:0,mon:0};
   for(const e of es){const st=stE(get,sec,e);byE[e.id]=st;acc.pre+=st.pre;acc.fun+=st.fun;acc.mon+=st.mon;acc.tto+=st.tto;acc.otT+=st.otT;cnt[estado(st)]++;
@@ -976,7 +994,7 @@ function calcSec(get,sec){
   /* OPGW del sector = torre (promedio de estructuras) y vano (por distancia), ponderados por el peso de sus actividades */
   const T=acc.tto/n,V=WV?vs2/WV:0,OT=acc.otT/n,OV=WV?vo2/WV:0;const sp=tenSplit(),hv=vs.length?1:0,ow=opgW(),owT=ow.t+hv*ow.v;
   const O=owT?(ow.t*OT+hv*ow.v*OV)/owT:0;
-  const stg={pre:acc.pre/n,fun:acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+sp.o*O+hv*sp.v*V)/((sp.t+sp.o+hv*sp.v)||1),tenT:T,tenV:V,tenO:O,tenOT:OT,tenOV:OV,tenR:rn?rs/rn:0};
+  const stg={pre:acc.pre/n,fun:sec==="cruce"?crFunGP(get,byE,acc.fun/n):acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+sp.o*O+hv*sp.v*V)/((sp.t+sp.o+hv*sp.v)||1),tenT:T,tenV:V,tenO:O,tenOT:OT,tenOV:OV,tenR:rn?rs/rn:0};
   let W=0,P=0;for(const et of etapas()){const w=num(et.peso,0);W+=w;P+=w*(stg[et.id]||0);}
   return {stg,pct:W?P/W:0,cnt,byE,byV,byO,ind,n:es.length,nv:vs.length,vdone,has:es.length>0};
 }
@@ -986,7 +1004,7 @@ function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of sec
   out.lineaPct=(()=>{let w=0,p=0;for(const s of secs()){const r=out.sec[s.id];if(r.has){w+=s.peso;p+=s.peso*r.pct;}}return w?p/w:0;})();
   out.total=W?P/W:0;return out;}
 
-function unitLabel(d){if(!d)return "";if(d.kind==="se")return (SE_CAT_NAME[d.cat]||"S/E")+" "+d.unidad;if(d.kind==="vano")return "Vano "+d.unidad;return d.unidad+(d.pata?" · pata "+d.pata:"");}
+function unitLabel(d){if(!d)return "";if(d.kind==="se")return (SE_CAT_NAME[d.cat]||"S/E")+" "+d.unidad;if(d.kind==="gp")return "Fundación "+((gpU(d.unidad)||{}).nombre||d.unidad);if(d.kind==="vano")return "Vano "+d.unidad;return d.unidad+(d.pata?" · pata "+d.pata:"");}
 /* Los registros de liberaciones (kind "lib") no son avance físico: quedan fuera del historial general salvo que se pidan */
 function allHist(filter,conLib){const out=[];for(const [k,d] of S.av){if(!d||(!conLib&&d.kind==="lib")||(filter&&!filter(k,d)))continue;for(const [hid,h] of Object.entries(d.hist||{})){if(h&&h.a)out.push(Object.assign({hid,k,sec:d.sector,uni:d.unidad,lab:unitLabel(d)},h));}}return out.sort((a,b)=>(b.ts||0)-(a.ts||0));}
 function lastUpdate(){let m=null;for(const d of S.av.values())if(d&&d.kind!=="lib")for(const h of Object.values((d&&d.hist)||{}))if(h&&h.fecha&&(!m||h.fecha>m))m=h.fecha;return m;}
@@ -1383,6 +1401,10 @@ function crossingSvg(){
     g+=`<text class="tx b" x="${t.x}" y="${gy+56}" text-anchor="middle" style="font-size:12px">${esc(id)}</text><text class="tx" x="${t.x}" y="${gy+70}" text-anchor="middle" style="font-size:9.5px">Fund. ${fmtP(st.fun)}</text><text class="tx" x="${t.x}" y="${gy+82}" text-anchor="middle" style="font-size:9.5px">Mont. ${fmtP(st.mon)}</text>`;
     const tip=`Torre ${e.torre||id} (${id}) · ${e.tipo||""}\nFundación ${fmtP(st.fun,1)} (promedio de 4 patas)\nMontaje ${fmtP(st.mon,1)} · ${EST_TXT[estado(st)]}`;
     g+=`<rect class="hit" x="${f1(t.x-G.reach-6)}" y="${f1(gy-t.h-8)}" width="${f1(2*G.reach+12)}" height="${f1(t.h+40)}" data-open="cruce|${esc(id)}" data-tip="${esc(tip)}" role="button" tabindex="0" aria-label="${esc("Torre "+id)}"/>`;}
+  /* fundación de la Gine Pole de cada sector, en ubicación esquemática entre el anclaje y la suspensión */
+  for(const u of GP_UNITS){const x=u.lado==="norte"?278:973,I=gpInfo(u);
+    g+=footModel(x,gy,14,18,"cr",I.tot)+`<text class="tx b" x="${x}" y="${gy+56}" text-anchor="middle" style="font-size:12px">GP</text><text class="tx" x="${x}" y="${gy+70}" text-anchor="middle" style="font-size:9.5px">Gine Pole</text><text class="tx" x="${x}" y="${gy+82}" text-anchor="middle" style="font-size:9.5px">Fund. ${fmtP(I.tot)}</text>`;
+    g+=`<rect class="hit" x="${x-26}" y="${gy-10}" width="52" height="96" data-open="cruce|${u.id}" data-tip="${esc(gpTip(u,I))}" role="button" tabindex="0" aria-label="${esc("Fundación "+u.nombre+" "+fmtP(I.tot))}"/>`;}
   const line=s=>`${s.a}–${s.b}: C1 ${fmtP(s.p1)} · C2 ${fmtP(s.p2)} · OPGW ${fmtP(s.pO)}`;
   const N=spanTxt.filter(s=>s.b==="2C"),M=spanTxt.find(s=>s.a==="2C"&&s.b==="3C"),Su=spanTxt.filter(s=>s.a==="3C");
   if(N.length)g+=`<text class="cap" x="200" y="26" text-anchor="middle">Vanos de anclaje · norte</text>`+N.map((s,i)=>`<text class="tx" x="200" y="${42+i*14}" text-anchor="middle">${esc(line(s))}</text>`).join("");
@@ -1404,6 +1426,9 @@ function pataPlanSvg(e){
     g+=`<text class="tx b" x="${x+sx*(w/2+4)}" y="${y+sy*(w/2+4)+(sy<0?0:8)}" text-anchor="${sx<0?"end":"start"}" style="font-size:11px">${L}</text><text class="big v" x="${x}" y="${y+sy*(w/2+13)+(sy<0?0:6)}" text-anchor="middle" style="font-size:11px">${fmtP(I.tot)}</text></g>`;}
   return `<svg class="mdl" viewBox="-4 -12 158 174" style="max-width:220px;margin:0 auto" role="img" aria-label="${esc("Fundación "+(e.torre||e.id)+" en planta")}">${g}</svg>`;
 }
+/* Fundación de la Gine Pole en planta: un solo bloque, con el mismo llenado que las patas */
+function gpPlanSvg(u){const I=gpInfo(u),x0=45,w=60,sq=`<rect x="${x0}" y="${x0}" width="${w}" height="${w}"/>`;
+  return `<svg class="mdl" viewBox="-4 -12 158 174" style="max-width:220px;margin:0 auto" role="img" aria-label="${esc("Fundación "+u.nombre+" en planta")}"><g class="lnk" data-open="cruce|${u.id}" role="button" tabindex="0" aria-label="${esc("Fundación "+u.nombre+" "+fmtP(I.tot))}" data-tip="${esc(gpTip(u,I))}"><rect class="pad" x="${x0}" y="${x0}" width="${w}" height="${w}"/>`+clipUp(`<g class="conc">${sq}</g>`,x0,x0,w,w,clamp(I.tot,0,100))+`<rect x="${x0}" y="${x0}" width="${w}" height="${w}" style="fill:none;stroke:var(--ink-2);stroke-width:1"/><rect x="69" y="69" width="12" height="12" style="fill:none;stroke:var(--ink-2);stroke-width:.7"/><text class="big v" x="75" y="${x0+w+16}" text-anchor="middle" style="font-size:11px">${fmtP(I.tot)}</text></g></svg>`;}
 function scopeSecs(){return S.dash==="total"?secs():[secById(S.dash)];}
 function vResumen(){
   const P=S.P;const sc=S.dash;const sel=sc==="total"?null:P.sec[sc];
@@ -1475,7 +1500,8 @@ function drillHtml(et,list){
     const avgAct=(keys,aid)=>keys.length?keys.reduce((x,k)=>x+cur(k,aid),0)/keys.length:0;
     const kes=es.map(e=>kE(s.id,e.id));
     if(et==="pre"||et==="mon"){for(const a of actsG(et))rows.push({t:pre()+a.nombre,v:avgAct(kes,a.id),c:s.id});}
-    else if(et==="fun"){if(s.id==="cruce"){const kp=[];for(const e of es)for(const p of patas(e.id))kp.push(kP(s.id,e.id,p.pata));for(const a of actsG("cr"))rows.push({t:pre()+a.nombre+" (patas)",v:avgAct(kp,a.id),c:s.id});}
+    else if(et==="fun"){if(s.id==="cruce"){const kp=[];for(const e of es)for(const p of patas(e.id))kp.push(kP(s.id,e.id,p.pata));for(const a of actsG("cr"))rows.push({t:pre()+a.nombre+" (patas)",v:avgAct(kp,a.id),c:s.id});
+        for(const a of actsG("gp"))rows.push({t:pre()+"Gine Pole · "+a.nombre,v:avgAct(GP_UNITS.map(u=>kGP(u.id)),a.id),c:s.id});}
       else for(const g of FUNG){const eg=es.filter(e=>(r.byE[e.id].fg||e.fund)===g);if(!eg.length)continue;rows.push({t:pre()+grupoById(g).nombre+" ("+eg.length+")",v:eg.reduce((x,e)=>x+r.byE[e.id].fun,0)/eg.length,c:s.id});}}
     else if(et==="ten"){rows.push({t:pre()+"Conductor en torre (promedio)",v:r.stg.tenT,c:s.id});for(const a of actsG("tto"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
       rows.push({t:pre()+"OPGW en torre (promedio)",v:r.stg.tenOT,c:s.id});for(const a of actsG("opt"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
@@ -1609,31 +1635,49 @@ function vLinea(){
 }
 
 /* ---------- Cruce ---------- */
-function pataInfo(e,p){const k=kP("cruce",e.id,p.pata);const as=actsG("cr");const tot=gPct(cur,k,"cr");let step=0;for(const a of as){if(cur(k,a.id)>=99.95)step++;else break;}return {tot,step,next:as[step],k,n:as.length};}
+function seqInfo(k,g){const as=actsG(g);const tot=gPct(cur,k,g);let step=0;for(const a of as){if(cur(k,a.id)>=99.95)step++;else break;}return {tot,step,next:as[step],k,n:as.length};}
+const pataInfo=(e,p)=>seqInfo(kP("cruce",e.id,p.pata),"cr");
+const gpInfo=u=>seqInfo(kGP(u.id),"gp");
+const gpTip=(u,I)=>`Fundación ${u.nombre}\nAvance ${fmtP(I.tot,1)} · ${I.step} de ${I.n} actividades\n${I.next?"Sigue: "+I.next.nombre:"Terminada"}`;
 /* Lados del cruce: norte = anclajes 1CA y 1CB + suspensión 2C; sur = suspensión 3C + anclajes 4CB y 4CA.
-   Fundación del lado = suma de lo hormigonado en todas sus patas sobre el total de patas (cada pata pesa igual);
-   una estructura sin patas cargadas cuenta como 4 patas con su % de fundación */
+   Fundación de las torres del lado = suma de lo hormigonado en todas sus patas sobre el total de patas (cada pata pesa igual);
+   una estructura sin patas cargadas cuenta como 4 patas con su % de fundación.
+   Fundación del lado = las torres y la Gine Pole, esta con su peso del programa (GP_UNITS) */
 const CR_LADOS=[{id:"norte",t:"Sector norte · Continente",ids:["1CA","1CB","2C"]},{id:"sur",t:"Sector sur · Isla de Chiloé",ids:["3C","4CB","4CA"]}];
 function crLado(L,P,get){get=get||cur;P=P||S.P;const r=P.sec.cruce;let sp=0,np=0,ok=0,mon=0,ne=0;const det=[];
   for(const id of L.ids){const e=estById("cruce",id);if(!e||!r||!r.byE[id])continue;const st=r.byE[id],ps=patas(id);ne++;mon+=st.mon;det.push({id,fun:st.fun});
     if(ps.length)for(const p of ps){const v=gPct(get,kP("cruce",id,p.pata),"cr");sp+=v;np++;if(v>=99.95)ok++;}
     else{sp+=4*st.fun;np+=4;if(st.fun>=99.95)ok+=4;}}
-  return {fun:np?sp/np:0,np,ok,mon:ne?mon/ne:0,det};}
+  const u=gpLado(L.id),gp=gPct(get,kGP(u.id),"gp");
+  return {fun:gpMix(np?sp/np:0,gp,u),u,gp,np,ok,mon:ne?mon/ne:0,det};}
+/* carga única del avance de partida de la Gine Pole (se ofrece a los administradores mientras no exista) */
+const gpCargaPend=()=>!(((S.av.get(kGP(GP_CARGA.u))||{}).act||{}).gp_exc);
+async function gpCargar(){if(S.saving||!S.canAdmin||!gpCargaPend())return;
+  const ts=Date.now(),{fecha,obs,ch}=GP_CARGA,key=kGP(GP_CARGA.u),act={},hist={};
+  for(const [a,v] of Object.entries(ch)){hist["i"+ts+"_"+a]={a,pct:v,fecha,por:S.me,pn:S.userName,obs,ts,imp:true};act[a]={pct:v,fecha,por:S.me,pn:S.userName,ts,imp:true};}
+  const base=baseOf("cruce",{kind:"gp",unidad:GP_CARGA.u});S.saving=true;render();
+  try{await withRetry(()=>rpcAvance(key,base,act,hist));mergeLocal(key,base,act,hist);toast("Avance de la Gine Pole cargado con fecha "+fmtD(fecha)+".");}
+  catch(err){saveErr(err,0,1);}
+  S.saving=false;render();}
 function vCruce(){
   const as=actsG("cr");const byId=Object.fromEntries(estr("cruce").map(e=>[e.id,e]));const r=S.P.sec.cruce;
   const lados=CR_LADOS.map(L=>Object.assign({L},crLado(L)));
   const plan=id=>{const e=byId[id];if(!e)return "";const st=r.byE[id];const ps=patas(id);
     const lis=ps.map(p=>{const I=pataInfo(e,p);return `<li><b class="mono">${esc(p.pata)}</b> · ${I.step>=I.n?"terminada":`${I.step}/${I.n} · sigue ${esc(I.next.nombre.toLowerCase())}`}</li>`;}).join("");
     return `<div class="pl"><h4><span>Fundación ${esc(e.torre||id)} <span class="muted small mono">${esc(id)}</span></span><b>${fmtP(st.fun,1)}</b></h4><span class="small muted">Montaje ${fmtP(st.mon,1)} · ${EST_TXT[estado(st)].toLowerCase()} · <button class="linkbtn" style="font-family:var(--f-body)" data-open="cruce|${esc(id)}">abrir</button></span>${pataPlanSvg(e)}<ul>${lis}</ul></div>`;};
+  const planGP=u=>{const I=gpInfo(u);
+    return `<div class="pl"><h4><span>Fundación Gine Pole <span class="muted small mono">${esc(u.id)}</span></span><b>${fmtP(I.tot,1)}</b></h4><span class="small muted">${I.step>=I.n?"Terminada":`${I.step}/${I.n} · sigue ${esc(I.next.nombre.toLowerCase())}`} · <button class="linkbtn" style="font-family:var(--f-body)" data-open="cruce|${esc(u.id)}">abrir</button></span>${gpPlanSvg(u)}<ul>${actsG("gp").map(a=>`<li>${esc(a.nombre)} · <b class="num">${fmtP(cur(I.k,a.id))}</b></li>`).join("")}</ul></div>`;};
   let h=`<div class="stack"><section class="panel stack" style="gap:10px"><div class="spread"><h2>Cruce aéreo del canal de Chacao · elevación</h2><div class="row small"><span>Fundaciones <b class="num">${fmtP(r.stg.fun,1)}</b></span><span>Montaje <b class="num">${fmtP(r.stg.mon,1)}</b></span><span>Tendido <b class="num">${fmtP(r.stg.ten,1)}</b></span><span>Cruce <b class="num">${fmtP(r.pct,1)}</b></span></div></div>
-  <div class="tmfig">${lados.map(z=>`<div><span>${esc(z.L.t)} · fundaciones</span><b class="num">${fmtP(z.fun,1)}</b><span>${z.ok} de ${z.np} patas terminadas · ${esc(z.det.map(d=>`${d.id} ${fmtP(d.fun)}`).join(" · "))} · montaje ${fmtP(z.mon,1)}</span></div>`).join("")}</div>
+  <div class="tmfig">${lados.map(z=>`<div><span>${esc(z.L.t)} · fundaciones</span><b class="num">${fmtP(z.fun,1)}</b><span>${z.ok} de ${z.np} patas terminadas · ${esc(z.det.map(d=>`${d.id} ${fmtP(d.fun)}`).join(" · "))} · Gine Pole ${fmtP(z.gp)} · montaje ${fmtP(z.mon,1)}</span></div>`).join("")}</div>
   <div class="mdl-wrap">${crossingSvg()}</div>
   ${mLegend([["circ","Circuito 1 a la izquierda y circuito 2 a la derecha"],["half","Medio vano: el lado de cada torre es su circuito"],["ghost","Torre por montar"],["steel","Estructura montada"],["fg","Fundación por construir"],["fz","Fundación hormigonada"],["wire","Conductor tendido"],["part","En tendido"],["none","Por tender"]])}
-  <p class="small muted">Cada torre lleva el circuito 1 a la izquierda y el circuito 2 a la derecha, con sus fases superior, media e inferior, y el cable de guardia OPGW en la cúspide. En cada fase, la mitad del vano que sale del lado derecho de una torre muestra el tendido del circuito 2 y la que llega al lado izquierdo de la torre siguiente, el del circuito 1. Los anclajes 1CA y 4CA van atenuados porque quedan detrás de 1CB y 4CB. Toca una torre para abrir su ficha.</p></section>`;
+  <p class="small muted">Cada torre lleva el circuito 1 a la izquierda y el circuito 2 a la derecha, con sus fases superior, media e inferior, y el cable de guardia OPGW en la cúspide. En cada fase, la mitad del vano que sale del lado derecho de una torre muestra el tendido del circuito 2 y la que llega al lado izquierdo de la torre siguiente, el del circuito 1. Los anclajes 1CA y 4CA van atenuados porque quedan detrás de 1CB y 4CB. GP es la fundación de la Gine Pole de cada sector, en ubicación esquemática. Toca una torre o una GP para abrir su ficha.</p></section>`;
   h+=`<section class="panel stack"><div class="spread"><h2>Fundaciones en planta</h2><span class="small muted">Patas D–A arriba, C–B abajo. El hormigón sube según el avance acumulado de cada pata. Toca una pata para registrar.</span></div>
-  <div class="plans">${lados.map(z=>`<div class="grp cap lbl">${esc(z.L.t)} · fundaciones ${fmtP(z.fun,1)} (${z.ok} de ${z.np} patas)</div>${z.L.ids.map(plan).join("")}`).join("")}</div>
-  <p class="small muted" style="margin:0">El avance de fundaciones de cada sector suma los dos anclajes y la suspensión: lo hormigonado en todas sus patas sobre el total de patas, cada pata con el mismo peso.</p>
-  <div class="stack" style="gap:6px"><span class="lbl">Secuencia de actividades por pata</span><div class="steps-legend plain">${as.map((a,i)=>`<span><i>${i+1}</i>${esc(a.nombre)} <span class="muted num">${fmtP(num(a.peso,0))}</span></span>`).join("")}</div></div></section>`;
+  ${S.canAdmin&&gpCargaPend()?`<div class="note small spread"><span>Gine Pole según el avance físico al ${esc(fmtD(GP_CARGA.fecha))}: norte 44 % (excavación 100 %, enfierradura y moldaje 76 %) y sur 0 %. Falta cargarlo; este aviso solo lo ven los administradores.</span><button class="btn small primary" id="gp-seed" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Cargar este avance"}</button></div>`:""}
+  <div class="plans">${lados.map(z=>`<div class="grp cap lbl">${esc(z.L.t)} · fundaciones ${fmtP(z.fun,1)} (${z.ok} de ${z.np} patas)</div>${z.L.ids.map(plan).join("")}${planGP(z.u)}`).join("")}</div>
+  <p class="small muted" style="margin:0">El avance de fundaciones de cada sector suma los dos anclajes y la suspensión (lo hormigonado en todas sus patas sobre el total de patas, cada pata con el mismo peso) y la fundación de la Gine Pole con su peso en el programa del contratista: ${GP_UNITS.map(u=>`${fmtP(u.w*100,1)} en el ${u.lado}`).join(" y ")}.</p>
+  <div class="stack" style="gap:6px"><span class="lbl">Secuencia de actividades por pata</span><div class="steps-legend plain">${as.map((a,i)=>`<span><i>${i+1}</i>${esc(a.nombre)} <span class="muted num">${fmtP(num(a.peso,0))}</span></span>`).join("")}</div></div>
+  <div class="stack" style="gap:6px"><span class="lbl">Secuencia de actividades de la Gine Pole</span><div class="steps-legend plain">${actsG("gp").map((a,i)=>`<span><i>${i+1}</i>${esc(a.nombre)} <span class="muted num">${fmtP(num(a.peso,0),num(a.peso,0)%1!==0)}</span></span>`).join("")}</div></div></section>`;
   const vs=vanos("cruce");
   h+=`<section class="panel stack"><h2>Vanos del cruce</h2><div class="tbl-wrap"><table class="tec"><thead><tr><th>Vano</th><th>Ubicación</th><th class="r">Longitud</th><th class="r">Cable piloto</th><th class="r">Circuito 1</th><th class="r">Circuito 2</th><th class="r">Flechado</th><th class="r">Separadores</th><th class="r">Total conductor</th><th class="r">OPGW tendido</th><th class="r">Total OPGW</th></tr></thead><tbody>
   ${vs.map(v=>{const c=x=>{const val=x;return `<td class="r num">${val>=99.95?"<b>100 %</b>":fmtP(val)}</td>`;};return `<tr><td><button class="linkbtn" data-open="cruce|${esc(v.a)}">${esc(v.label)}</button></td><td class="small">${v.a==="2C"&&v.b==="3C"?"Sobre el canal":v.a==="2C"||v.b==="2C"?"Anclaje norte":"Anclaje sur"}</td><td class="r num">${fmtM(v.len)}</td>${c(cur(v.key,"tv_pil"))}${c(circPct(v.key,"1"))}${c(circPct(v.key,"2"))}${c(cur(v.key,"tv_fle"))}${c(cur(v.key,"tv_esp"))}<td class="r num"><b>${fmtP(r.byV[v.key]||0,1)}</b></td>${c(cur(v.key,"tv_opg"))}<td class="r num"><b>${fmtP(r.byO[v.key]||0,1)}</b></td></tr>`;}).join("")}
@@ -1736,7 +1780,7 @@ function vDrawerSE(){
 }
 
 /* ---------- Panel de estructura ---------- */
-function openDrawer(sec,id,pata){const e=estById(sec,id);if(!e)return;S.drw={sec,id,edit:null,pata:pata||(sec==="cruce"&&patas(id)[0]?patas(id)[0].pata:null),fgSel:null};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
+function openDrawer(sec,id,pata){if(gpU(id)){S.drw={sec:"cruce",gp:id,edit:null};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);return;}const e=estById(sec,id);if(!e)return;S.drw={sec,id,edit:null,pata:pata||(sec==="cruce"&&patas(id)[0]?patas(id)[0].pata:null),fgSel:null};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
 function closeDrawer(){S.drw=null;render();}
 function qeHtml(E,title){const nf=newerFecha(E.key,[E.aid],E.fecha);return `<div class="qe">${title?`<b class="small">${esc(title)}</b>`:""}<div class="quick" role="group" aria-label="Avance">${[0,25,50,75,100].map(p=>`<button data-qp="${p}" aria-pressed="${E.pct===p}">${p}%</button>`).join("")}</div>
       ${nf?`<div class="warnline">⚠ Ya hay un registro con fecha ${esc(fmtD(nf))}, posterior a la elegida. Este quedará en el historial pero no cambiará el avance vigente.</div>`:""}
@@ -1761,7 +1805,19 @@ function actRows(key,g,col,list){const ro=!S.canWrite;const D=S.drw;let condDone
     let h=`<button class="arow ${v<=0?"z":""}" data-qe="${esc(key)}|${a.id}" ${ro?"disabled":""} aria-expanded="${ed}" data-tip="${esc(a.nombre+" · peso "+fmtP(num(a.peso,0))+(x?"\nÚltimo registro "+fmtD(x.fecha):""))}"><span class="an">${esc(a.nombre)}</span><span class="ab"><i style="--w:${clamp(v,0,100)}%${col?";--c:"+col:""}"></i></span><span class="av">${fmtP(v)}</span></button>`;
     if(ed)h+=qeHtml(D.edit);
     return h;}).join("");}
+function vDrawerGP(){
+  const D=S.drw,u=gpU(D.gp);if(!u)return "";const I=gpInfo(u),k=I.k,otro=GP_UNITS.find(x=>x!==u),e=estById("cruce",u.susp);
+  const hist=allHist(kk=>kk===k).filter(x=>!x.imp).slice(0,12);
+  let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc("Fundación "+u.nombre)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor("cruce")}"></span>${esc(secById("cruce").nombre)} · ${esc(u.sector)}</span><h2>Fundación ${esc(u.nombre)}</h2>${estHtml(seEst(I.tot))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
+  h+=`<div class="meta"><div><span>Sector</span>${esc(u.sector)}</div><div><span>Contratista</span>${esc((e&&e.contr)||"—")}</div><div><span>Peso en las fundaciones del sector</span><b class="num">${fmtP(u.w*100,1)}</b></div></div>`;
+  h+=`<div class="rings" style="justify-content:flex-start;gap:16px;align-items:center">${ring(I.tot,96,I.tot>=99.95?"var(--good)":"var(--accent)",fmtP(I.tot,1),"Avance")}<span class="small muted">Toca una actividad para registrar su avance acumulado.</span></div>`;
+  h+=`<div class="agrp"><h3><span>Actividades</span><span class="num">${fmtP(I.tot,1)}</span></h3>${actRows(k,"gp")}</div>`;
+  h+=`<div class="agrp"><h3><span>Historial en terreno</span></h3>${hist.length?`<div class="feed">${hist.map(x=>{const a=actById(x.a);return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w">${esc(a?a.nombre:x.a)}<div class="o">${esc(autor(x))}${x.obs?" — "+esc(x.obs):""}</div></div><span class="p num">${fmtP(num(x.pct,0))}</span></div>`;}).join("")}</div>`:`<span class="small muted">Sin registros en terreno.</span>`}</div>`;
+  h+=`<div class="row" style="justify-content:flex-end"><button class="btn small ghost" data-open="cruce|${esc(otro.id)}">${esc(otro.nombre)} →</button></div>`;
+  return h+`</div></aside>`;
+}
 function vDrawer(){
+  if(S.drw&&S.drw.gp)return vDrawerGP();
   if(S.drw&&S.drw.se)return vDrawerSE();
   if(S.drw&&S.drw.lib)return vDrawerLib();
   const D=S.drw;const sec=D.sec;const e=estById(sec,D.id);if(!e)return "";const r=S.P.sec[sec];const st=r.byE[e.id];const k=kE(sec,e.id);
@@ -1795,7 +1851,7 @@ function vDrawer(){
   h+=`<div class="row" style="justify-content:space-between">${pv?`<button class="btn small ghost" data-open="${sec}|${esc(pv.id)}">← ${esc(pv.id)}</button>`:"<span></span>"}${nx?`<button class="btn small ghost" data-open="${sec}|${esc(nx.id)}">${esc(nx.id)} →</button>`:""}</div>`;
   return h+`</div></aside>`;
 }
-function metaForKey(key){const D=S.drw;if(D.se)return key===kSE(D.cat,D.id)?{kind:"se",unidad:D.id,cat:D.cat}:null;const sec=D.sec;const e=estById(sec,D.id);
+function metaForKey(key){const D=S.drw;if(D.se)return key===kSE(D.cat,D.id)?{kind:"se",unidad:D.id,cat:D.cat}:null;if(D.gp)return key===kGP(D.gp)?{kind:"gp",unidad:D.gp}:null;const sec=D.sec;const e=estById(sec,D.id);
   if(key===kE(sec,e.id))return {kind:"est",unidad:e.id};
   for(const p of patas(e.id))if(key===kP(sec,e.id,p.pata))return {kind:"pata",unidad:e.id,pata:p.pata};
   for(const v of vanosOf(sec,e.id))if(key===v.key)return {kind:"vano",unidad:v.label,a:v.a,b:v.b};
@@ -1828,7 +1884,7 @@ async function quickSave(){
   const nf=newerFecha(E.key,[E.aid],E.fecha);
   S.saving=true;render();
   try{await saveOne(E.key,S.drw.sec,meta,E.aid,E.pct,E.fecha,E.obs,Date.now());S.drw.edit=null;
-    const donde=meta.kind==="vano"?"vano "+meta.unidad:meta.unidad+(meta.pata?" pata "+meta.pata:"");
+    const donde=meta.kind==="vano"?"vano "+meta.unidad:meta.kind==="gp"?gpU(meta.unidad).nombre:meta.unidad+(meta.pata?" pata "+meta.pata:"");
     if(nf)toast(`Guardado en el historial (${a.nombre} ${fmtP(E.pct,E.pct%1!==0)} en ${donde}), pero el avance vigente no cambia: ya hay un registro con fecha posterior (${fmtD(nf)}).`,true);
     else toast(`Guardado: ${a.nombre} ${fmtP(E.pct,E.pct%1!==0)} en ${donde}.`);}
   catch(err){saveErr(err,0,1);}
@@ -1845,6 +1901,7 @@ function unitsFor(r,all){
   if(r.grp==="tva"||r.grp==="opg"||r.grp==="rem"){let vs=vanos(r.sec);if(r.grp==="rem")vs=vs.filter(v=>v.ml);else if(OPG_NO_ML.has(r.act))vs=vs.filter(v=>!v.ml);if(!all){if(r.tt)vs=vs.filter(v=>v.tt===r.tt);if(q)vs=vs.filter(v=>v.label.toLowerCase().includes(q));}
     return vs.map(v=>({uid:v.a+">"+v.b,label:v.label,sub:(v.tt||"").replace("Tramo ","T"),key:v.key,ml:!!v.ml,meta:{kind:"vano",unidad:v.label,a:v.a,b:v.b}}));}
   if(r.grp==="cr")return estr("cruce").flatMap(e=>patas(e.id).map(p=>({uid:e.id+"|"+p.pata,label:e.id+"·"+p.pata,sub:"Torre "+(e.torre||e.id),key:kP("cruce",e.id,p.pata),meta:{kind:"pata",unidad:e.id,pata:p.pata}})));
+  if(r.grp==="gp")return GP_UNITS.map(u=>({uid:u.id,label:u.nombre,sub:u.sector.split(" · ")[1],key:kGP(u.id),meta:{kind:"gp",unidad:u.id}}));
   let es=estr(r.sec);
   if(!all){if(FUNG.includes(r.grp)&&!r.verTodas)es=es.filter(e=>!e.fund||e.fund===r.grp);if(r.tt)es=es.filter(e=>e.tt===r.tt);if(q)es=es.filter(e=>String(e.id).toLowerCase().includes(q));}
   return es.map(e=>({uid:e.id,label:e.id,sub:(e.tt||"").replace("Tramo ","T")+(e.tipo?" · "+e.tipo.slice(0,4)+".":""),key:kE(r.sec,e.id),meta:{kind:"est",unidad:e.id}}));
@@ -1857,6 +1914,8 @@ function vRegistrar(){
   if(r.sec){const stg=r.sec==="se"?{}:P.sec[r.sec].stg;
     if(r.sec==="se")h+=`<div class="grp"><span class="lbl">Partida</span><div class="opts">${SE_CATS.map(c=>`<button class="opt" data-rgrp="se_${c.id}" aria-pressed="${r.grp==="se_"+c.id}"><span class="t">${esc(c.nombre)}</span><span class="s num">${S.SE.cat[c.id].n} elementos · ${fmtP(S.SE.cat[c.id].pct,1)}</span></button>`).join("")}</div></div>`;
     else h+=`<div class="grp"><span class="lbl">Etapa</span><div class="opts">${etapas().map(e=>`<button class="opt" data-retapa="${e.id}" aria-pressed="${r.etapa===e.id}"><span class="t">${esc(e.nombre)}</span><span class="s num">${fmtP(stg[e.id]||0,1)} en el sector</span></button>`).join("")}</div></div>`;
+    if(r.etapa==="fun"&&r.sec==="cruce"){const pg=GP_UNITS.reduce((x,u)=>x+gPct(cur,kGP(u.id),"gp"),0)/GP_UNITS.length;
+      h+=`<div class="grp"><span class="lbl">¿Qué fundación?</span><div class="opts"><button class="opt" data-rgrp="cr" aria-pressed="${r.grp==="cr"}"><span class="t">Torres</span><span class="s">Por pata</span></button><button class="opt" data-rgrp="gp" aria-pressed="${r.grp==="gp"}"><span class="t">Gine Pole</span><span class="s num">Norte y sur · ${fmtP(pg,1)}</span></button></div></div>`;}
     if(r.etapa==="fun"&&r.sec!=="cruce"){const es=estr(r.sec);
       h+=`<div class="grp"><span class="lbl">Tipo de fundación</span><div class="opts">${FUNG.map(g=>{const n=es.filter(e=>e.fund===g).length;return `<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${esc(grupoById(g).nombre)}</span><span class="s">${n} estructura(s)${es.some(e=>!e.fund)?" + sin tipo definido":""}</span></button>`;}).join("")}</div></div>`;}
     if(r.etapa==="ten"){const o=(g,t,s,v)=>`<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${t}</span><span class="s">${s} · ${fmtP(v||0,1)}</span></button>`;
@@ -1874,10 +1933,10 @@ function vRegistrar(){
   h+=`</section>`;
   const aids=regAids(r);
   const act=r.act==="__cond"?(aids.length?{id:"__cond",nombre:"Tendido de conductor ("+aids.map(id=>{const a=actById(id);return "C"+a.circ+" "+faseTxt(a.fase).toLowerCase();}).join(", ")+")"}:null):(r.act&&actById(r.act));
-  const word=r.sec==="se"?"elementos":r.grp==="tva"||r.grp==="opg"||r.grp==="rem"?"vanos":r.grp==="cr"?"patas":"estructuras";
+  const word=r.sec==="se"?"elementos":r.grp==="tva"||r.grp==="opg"||r.grp==="rem"?"vanos":r.grp==="cr"?"patas":r.grp==="gp"?"fundaciones":"estructuras";
   h+=`<section class="step ${act?"":"off"} ${r.sel.size?"done":""}"><div class="step-h"><span class="step-n">3</span><div><h3>¿En qué ${word}?</h3><span class="hint">Toca para seleccionar. La barra azul inferior muestra el avance ya registrado.</span></div></div>`;
   if(act){
-    if(r.grp!=="cr"){const tts=[...new Set(estr(r.sec).map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
+    if(r.grp!=="cr"&&r.grp!=="gp"){const tts=[...new Set(estr(r.sec).map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
       h+=`<div class="filters"><div class="field"><label for="r-q">Buscar N°</label><input id="r-q" type="search" value="${esc(r.q)}" placeholder="Ej.: 115"></div>${tts.length?`<div class="field"><label for="r-tt">Tramo de tendido</label><select id="r-tt"><option value="">Todos</option>${tts.map(t=>`<option ${r.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>`:""}${FUNG.includes(r.grp)?`<label class="small row" style="gap:6px"><input type="checkbox" id="r-all" ${r.verTodas?"checked":""}> Ver también otros tipos de fundación</label>`:""}</div>`;}
     const us=unitsFor(r,false);
     h+=`<div class="row"><button class="btn small ghost" data-rsel="pend">Seleccionar pendientes visibles</button><button class="btn small ghost" data-rsel="none">Quitar selección</button><span class="muted num small">${r.sel.size} seleccionada(s) · ${us.length} visibles</span></div>`;
@@ -1912,7 +1971,7 @@ async function guardar(){
   /* lo ya guardado se quita de la selección para no duplicarlo al reintentar */
   r.sel=new Set([...r.sel].filter(uid=>!hechos.has(uid)));
   if(err){saveErr(err,ok,ok+r.sel.size);render();return;}
-  const word=r.sec==="se"?"elemento(s)":r.grp==="tva"||r.grp==="opg"||r.grp==="rem"?"vano(s)":r.grp==="cr"?"pata(s)":"estructura(s)";
+  const word=r.sec==="se"?"elemento(s)":r.grp==="tva"||r.grp==="opg"||r.grp==="rem"?"vano(s)":r.grp==="cr"?"pata(s)":r.grp==="gp"?"fundación(es)":"estructura(s)";
   if(atras.length)toast(`Guardado en ${ok} ${word}. Atención: en ${atras.length} ya había un registro con fecha posterior, así que su avance vigente no cambió (queda en el historial).`,true);
   else toast(`Avance guardado: ${act.nombre} ${fmtP(r.pct,r.pct%1!==0)} en ${ok} ${word}.`);
   r.obs="";render();
@@ -2550,6 +2609,9 @@ function pgFallback(E,ctx){const id=x=>String(x.e.id).toUpperCase();
   else if(/\banclaje\b/.test(ctx.replace(/pernos de anclaje/g,"")))E=E.filter(x=>/ancl/.test(nrm(x.e.tipo)));
   if(/\bisla\b/.test(ctx))E=E.filter(x=>x.s==="isla");else if(/continente/.test(ctx))E=E.filter(x=>x.s==="continente");
   return E;}
+/* Fundación de la Gine Pole: se mide en su ficha por sector. Su traslado y las demás tareas de la Gine Pole siguen sin equivalencia */
+const PG_GP=/fundacion gin(?:e)? ?pole (norte|sur)/;
+function pgGpSteps(t){return GP_ACTS.filter(a=>({gp_exc:/excav/,gp_enf:/enfierr/,gp_hor:/hormig/,gp_ret:/retiro/,gp_rel:/relleno|compact/})[a.id].test(t)).map(a=>a.id);}
 function pgFType(ctx){if(/\bpilas?\b/.test(ctx))return ["pila"];if(/helicoidal|\(ah\)|\bah\b|pilote|cabezales? metalic/.test(ctx))return ["amet","ahor"];if(/zapata/.test(ctx))return ["zv"];return null;}
 const pgFg=x=>x.s==="cruce"?"cr":stE(cur,x.s,x.e).fg;
 /* --- qué actividad de la app equivale a cada tarea --- */
@@ -2660,6 +2722,7 @@ function pgModel(P){const g=gc(),c=PGM.get(P);if(c&&c.g===g)return c.M;
     const path=pathOf(t),ctx=path.join(" > "),own=path[path.length-1]||"";
     const r={t,path,ctx,parts:null,E:[],V:[],pata:null,soloV:false,sl:"",ml:"",why:"",w:0};recs.push(r);
     /* bajadas, reserva y mufa (cajas de empalme) del OPGW sí se miden: actividad de torre; sus suministros y la fusión de fibra no */
+    {const gm=se?null:PG_GP.exec(ctx);if(gm){const u=gpLado(gm[1]),ids=pgGpSteps(own);r.parts=[{t:"gp",u:u.id,ids,l:"Fundación Gine Pole · "+(ids.length?ids.map(id=>GP_ACTS.find(a=>a.id===id).nombre.toLowerCase()).join(", "):"completa")}];r.sl=u.nombre;r.ml=r.parts[0].l;continue;}}
     const opOk=!se&&/opgw|cable de guardia/.test(ctx)&&/mufa|caja|bajad|reserva/.test(own)&&!/suministr|procurement|compra|transporte|ingenier|fusion|fibra/.test(ctx);
     if(!opOk&&(PG_EXCL.test(ctx)||(se?PG_EXCL_SE:PG_EXCL_LIN).test(ctx))){r.why="Fuera de lo que mide la app (ingeniería, suministros, permisos, pruebas u obras auxiliares)";continue;}
     if(se){const p=pgRuleSE(own,ctx);if(!p){r.why="Sin partida equivalente en la S/E de la app";continue;}r.parts=p;r.sl=p[0].sl;r.ml=p[0].l;continue;}
@@ -2709,6 +2772,7 @@ function pgValE(get,p,x,pata){const s=x.s,e=x.e;
   return null;}
 function pgPartVal(r,p,get){
   if(p.t==="se")return pgAvgN(p.its.map(it=>p.ids.length?pgAvg(get,kSE(it.cat,it.id),p.ids):seItemPct(get,it)));
+  if(p.t==="gp")return p.ids.length?pgAvg(get,kGP(p.u),p.ids):gPct(get,kGP(p.u),"gp");
   if(p.t==="lib"){const vals=[];if(!r.soloV)for(const x of r.E){const k=kLibE(x.s,x.e.id);if(libUnit(k))vals.push(pgLibVal(k,p.ser));}
     for(const y of r.V){const k=kLibV(y.s,y.v.a,y.v.b);if(libUnit(k))vals.push(pgLibVal(k,p.ser));}return pgAvgN(vals);}
   if(p.on==="v"||p.t==="tva"){if(p.t==="a"&&!p.r.length)return null;const V=p.t==="a"&&p.r.every(id=>OPG_NO_ML.has(id))?r.V.filter(y=>!y.v.ml):r.V;return pgAvgN(V.map(y=>p.t==="tva"?gPct(get,y.v.key,"tva"):pgAvg(get,y.v.key,p.r)));}
@@ -2931,8 +2995,8 @@ const ppHtml=d=>Math.abs(d)<0.05?`<span class="muted">0,0 pp</span>`:`<b class="
 const listaTxt=(a,max)=>a.length>max?a.slice(0,max).join(", ")+` y ${a.length-max} más`:a.join(", ");
 const nTxt=(n,a,b)=>n+" "+(n===1?a:b);
 /* contratista, elemento de liberación y elemento de obra de un documento de avance (un vano va al contratista de la estructura donde termina) */
-function contrDe(d){if(d.kind==="se")return SE_CONTRATISTA;const e=d.kind==="vano"?vanoEst(d.sector,d):estById(d.sector,d.unidad);return (e&&e.contr)||"Sin contratista";}
-const libKeyDe=d=>d.kind==="vano"?(d.a&&d.b?kLibV(d.sector,d.a,d.b):null):d.kind==="se"||d.kind==="lib"?null:kLibE(d.sector,d.unidad);
+function contrDe(d){if(d.kind==="se")return SE_CONTRATISTA;const e=d.kind==="vano"?vanoEst(d.sector,d):d.kind==="gp"?estById("cruce",(gpU(d.unidad)||{}).susp):estById(d.sector,d.unidad);return (e&&e.contr)||"Sin contratista";}
+const libKeyDe=d=>d.kind==="vano"?(d.a&&d.b?kLibV(d.sector,d.a,d.b):null):d.kind==="se"||d.kind==="lib"||d.kind==="gp"?null:kLibE(d.sector,d.unidad);
 const elemDe=d=>d.kind==="vano"?"V|"+d.unidad:d.sector+"|"+d.unidad;
 const repOpen=d=>d.kind==="se"?`data-ose="${esc(d.cat)}|${esc(d.unidad)}"`:`data-open="${esc(d.sector)}|${esc(d.kind==="vano"?vanoFicha(d.sector,d):d.unidad)}"${d.pata?` data-pata="${esc(d.pata)}"`:""}`;
 let REPC=null;
@@ -3141,6 +3205,11 @@ function exPvE(x){if(x.pve)return x.pve;
           /* avanzó (programado o ejecutado) en el período, está en ejecución o va atrasada */
           if((p1!=null&&(p1-(p0||0)>0.01||(p1>0.01&&p1<99.95)||p1-e1>0.5))||e1-(e0||0)>0.01||(e1>0.01&&e1<99.95))rows.push({t:a.nombre,u:"%",p:p1,e:e1});}
         return {t:t+" "+ids.join(" y "),rows:rows.slice(0,5)};});
+      /* Gine Pole del lado: se agrega solo si tiene actividades en el período, con el mismo criterio */
+      {const u=gpLado(L.id),k=kGP(u.id),rows=[],pGP=(a,t)=>{if(!M)return null;const v=[];for(const r of M.meas)if(r.parts.some(p=>p.t==="gp"&&p.u===u.id&&(!p.ids.length||p.ids.includes(a.id)))){const z=pl(r,t);if(z!=null)v.push(z);}return pgAvgN(v);};
+        for(const a of actsG("gp")){const e1=x.g1(k,a.id),e0=x.g0(k,a.id),p1=pGP(a,tm),p0=pGP(a,tm0);
+          if((p1!=null&&(p1-(p0||0)>0.01||(p1>0.01&&p1<99.95)||p1-e1>0.5))||e1-e0>0.01||(e1>0.01&&e1<99.95))rows.push({t:a.nombre,u:"%",p:p1,e:e1});}
+        if(rows.length)grs.push({t:"Fundación Gine Pole",rows});}
       if(grs.some(g=>g.rows.length))out.cru.push({L,f:fc.f,grs});}}
   return x.pve=out;}
 /* estructuras de un frente en tramos continuos de la línea («estructuras 1–14 y 42–180»); muy repartidas, solo la cantidad */
@@ -3646,6 +3715,8 @@ function descargarCSV(){
   for(const s of secs())for(const e of estr(s.id)){const st=S.P.sec[s.id].byE[e.id];L.push([s.nombre,e.id,vertice(e.id),e.zona,e.tt,e.tipo,e.torre,e.contr,f(st.pre),f(st.fun),st.fg?grupoById(st.fg).nombre:"",f(st.mon),f(st.tto),f(st.otT||0),f(totE(st)),EST_TXT[estado(st)]].map(q).join(";"));}
   L.push("");L.push("VANOS (longitudes según actualización de terreno, "+ASB_DOC+")");L.push("Sector;Vano;Tramo tendido;Longitud m;"+actsG("tva").map(a=>a.nombre+" %").join(";")+";Total conductor %;"+actsG("opg").map(a=>a.nombre+" %").join(";")+";Total OPGW %;"+actsG("rem").map(a=>a.nombre+" %").join(";")+";Conductor C1 tendido m;Conductor C2 tendido m;OPGW tendido m");
   for(const s of secs())for(const v of vanos(s.id)){const p=S.P.sec[s.id].byV[v.key]||0,po=S.P.sec[s.id].byO[v.key]||0;const m=x=>v.len!=null?f(v.len*x/100):"";L.push([s.nombre,v.label,v.tt,v.len!=null?f(v.len):""].concat(actsG("tva").map(a=>f(cur(v.key,a.id))),[f(p)],actsG("opg").map(a=>v.ml&&OPG_NO_ML.has(a.id)?"":f(cur(v.key,a.id))),[f(po)],actsG("rem").map(a=>v.ml?f(cur(v.key,a.id)):""),[m(circPct(v.key,"1")),m(circPct(v.key,"2")),m(cur(v.key,"tv_opg"))]).map(q).join(";"));}
+  L.push("");L.push("FUNDACIÓN GINE POLE (CRUCE)");L.push("Sector;"+actsG("gp").map(a=>a.nombre+" %").join(";")+";Total %");
+  for(const u of GP_UNITS)L.push([u.sector].concat(actsG("gp").map(a=>f(cur(kGP(u.id),a.id))),[f(gPct(cur,kGP(u.id),"gp"))]).map(q).join(";"));
   L.push("");L.push("RESUMEN");L.push("Sector;"+etapas().map(e=>e.nombre+" %").join(";")+";Total sector %");
   for(const s of secs()){const r=S.P.sec[s.id];L.push([s.nombre].concat(etapas().map(e=>f(r.stg[e.id]||0)),[f(r.pct)]).map(q).join(";"));}
   L.push(["LÍNEA (Continente + Cruce + Isla)"].concat(etapas().map(()=>""),[f(S.P.lineaPct)]).map(q).join(";"));
@@ -3747,6 +3818,7 @@ document.addEventListener("click",ev=>{
   if(ds.qp){S.drw.edit.pct=+ds.qp;render();return;}
   if(b.id==="q-save"){quickSave();return;}
   if(b.id==="q-cancel"){S.drw.edit=null;render();return;}
+  if(b.id==="gp-seed"){gpCargar();return;}
   if(ds.csv){descargarCSV();return;}
   if(ds.rsec){if(r.sec!==ds.rsec)S.reg=Object.assign(newReg(),{sec:ds.rsec});render();return;}
   if(ds.retapa){r.etapa=ds.retapa;r.grp=grpFor(ds.retapa,r.sec);r.act=null;keepSel();render();return;}
