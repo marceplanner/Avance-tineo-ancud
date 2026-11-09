@@ -511,6 +511,10 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 /* Reporte semanal */
 .rp-up{color:var(--good-ink)}
 table.rp td small{display:block;font-size:.72rem;color:var(--muted);font-weight:400;font-family:var(--f-body)}
+table.rp td small.crit{color:var(--crit-ink)}
+table.rp td small.warn{color:var(--warn-ink);font-weight:600}
+.kpic .kp{white-space:nowrap}
+.kpic .kp .kpl{font-family:var(--f-body);font-weight:400;font-size:.72rem;color:var(--muted)}
 table.rp td.rp-ids{white-space:normal;min-width:240px;max-width:560px;font-family:var(--f-mono);font-size:.78rem;color:var(--ink-2)}
 .rp-al{display:flex;flex-direction:column;gap:8px;border-left:3px solid var(--lib-res);padding-left:12px}
 .rp-al h3{font-size:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -989,20 +993,20 @@ function calcSec(get,sec){
   const es=estr(sec);const acc={pre:0,fun:0,mon:0,tto:0,otT:0};const cnt={sin:0,eje:0,ter:0};const byE={};const ind={per:0,acc:0,fun:0,mon:0};
   for(const e of es){const st=stE(get,sec,e);byE[e.id]=st;acc.pre+=st.pre;acc.fun+=st.fun;acc.mon+=st.mon;acc.tto+=st.tto;acc.otT+=st.otT;cnt[estado(st)]++;
     const k=kE(sec,e.id);if(get(k,"per")>=100)ind.per++;if(get(k,"acc")>=100)ind.acc++;if(st.fun>=99.95)ind.fun++;if(st.mon>=99.95)ind.mon++;}
-  const n=es.length||1;const vs=vanos(sec);const byV={};let vs2=0,vdone=0;
+  const n=es.length||1;const vs=vanos(sec);const byV={};let vs2=0,vdone=0,vten=0;
   /* Tendido por vano medido por distancia: cada vano pesa según su longitud (actualización de terreno).
      Un vano sin longitud (cruce) pesa como el promedio de los que sí la tienen; si ninguno la tiene, todos pesan igual */
   const known=vs.filter(v=>v.len!=null);const wDef=known.length?known.reduce((x,v)=>x+v.len,0)/known.length:1;let WV=0,vo2=0;const byO={};
   /* byV = conductor del vano (grupo tva); byO = OPGW del vano (grupo opg, carga aparte), los dos medidos por distancia.
      En los vanos a los marcos de línea, el conductor cuenta tendido (tva) y remates (rem) con los pesos del programa maestro (ML_REM) */
   let rs=0,rn=0;
-  for(const v of vs){const pt=gPct(get,v.key,"tva"),pr=v.ml?gPct(get,v.key,"rem"):0,p=v.ml?pt*(1-ML_REM)+pr*ML_REM:pt,po=lPct(get,v.key,opgDeVano(v));if(v.ml){rs+=pr;rn++;}byV[v.key]=p;byO[v.key]=po;const w=v.len!=null?v.len:wDef;WV+=w;vs2+=w*p;vo2+=w*po;if(p>=99.95)vdone++;}
+  for(const v of vs){const pt=gPct(get,v.key,"tva"),pr=v.ml?gPct(get,v.key,"rem"):0,p=v.ml?pt*(1-ML_REM)+pr*ML_REM:pt,po=lPct(get,v.key,opgDeVano(v));if(v.ml){rs+=pr;rn++;}byV[v.key]=p;byO[v.key]=po;const w=v.len!=null?v.len:wDef;WV+=w;vs2+=w*p;vo2+=w*po;if(p>=99.95)vdone++;if(circPct(v.key,"1",get)>=99.95&&circPct(v.key,"2",get)>=99.95)vten++;}
   /* OPGW del sector = torre (promedio de estructuras) y vano (por distancia), ponderados por el peso de sus actividades */
   const T=acc.tto/n,V=WV?vs2/WV:0,OT=acc.otT/n,OV=WV?vo2/WV:0;const sp=tenSplit(sec),hv=vs.length?1:0,ow=opgW(),owT=ow.t+hv*ow.v;
   const O=owT?(ow.t*OT+hv*ow.v*OV)/owT:0;
   const stg={pre:acc.pre/n,fun:sec==="cruce"?crFunGP(get,byE,acc.fun/n):acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+sp.o*O+hv*sp.v*V)/((sp.t+sp.o+hv*sp.v)||1),tenT:T,tenV:V,tenO:O,tenOT:OT,tenOV:OV,tenR:rn?rs/rn:0};
   let W=0,P=0;for(const et of etapas()){const w=pesoE(et.id,sec);W+=w;P+=w*(stg[et.id]||0);}
-  return {stg,pct:W?P/W:0,cnt,byE,byV,byO,ind,n:es.length,nv:vs.length,vdone,has:es.length>0};
+  return {stg,pct:W?P/W:0,cnt,byE,byV,byO,ind,n:es.length,nv:vs.length,vdone,vten,has:es.length>0};
 }
 function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of secs()){const r=calcSec(get,s.id);out.sec[s.id]=r;if(r.has){W+=s.peso;P+=s.peso*r.pct;}}
   /* La subestación Tineo es parte del proyecto: entra al global con su propio peso */
@@ -1440,21 +1444,21 @@ function vResumen(){
   const P=S.P;const sc=S.dash;const sel=sc==="total"?null:P.sec[sc];
   const tot=sel?sel.pct:P.total;
   let cnt={sin:0,eje:0,ter:0},N=0;for(const s of scopeSecs()){const c=P.sec[s.id].cnt;cnt.sin+=c.sin;cnt.eje+=c.eje;cnt.ter+=c.ter;N+=P.sec[s.id].n;}
-  let NV=0,VD=0;for(const s of scopeSecs()){NV+=P.sec[s.id].nv;VD+=P.sec[s.id].vdone;}
+  let NV=0,VD=0,VT=0;for(const s of scopeSecs()){NV+=P.sec[s.id].nv;VD+=P.sec[s.id].vdone;VT+=P.sec[s.id].vten;}
   const tp=tot.toFixed(1).split(".");
   let h=`<div class="stack">`;
   h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${sc==="total"?"proyecto, global ponderado":esc(secById(sc).nombre)}</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
-     <div class="sub">${sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VD} de ${NV} vanos tendidos</div></div>
+     <div class="sub">${sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VT} de ${NV} vanos tendidos (${VD} terminados)</div></div>
    <div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">Proyecto</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}">${esc(s.nombre)}</button>`).join("")}</div></div>
-   <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span><span class="d">${r.cnt.ter}/${r.n} estructuras · ${r.vdone}/${r.nv} vanos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
-   ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)"><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras</span><span class="d muted">Pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
+   <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span><span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
+   ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)" data-tip="S/E Tineo: mide solo las obras civiles (fundaciones, canaletas y drenajes) y las estructuras del patio registradas en la app. El avance real del programa de PINE incluye además ingeniería, suministros, permisos y obras preliminares; por eso es mayor."><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span><span class="d muted">Solo obras civiles y estructuras · pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
   if(S.canAdmin)h+=pgResumen();
   h+=kpiSection();
   h+=tendMetros();
   h+=`<section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades. El modelo de torre está en <button class="linkbtn" style="font-family:var(--f-body)" data-tab="linea">Pictograma de la línea</button>.</span></div>
    ${etapaTable()}
    ${S.dashEt?`<div class="stack" style="gap:6px"><div class="spread"><h3>${esc((etapaById(S.dashEt)||{}).nombre||"")} · actividades</h3><button class="btn small ghost" data-dashet="${S.dashEt}">Cerrar</button></div>${drillHtml(S.dashEt)}</div>`:""}</section>`;
-  h+=`<div class="grid2"><section class="panel stack"><h2>Estado de estructuras</h2>${estadoTable()}<p class="small muted">Terminada = montaje al 100 %. En ejecución = cualquier avance registrado.</p></section>
+  h+=`<div class="grid2"><section class="panel stack"><h2>Estado de estructuras</h2>${estadoTable()}<p class="small muted">Terminada = montaje al 100 %. En ejecución = cualquier avance registrado. Vano tendido = las seis fases de conductor al 100 %; vano terminado = todo el conductor del vano al 100 % (además flechado y separadores).</p></section>
     <section class="panel stack"><h2>Por contratista</h2>${contrTable()}</section></div>`;
   {const F=S.dashF;const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
   h+=`<section class="panel stack" style="gap:10px"><div class="spread"><h2>Detalle por estructura</h2><span class="small muted">${esc(amb)}${F.contr?" · contratista "+esc(F.contr):""} · usa los filtros de "Indicadores de avance"</span></div>${estMatrix()}</section>`;}
@@ -1465,20 +1469,21 @@ function vResumen(){
 const cls3=(c,p)=>{c.n++;if(p>=99.95)c.ter++;else if(p>0)c.eje++;else c.sin++;};
 const cnt0=()=>({n:0,ter:0,eje:0,sin:0});
 function kpiData(){
-  const F=S.dashF;const P=S.P;const out={tal:cnt0(),fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,opgw:0,mL:0,m1:0,m2:0,mP:0,talSum:0};
+  const F=S.dashF;const P=S.P;const out={tal:cnt0(),fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,cb:0,opgw:0,mL:0,m1:0,m2:0,mP:0,talSum:0};
   for(const s of scopeSecs()){const r=P.sec[s.id];
     for(const e of estr(s.id)){if(F.contr&&e.contr!==F.contr)continue;if(F.tt&&e.tt!==F.tt)continue;
       const st=r.byE[e.id];const k=kE(s.id,e.id);const tl=cur(k,"tal");
       cls3(out.tal,tl);out.talSum+=tl;cls3(out.fun,st.fun);cls3(out.mon,st.mon);cls3(out.acc,cur(k,"acc"));cls3(out.pat,patVal(s.id,e));}
     for(const v of vanos(s.id)){const eb=vanoEst(s.id,v)||{};if(F.contr&&eb.contr!==F.contr)continue;if(F.tt&&v.tt!==F.tt)continue;
-      cls3(out.ten,r.byV[v.key]||0);if(v.len!=null){out.mL+=v.len;out.mP+=v.len*(r.byV[v.key]||0)/100;out.m1+=v.len*circPct(v.key,"1")/100;out.m2+=v.len*circPct(v.key,"2")/100;}if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
+      cls3(out.ten,r.byV[v.key]||0);if(v.len!=null){out.mL+=v.len;out.mP+=v.len*(r.byV[v.key]||0)/100;out.m1+=v.len*circPct(v.key,"1")/100;out.m2+=v.len*circPct(v.key,"2")/100;}if(circPct(v.key,"1")>=99.95&&circPct(v.key,"2")>=99.95)out.cb++;if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
   return out;}
 /* pctOver: % propio de la tarjeta (tendido: avance medido por distancia en vez de vanos terminados / total) */
-function kpiCard(titulo,c,unidad,layer,nota,kind,pctOver){const pct=pctOver!=null?pctOver:c.n?c.ter/c.n*100:0;
-  return `<button class="kpic" data-kpi="${layer}" data-tip="${esc(`${titulo}\n${c.ter} terminadas · ${c.eje} en ejecución · ${c.sin} faltantes (de ${c.n})\nToca para verlo en el pictograma`)}">
-  <span class="kh"><span class="lbl">${esc(titulo)}</span><span class="kp ${pct>=99.95?"ok":""}">${fmtP(pct)}</span></span>
+/* el % de cada tarjeta dice qué mide: la parte terminada o, en el tendido, el avance por distancia */
+function kpiCard(titulo,c,unidad,layer,nota,kind,pctOver,masc){const pct=pctOver!=null?pctOver:c.n?c.ter/c.n*100:0;const ter=masc?"terminados":"terminadas",pl=pctOver!=null?"por distancia":ter;
+  return `<button class="kpic" data-kpi="${layer}" data-tip="${esc(`${titulo}\n${c.ter} ${ter} · ${c.eje} en ejecución · ${c.sin} faltantes (de ${c.n})\nToca para verlo en el pictograma`)}">
+  <span class="kh"><span class="lbl">${esc(titulo)}</span><span class="kp ${pct>=99.95?"ok":""}">${fmtP(pct)} <small class="kpl">${pl}</small></span></span>
   <span class="kbody"><svg class="mdl kicon" viewBox="0 0 92 62" aria-hidden="true">${kpiIcon(kind,pct)}</svg><span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span class="kv"><b class="num">${c.ter}</b><span class="of num">/ ${c.n}</span></span><span class="small" style="color:var(--ink-2)">${esc(unidad)}</span></span></span>
-  <span class="ktally"><span><b>${c.ter}</b> terminadas</span><span><b>${c.eje}</b> en ejecución</span><span><b>${c.sin}</b> faltan</span></span>
+  <span class="ktally"><span><b>${c.ter}</b> ${ter}</span><span><b>${c.eje}</b> en ejecución</span><span><b>${c.sin}</b> faltan</span></span>
   ${nota?`<span class="ks">${nota}</span>`:""}</button>`;}
 function kpiSection(){
   const F=S.dashF;const ess=[].concat(...scopeSecs().map(s=>estr(s.id)));
@@ -1496,7 +1501,7 @@ function kpiSection(){
   ${kpiCard("Mallas de puesta a tierra",K.pat,"mallas instaladas","pre",S.dash==="cruce"||S.dash==="total"?"En el cruce se toma la malla PAT de las patas.":"","pat")}
   ${kpiCard("Fundaciones",K.fun,"fundaciones hormigonadas","fun",S.dash==="cruce"||S.dash==="total"?"En el cruce se mide por pata (promedio de las 4).":"","fun")}
   ${kpiCard("Montaje de estructuras",K.mon,"estructuras montadas","mon","","mon")}
-  ${kpiCard("Tendido",K.ten,"vanos tendidos","ten",`Circuito 1: <b>${K.c1}</b>/${K.ten.n} · Circuito 2: <b>${K.c2}</b>/${K.ten.n} · OPGW: <b>${K.opgw}</b>/${K.ten.n} vanos${K.mL?`<br>Conductor tendido: C1 <b>${fmtKm(K.m1)}</b> · C2 <b>${fmtKm(K.m2)}</b> de ${fmtKm(K.mL)}<br>El % de la tarjeta es el avance medido por distancia.`:""}`,"ten",K.mL?K.mP/K.mL*100:null)}
+  ${kpiCard("Tendido",K.ten,"vanos con el conductor terminado","ten",`Vanos tendidos (seis fases): <b>${K.cb}</b>/${K.ten.n} · Circuito 1: <b>${K.c1}</b>/${K.ten.n} · Circuito 2: <b>${K.c2}</b>/${K.ten.n} · OPGW: <b>${K.opgw}</b>/${K.ten.n} vanos${K.mL?`<br>Conductor tendido: C1 <b>${fmtKm(K.m1)}</b> · C2 <b>${fmtKm(K.m2)}</b> de ${fmtKm(K.mL)}<br>El % de la tarjeta es el avance medido por distancia.`:""}`,"ten",K.mL?K.mP/K.mL*100:null,true)}
   </div></section>`;
   return h;}
 function stkSeg(c,n){if(!n)return "";const seg=k=>c[k]?`<i class="${k}" style="width:${c[k]/n*100}%">${c[k]/n>.06?c[k]:""}</i>`:"";return seg("ter")+seg("eje")+seg("sin");}
@@ -1549,7 +1554,7 @@ function tendMetros(){
   <h3 style="margin:4px 0 0">Tramos con tendido</h3>
   ${tram.length?`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Tramo de tendido</th><th>Estructuras con avance</th><th class="r">Vanos</th><th class="r">Longitud</th><th class="r">Avance</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th class="r">Vanos tendidos</th><th>Estado</th></tr></thead><tbody>
   ${tram.map(trT).join("")}<tr><td><b>Total</b></td><td class="small">${tram.length} ${tram.length===1?"tramo":"tramos"}</td><td class="r num"><b>${TT.n}</b></td><td class="r num"><b>${fmtM(TT.L)}</b></td><td class="r num"><b>${pc(TT.eq,TT.L)}</b></td><td class="r num"><b>${fmtM(TT.c1)}</b></td><td class="r num"><b>${fmtM(TT.c2)}</b></td><td class="r num"><b>${fmtM(TT.og)}</b></td><td class="r num"><b>${fmtM(TT.mb)}</b></td><td></td></tr></tbody></table></div>`:`<p class="muted small" style="margin:0">Aún no hay tendido registrado${F.contr?" para este contratista":""}.</p>`}
-  <p class="small muted" style="margin:0">Avance del tendido = Σ longitud del vano × avance del vano (piloto, conductores, OPGW, flechado y accesorios) ÷ longitud total. Conductor y OPGW = longitud × avance registrado de cada cable (conductor: promedio de sus tres fases). Vanos tendidos = vanos con las seis fases al 100 %; vanos terminados = todo el tendido al 100 %.${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
+  <p class="small muted" style="margin:0">Avance del tendido = Σ longitud del vano × avance del conductor en el vano (piloto, seis fases, flechado y separadores) ÷ longitud total; el OPGW se informa aparte. Conductor y OPGW = longitud × avance registrado de cada cable (conductor: promedio de sus tres fases). Vanos tendidos = vanos con las seis fases al 100 %; vanos terminados = todo el conductor del vano al 100 % (además flechado y separadores).${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
   return h;}
 /* Avance por etapa en cifras: % de cada etapa por sector y, con varios sectores, la línea ponderada por el peso de cada sector */
 function etapaTable(){
@@ -1564,11 +1569,11 @@ function etapaTable(){
   return h+`</tbody></table></div>`;
 }
 function estadoTable(){
-  const rows=scopeSecs().map(s=>({s,r:S.P.sec[s.id]}));const T={n:0,ter:0,eje:0,sin:0,nv:0,vd:0};
-  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Estructuras</th><th class="r">Terminadas</th><th class="r">En ejecución</th><th class="r">Sin iniciar</th><th class="r">Vanos tendidos</th></tr></thead><tbody>`;
-  for(const {s,r} of rows){T.n+=r.n;T.ter+=r.cnt.ter;T.eje+=r.cnt.eje;T.sin+=r.cnt.sin;T.nv+=r.nv;T.vd+=r.vdone;
-    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-dash="${s.id}">${esc(s.nombre)}</button></td><td class="r num">${r.n}</td><td class="r num"><b>${r.cnt.ter}</b></td><td class="r num">${r.cnt.eje}</td><td class="r num">${r.cnt.sin}</td><td class="r num">${r.vdone} / ${r.nv}</td></tr>`;}
-  if(rows.length>1)h+=`<tr><td><b>Total línea</b></td><td class="r num"><b>${T.n}</b></td><td class="r num"><b>${T.ter}</b></td><td class="r num"><b>${T.eje}</b></td><td class="r num"><b>${T.sin}</b></td><td class="r num"><b>${T.vd} / ${T.nv}</b></td></tr>`;
+  const rows=scopeSecs().map(s=>({s,r:S.P.sec[s.id]}));const T={n:0,ter:0,eje:0,sin:0,nv:0,vd:0,vt:0};
+  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Estructuras</th><th class="r">Terminadas</th><th class="r">En ejecución</th><th class="r">Sin iniciar</th><th class="r">Vanos tendidos</th><th class="r">Vanos terminados</th></tr></thead><tbody>`;
+  for(const {s,r} of rows){T.n+=r.n;T.ter+=r.cnt.ter;T.eje+=r.cnt.eje;T.sin+=r.cnt.sin;T.nv+=r.nv;T.vd+=r.vdone;T.vt+=r.vten;
+    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-dash="${s.id}">${esc(s.nombre)}</button></td><td class="r num">${r.n}</td><td class="r num"><b>${r.cnt.ter}</b></td><td class="r num">${r.cnt.eje}</td><td class="r num">${r.cnt.sin}</td><td class="r num">${r.vten} / ${r.nv}</td><td class="r num">${r.vdone} / ${r.nv}</td></tr>`;}
+  if(rows.length>1)h+=`<tr><td><b>Total línea</b></td><td class="r num"><b>${T.n}</b></td><td class="r num"><b>${T.ter}</b></td><td class="r num"><b>${T.eje}</b></td><td class="r num"><b>${T.sin}</b></td><td class="r num"><b>${T.vt} / ${T.nv}</b></td><td class="r num"><b>${T.vd} / ${T.nv}</b></td></tr>`;
   return h+`</tbody></table></div>`;
 }
 function contrTable(){
@@ -1597,7 +1602,7 @@ function estMatrix(){
   h+=`<tr><th class="rh"></th>${gTT.map(g=>`<th class="gh" colspan="${g.n}">${esc(g.n>=3?(g.c.e.tt||""):(g.c.e.tt||"").replace("Tramo ","T"))}</th>`).join("")}<th class="tot"></th></tr>`;
   h+=`<tr class="ids"><th class="rh lbl" style="vertical-align:bottom">Indicador</th>${cols.map(c=>`<th><button class="mxid" data-open="${c.s.id}|${esc(c.e.id)}" title="${esc(c.e.id)}">${esc(c.e.id)}</button></th>`).join("")}<th class="tot lbl" style="vertical-align:bottom">Listas</th></tr></thead><tbody>`;
   for(const R of rows){
-    h+=`<tr><th class="rh">${esc(R.r.t)}<small>${R.ok}/${R.n} al 100% · ${fmtP(R.avg)}</small></th>`;
+    h+=`<tr><th class="rh">${esc(R.r.t)}<small>${R.ok}/${R.n} al 100 % · promedio ${fmtP(R.avg)}</small></th>`;
     R.cells.forEach((v,i)=>{const c=cols[i];
       if(v==null){h+=`<td class="c na"></td>`;return;}
       const cls=v>=99.95?"ok":v>0?"p":"";
@@ -3009,7 +3014,7 @@ function vProgramas(){
   if(!ps.length)return h+`<p class="muted" style="margin:0">Aún no hay programas cargados.${S.canAdmin?"":" Un administrador debe cargarlos."}</p></section></div>`;
   h+=`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista · programa</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Índice</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas alta / media</th></tr></thead><tbody>
   ${ps.map(P=>{const k=progKey(P.contr),M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length,nm=X.al.filter(a=>a.sev==="media").length;
-    return `<tr${G.sel===k?` class="on"`:""}><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(k)}">${esc(progName(P.contr))}</button><small>${esc(P.titulo||P.archivo||"")}</small></td><td class="r num">${pgD(P.estado)}</td><td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgIdxTxt(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"} / ${nm}</td></tr>`;}).join("")}</tbody></table></div>
+    return `<tr${G.sel===k?` class="on"`:""}><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(k)}">${esc(progName(P.contr))}</button><small>${esc(P.titulo||P.archivo||"")}</small></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgIdxTxt(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"} / ${nm}</td></tr>`;}).join("")}</tbody></table></div>
   <p class="small muted" style="margin:0">Programado = Texto28 y avance real = Texto27 de cada programa, a su fecha de estado, ponderados con los pesos del contratista. Índice = avance real ÷ programado (1,00 = al día). Terreno = lo registrado en la app en las tareas que tienen equivalente, junto al avance real que el programa informa para esas mismas tareas. Toca un contratista para ver su detalle.</p></section>`;
   const P=S.prog.get(G.sel);if(P)h+=pgDetalle(P);
   return h+`</div>`;}
@@ -3049,11 +3054,14 @@ function pgDetalle(P){const G=S.pg,M=pgModel(P),X=pgNow(P),A=X.agg,T0=M.tot,R=M.
   if((P.revs||[]).length)h+=`<section class="panel stack"><h2>Revisiones cargadas</h2><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Archivo</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Término vigente</th><th class="r">Término línea base</th><th>Cargado</th></tr></thead><tbody>${P.revs.map(v=>`<tr><td>${esc(v.archivo||"")}</td><td class="r num">${pgD(v.estado)}</td><td class="r num">${fmtP(v.p28,1)}</td><td class="r num"><b>${fmtP(v.r27!=null?v.r27:v.decl,1)}</b></td><td class="r num">${pgD(v.fin)}</td><td class="r num">${pgD(v.finLB)}</td><td class="small">${pgD(v.fecha)}${v.por?" · "+esc(v.por):""}</td></tr>`).join("")}</tbody></table></div></section>`;
   return h;}
 /* Resumen: programado frente a avance real de cada contratista (de su programa) y lo registrado en terreno */
+/* fecha de estado de un programa con su antigüedad; sobre 14 días se marca, igual que la alerta «Programa sin actualizar» */
+function pgEdadTd(P){const e=pgMs(P.estado);if(!isFinite(e))return `<td class="r num">—</td>`;const dd=Math.max(0,Math.floor((Date.now()-e)/PG_DAY));
+  return `<td class="r num">${pgD(P.estado)}<small class="${dd>14?"warn":""}">${dd>14?"sin actualizar · ":""}hace ${dd} día${dd===1?"":"s"}</small></td>`;}
 function pgResumen(){const ps=progs();if(!ps.length)return "";
   return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
   ${ps.map(P=>{const M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length;
-    return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td><td class="r num">${pgD(P.estado)}</td><td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div>
-  <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de cada programa a su fecha de estado. Terreno = lo registrado en la app en las tareas con equivalente, junto al avance real que el programa informa para ellas.</p></section>`;}
+    return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de cada programa a su fecha de estado. Terreno = lo registrado en la app en las tareas con equivalente, junto al avance real que el programa informa para ellas. En la S/E Tineo el % del Resumen mide solo obras civiles y estructuras del patio; el programa de PINE suma además ingeniería, suministros, permisos y obras preliminares, por eso su avance real es mayor.</p></section>`;}
 
 /* ---------- Reporte semanal ---------- */
 /* Compara el avance al cierre del día anterior al período con el avance al último día del período. El avance a una fecha se
