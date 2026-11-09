@@ -895,7 +895,7 @@ async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||
 
 /* ---------- modelo ---------- */
 const cfgOk=()=>!!(S.cfg&&S.cfg.v===2);
-function secs(){const c=S.cfg;return SECTORES_BASE.map(b=>{const x=((c&&c.sectores)||[]).find(s=>s.id===b.id)||{};return {id:b.id,nombre:x.nombre||b.nombre,peso:num(x.peso,1),desc:x.desc||""};});}
+function secs(){const c=S.cfg;return SECTORES_BASE.map(b=>{const x=((c&&c.sectores)||[]).find(s=>s.id===b.id)||{};return {id:b.id,nombre:x.nombre||b.nombre,peso:num(x.peso,1),desc:x.desc||"",ep:x.ep||null,ts:x.ts||null};});}
 const secById=id=>secs().find(s=>s.id===id);
 const acts=()=>((S.cfg&&S.cfg.actividades)||[]);
 let GC={cfg:null,uni:null,m:{},v:{}};
@@ -924,7 +924,11 @@ const grupos=()=>((S.cfg&&S.cfg.grupos)||[]);
 const grupoById=id=>grupos().find(g=>g.id===id)||{id,nombre:id};
 const etapas=()=>((S.cfg&&S.cfg.etapas)||[]);
 const etapaById=id=>etapas().find(e=>e.id===id);
-const pesoE=id=>{const x=etapaById(id);return x?num(x.peso,0):0;};
+/* Peso de una etapa en un sector. Cada sector trae su propio reparto (campo "ep" del sector), tomado del programa de su
+   contratista (Texto30): Continente, programa maestro STN4324-DK-PM-C-0001 (Elecnor); Cruce, CSTC; Isla, Globaltec.
+   Si un sector no lo trae, rige el peso general de la etapa */
+const secCfg=sec=>sec?(((S.cfg&&S.cfg.sectores)||[]).find(s=>s.id===sec)||null):null;
+const pesoE=(id,sec)=>{const c=secCfg(sec),v=c&&c.ep?num(c.ep[id],NaN):NaN;if(isFinite(v))return v;const x=etapaById(id);return x?num(x.peso,0):0;};
 const allEst=()=>((S.uni&&S.uni.estructuras)||[]);
 const estr=sec=>{const c=gc();const k="e_"+sec;return c.m[k]||(c.m[k]=allEst().filter(e=>e.sec===sec));};
 const estById=(sec,id)=>estr(sec).find(e=>e.id===id);
@@ -957,13 +961,15 @@ const vanoEst=(sec,v)=>estById(sec,v.b)||estById(sec,v.a);
 const vanoFicha=(sec,v)=>estById(sec,v.a)?v.a:v.b;
 /* actividades de OPGW que corresponden a un vano */
 const opgDeVano=v=>v.ml?actsG("opg").filter(a=>!OPG_NO_ML.has(a.id)):actsG("opg");
-function tenSplit(){const e=etapaById("ten")||{};const t=num(e.torre,30),v=num(e.vano,70),o=num(e.opgw,0);return {t,v,o,s:(t+v+o)||1};}
+/* reparto del tendido (conductor en torre, conductor en vano y OPGW) de un sector: el suyo (campo "ts") o el general */
+function tenSplit(sec){const e=etapaById("ten")||{},c=secCfg(sec),x=(c&&c.ts)||{};const t=num(x.torre,num(e.torre,30)),v=num(x.vano,num(e.vano,70)),o=num(x.opgw,num(e.opgw,0));return {t,v,o,s:(t+v+o)||1};}
 const condActs=()=>actsG("tva").filter(a=>a.circ);
 
 function lPct(get,key,L){let W=0,P=0;for(const a of L){const w=num(a.peso,0);W+=w;P+=w*get(key,a.id);}return W?P/W:0;}
 function gPct(get,key,g){return lPct(get,key,actsG(g));}
 function stE(get,sec,e){
-  const k=kE(sec,e.id);const pre=gPct(get,k,"pre"),mon=gPct(get,k,"mon"),tto=gPct(get,k,"tto"),otT=gPct(get,k,"opt");let fun=0,fg=null;
+  const k=kE(sec,e.id);/* en el cruce la malla PAT se mide por pata, dentro de la fundación: no entra a las obras preliminares de la torre */
+  const pre=sec==="cruce"?lPct(get,k,actsG("pre").filter(a=>a.id!=="pat")):gPct(get,k,"pre"),mon=gPct(get,k,"mon"),tto=gPct(get,k,"tto"),otT=gPct(get,k,"opt");let fun=0,fg=null;
   const ps=sec==="cruce"?patas(e.id):[];
   if(ps.length){fun=ps.reduce((x,p)=>x+gPct(get,kP(sec,e.id,p.pata),"cr"),0)/ps.length;fg="cr";}
   else{for(const g of FUNG){const v=gPct(get,k,g);if(v>fun){fun=v;fg=g;}}if(!fg)fg=e.fund||null;}
@@ -972,8 +978,8 @@ function stE(get,sec,e){
 /* peso de las actividades del OPGW en la torre (t) y en el vano (v); suman 100 entre las dos */
 const opgW=()=>{const c=gc();return c.m.opgW||(c.m.opgW={t:actsG("opt").reduce((x,a)=>x+num(a.peso,0),0),v:actsG("opg").reduce((x,a)=>x+num(a.peso,0),0)});};
 /* tendido en la torre de una estructura: conductor (tto) y OPGW en la torre (otT), con su parte del reparto de la etapa */
-function tenTorre(st){const sp=tenSplit(),ow=opgW(),ot=(ow.t+ow.v)?sp.o*ow.t/(ow.t+ow.v):0;return (sp.t+ot)?(sp.t*st.tto+ot*(st.otT||0))/(sp.t+ot):st.tto;}
-function totE(st){const w={pre:pesoE("pre"),fun:pesoE("fun"),mon:pesoE("mon"),ten:pesoE("ten")};const W=w.pre+w.fun+w.mon+w.ten;return W?(w.pre*st.pre+w.fun*st.fun+w.mon*st.mon+w.ten*tenTorre(st))/W:0;}
+function tenTorre(st,sec){const sp=tenSplit(sec),ow=opgW(),ot=(ow.t+ow.v)?sp.o*ow.t/(ow.t+ow.v):0;return (sp.t+ot)?(sp.t*st.tto+ot*(st.otT||0))/(sp.t+ot):st.tto;}
+function totE(st,sec){const w={pre:pesoE("pre",sec),fun:pesoE("fun",sec),mon:pesoE("mon",sec),ten:pesoE("ten",sec)};const W=w.pre+w.fun+w.mon+w.ten;return W?(w.pre*st.pre+w.fun*st.fun+w.mon*st.mon+w.ten*tenTorre(st,sec))/W:0;}
 function estado(st){if(st.mon>=99.95)return "ter";if(st.pre+st.fun+st.mon+st.tto+(st.otT||0)<=0)return "sin";return "eje";}
 /* fundaciones del cruce: promedio de sus dos sectores, cada uno con sus torres y su Gine Pole */
 function crFunGP(get,byE,def){
@@ -992,10 +998,10 @@ function calcSec(get,sec){
   let rs=0,rn=0;
   for(const v of vs){const pt=gPct(get,v.key,"tva"),pr=v.ml?gPct(get,v.key,"rem"):0,p=v.ml?pt*(1-ML_REM)+pr*ML_REM:pt,po=lPct(get,v.key,opgDeVano(v));if(v.ml){rs+=pr;rn++;}byV[v.key]=p;byO[v.key]=po;const w=v.len!=null?v.len:wDef;WV+=w;vs2+=w*p;vo2+=w*po;if(p>=99.95)vdone++;}
   /* OPGW del sector = torre (promedio de estructuras) y vano (por distancia), ponderados por el peso de sus actividades */
-  const T=acc.tto/n,V=WV?vs2/WV:0,OT=acc.otT/n,OV=WV?vo2/WV:0;const sp=tenSplit(),hv=vs.length?1:0,ow=opgW(),owT=ow.t+hv*ow.v;
+  const T=acc.tto/n,V=WV?vs2/WV:0,OT=acc.otT/n,OV=WV?vo2/WV:0;const sp=tenSplit(sec),hv=vs.length?1:0,ow=opgW(),owT=ow.t+hv*ow.v;
   const O=owT?(ow.t*OT+hv*ow.v*OV)/owT:0;
   const stg={pre:acc.pre/n,fun:sec==="cruce"?crFunGP(get,byE,acc.fun/n):acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+sp.o*O+hv*sp.v*V)/((sp.t+sp.o+hv*sp.v)||1),tenT:T,tenV:V,tenO:O,tenOT:OT,tenOV:OV,tenR:rn?rs/rn:0};
-  let W=0,P=0;for(const et of etapas()){const w=num(et.peso,0);W+=w;P+=w*(stg[et.id]||0);}
+  let W=0,P=0;for(const et of etapas()){const w=pesoE(et.id,sec);W+=w;P+=w*(stg[et.id]||0);}
   return {stg,pct:W?P/W:0,cnt,byE,byV,byO,ind,n:es.length,nv:vs.length,vdone,has:es.length>0};
 }
 function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of secs()){const r=calcSec(get,s.id);out.sec[s.id]=r;if(r.has){W+=s.peso;P+=s.peso*r.pct;}}
@@ -1499,7 +1505,7 @@ function drillHtml(et,list){
   for(const s of list){const r=S.P.sec[s.id];const es=estr(s.id);const pre=()=>list.length>1?s.nombre+" · ":"";
     const avgAct=(keys,aid)=>keys.length?keys.reduce((x,k)=>x+cur(k,aid),0)/keys.length:0;
     const kes=es.map(e=>kE(s.id,e.id));
-    if(et==="pre"||et==="mon"){for(const a of actsG(et))rows.push({t:pre()+a.nombre,v:avgAct(kes,a.id),c:s.id});}
+    if(et==="pre"||et==="mon"){for(const a of actsG(et)){if(et==="pre"&&s.id==="cruce"&&a.id==="pat")continue;rows.push({t:pre()+a.nombre,v:avgAct(kes,a.id),c:s.id});}}
     else if(et==="fun"){if(s.id==="cruce"){const kp=[];for(const e of es)for(const p of patas(e.id))kp.push(kP(s.id,e.id,p.pata));for(const a of actsG("cr"))rows.push({t:pre()+a.nombre+" (patas)",v:avgAct(kp,a.id),c:s.id});
         for(const a of actsG("gp"))rows.push({t:pre()+"Gine Pole · "+a.nombre,v:avgAct(GP_UNITS.map(u=>kGP(u.id)),a.id),c:s.id});}
       else for(const g of FUNG){const eg=es.filter(e=>(r.byE[e.id].fg||e.fund)===g);if(!eg.length)continue;rows.push({t:pre()+grupoById(g).nombre+" ("+eg.length+")",v:eg.reduce((x,e)=>x+r.byE[e.id].fun,0)/eg.length,c:s.id});}}
@@ -1548,11 +1554,13 @@ function tendMetros(){
 /* Avance por etapa en cifras: % de cada etapa por sector y, con varios sectores, la línea ponderada por el peso de cada sector */
 function etapaTable(){
   const list=scopeSecs().filter(s=>S.P.sec[s.id].has);const many=list.length>1;const WS=list.reduce((x,s)=>x+s.peso,0)||1;
-  const lin=et=>list.reduce((x,s)=>x+s.peso*(S.P.sec[s.id].stg[et]||0),0)/WS;const sp=tenSplit();
-  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th><th class="r">Peso</th>${list.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea</th>`:""}</tr></thead><tbody>`;
+  const lin=et=>list.reduce((x,s)=>x+s.peso*(S.P.sec[s.id].stg[et]||0),0)/WS;
+  /* cada sector pondera sus etapas con el programa de su contratista: el peso va bajo el avance del sector */
+  const pw=(id,s)=>{const w=pesoE(id,s.id);return `<small class="muted" style="display:block;font-weight:400">pesa ${fmtP(w,w%1!==0)}</small>`;};
+  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${list.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea</th>`:""}</tr></thead><tbody>`;
   for(const e of etapas()){const on=S.dashEt===e.id;
-    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button>${e.id==="ten"?`<span class="small muted"> · conductor en torre ${fmtP(sp.t,sp.t%1!==0)} / conductor en vano ${fmtP(sp.v,sp.v%1!==0)} / OPGW ${fmtP(sp.o,sp.o%1!==0)} (torre y vano, como el programa maestro); vanos medidos por distancia</span>`:""}</td><tdclass="r num">${fmtP(num(e.peso,0))}</td>${list.map(s=>`<td class="r num">${fmtP(S.P.sec[s.id].stg[e.id]||0,1)}</td>`).join("")}${many?`<td class="r num"><b>${fmtP(lin(e.id),1)}</b></td>`:""}</tr>`;}
-  h+=`<tr><td><b>Avance ponderado</b></td><td class="r num">${fmtP(etapas().reduce((x,e)=>x+num(e.peso,0),0))}</td>${list.map(s=>`<td class="r num"><b>${fmtP(S.P.sec[s.id].pct,1)}</b></td>`).join("")}${many?`<td class="r num"><b>${fmtP(S.P.lineaPct,1)}</b></td>`:""}</tr>`;
+    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button>${e.id==="ten"?`<span class="small muted"> · conductor en torre, conductor en vano y OPGW con el reparto del programa de cada contratista; vanos medidos por distancia</span>`:""}</td>${list.map(s=>`<td class="r num">${fmtP(S.P.sec[s.id].stg[e.id]||0,1)}${pw(e.id,s)}</td>`).join("")}${many?`<td class="r num"><b>${fmtP(lin(e.id),1)}</b></td>`:""}</tr>`;}
+  h+=`<tr><td><b>Avance ponderado</b></td>${list.map(s=>`<td class="r num"><b>${fmtP(S.P.sec[s.id].pct,1)}</b></td>`).join("")}${many?`<td class="r num"><b>${fmtP(S.P.lineaPct,1)}</b></td>`:""}</tr>`;
   return h+`</tbody></table></div>`;
 }
 function estadoTable(){
@@ -1564,7 +1572,7 @@ function estadoTable(){
   return h+`</tbody></table></div>`;
 }
 function contrTable(){
-  const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){const k=e.contr||"Sin contratista";const st=S.P.sec[s.id].byE[e.id];if(!m.has(k))m.set(k,{n:0,t:0,ter:0,f:0});const x=m.get(k);x.n++;x.t+=totE(st);if(estado(st)==="ter")x.ter++;if(st.fun>=99.95)x.f++;}
+  const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){const k=e.contr||"Sin contratista";const st=S.P.sec[s.id].byE[e.id];if(!m.has(k))m.set(k,{n:0,t:0,ter:0,f:0});const x=m.get(k);x.n++;x.t+=totE(st,s.id);if(estado(st)==="ter")x.ter++;if(st.fun>=99.95)x.f++;}
   const rows=[...m].sort((a,b)=>b[1].n-a[1].n);
   return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio</th></tr></thead><tbody>${rows.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${fmtP(x.t/x.n,1)}</td></tr>`).join("")}</tbody></table></div>`;
 }
@@ -1824,7 +1832,7 @@ function vDrawer(){
   const vs=vanosOf(sec,e.id);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Estructura ${esc(e.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor(sec)}"></span>${esc(secById(sec).nombre)} · ${esc(e.tt||"")}</span><h2>Estructura <span class="mono">${esc(e.id)}</span></h2>${estHtml(estado(st))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
   h+=`<div class="meta"><div><span>Tipo</span>${esc(e.tipo||"—")}</div><div><span>Torre</span><b class="mono">${esc(e.torre||"—")}</b></div><div><span>Contratista</span>${esc(e.contr||"—")}</div><div><span>Vértice</span>${esc(vertice(e.id)||"—")}</div><div><span>Liberación</span><button class="linkbtn" style="font-family:var(--f-body);text-align:left" data-libopen="${esc(kLibE(sec,e.id))}">${LIB_GEN[libGen(kLibE(sec,e.id))].t}</button></div><div><span>Fundación</span>${(()=>{const g=st.fun>0?st.fg:(sec==="cruce"?st.fg:(D.fgSel||e.fund||null));return g?esc(grupoById(g).nombre):"Sin definir";})()}</div></div>`;
-  h+=`<div class="rings">${[["Prelim.",st.pre],["Fundación",st.fun],["Montaje",st.mon],["Tend. torre",tenTorre(st)],["Total",totE(st)]].map(([t,v],i)=>`<span class="stack" style="gap:2px;align-items:center">${ring(v,68,i===4?"var(--accent)":"var(--seq-hi)")}<span class="small muted">${t}</span></span>`).join("")}</div>`;
+  h+=`<div class="rings">${[["Prelim.",st.pre],["Fundación",st.fun],["Montaje",st.mon],["Tend. torre",tenTorre(st,sec)],["Total",totE(st,sec)]].map(([t,v],i)=>`<span class="stack" style="gap:2px;align-items:center">${ring(v,68,i===4?"var(--accent)":"var(--seq-hi)")}<span class="small muted">${t}</span></span>`).join("")}</div>`;
   h+=`<div class="note small">Toca una actividad para registrar su avance acumulado.</div>`;
   h+=`<div class="agrp"><h3><span>Obras preliminares</span><span class="num">${fmtP(st.pre,1)}</span></h3>${actRows(k,"pre")}</div>`;
   if(sec==="cruce"&&patas(e.id).length){const ps=patas(e.id);const p=ps.find(x=>x.pata===D.pata)||ps[0];const kp=kP(sec,e.id,p.pata);
@@ -2078,7 +2086,7 @@ function vEstructuras(){
   <div class="tbl-wrap" style="max-height:640px"><table><thead><tr><th>N°</th><th>Vértice</th><th>Tramo</th><th>Tipo</th><th>Torre</th><th>Contratista</th><th class="r">Prelim.</th><th class="r">Fundación</th><th class="r">Montaje</th><th class="r">Tend. torre</th><th class="r">Vano sig. (m)</th><th class="r">Vano sig.</th><th class="r">Total</th><th>Estado</th></tr></thead><tbody>`;
   const all=estr(sid);
   for(const e of es){const st=r.byE[e.id];const i=all.indexOf(e);const nx=all[i+1];const v=nx?vanoBetween(sid,e.id,nx.id):vanos(sid).find(z=>z.ml&&z.a===e.id)||null;
-    h+=`<tr><td><button class="linkbtn" data-open="${sid}|${esc(e.id)}">${esc(e.id)}</button></td><td class="mono small">${esc(vertice(e.id))}</td><td class="muted">${esc(e.tt||"")}</td><td>${esc(e.tipo||"")}</td><td class="mono small">${esc(e.torre||"")}</td><td class="small">${esc(e.contr||"")}</td>${heatTd(st.pre)}${heatTd(st.fun,`${Math.round(st.fun)}${st.fg?`<small>${ABBR[st.fg]}</small>`:""}`)}${heatTd(st.mon)}${heatTd(st.tto)}<td class="r num small">${v&&v.len!=null?Math.round(v.len).toLocaleString("es-CL"):"—"}</td>${v?heatTd(r.byV[v.key]||0):`<td class="r muted">—</td>`}<td class="r num"><b>${fmtP(totE(st))}</b></td><td>${estHtml(estado(st))}</td></tr>`;}
+    h+=`<tr><td><button class="linkbtn" data-open="${sid}|${esc(e.id)}">${esc(e.id)}</button></td><td class="mono small">${esc(vertice(e.id))}</td><td class="muted">${esc(e.tt||"")}</td><td>${esc(e.tipo||"")}</td><td class="mono small">${esc(e.torre||"")}</td><td class="small">${esc(e.contr||"")}</td>${heatTd(st.pre)}${heatTd(st.fun,`${Math.round(st.fun)}${st.fg?`<small>${ABBR[st.fg]}</small>`:""}`)}${heatTd(st.mon)}${heatTd(st.tto)}<td class="r num small">${v&&v.len!=null?Math.round(v.len).toLocaleString("es-CL"):"—"}</td>${v?heatTd(r.byV[v.key]||0):`<td class="r muted">—</td>`}<td class="r num"><b>${fmtP(totE(st,sid))}</b></td><td>${estHtml(estado(st))}</td></tr>`;}
   if(!es.length)h+=`<tr><td colspan="14" class="muted">No hay estructuras con esos filtros.</td></tr>`;
   return h+`</tbody></table></div></section></div>`;
 }
@@ -3092,7 +3100,7 @@ function repCalc(){const R=S.rep;
   const PR={acc:pr("Caminos de acceso","caminos construidos"),pat:pr("Mallas de puesta a tierra","mallas instaladas"),fun:pr("Fundaciones","fundaciones terminadas"),mon:pr("Montaje de estructuras","estructuras montadas")};
   for(const s of secs())for(const e of estr(s.id)){const a=P0.sec[s.id].byE[e.id],b=P1.sec[s.id].byE[e.id],k=kE(s.id,e.id);
     const v0={acc:g0(k,"acc"),pat:patVal(s.id,e,g0),fun:a.fun,mon:a.mon},v1={acc:g1(k,"acc"),pat:patVal(s.id,e,g1),fun:b.fun,mon:b.mon};
-    const r=cRow(e.contr||"Sin contratista");r.n++;r.t0+=totE(a);r.t1+=totE(b);
+    const r=cRow(e.contr||"Sin contratista");r.n++;r.t0+=totE(a,s.id);r.t1+=totE(b,s.id);
     for(const i in PR){const p=PR[i];p.n++;if(v1[i]>=99.95)p.acum++;
       if(v0[i]<99.95&&v1[i]>=99.95){p.ter.push(e.id);if(i==="fun")r.fun++;if(i==="mon")r.mon++;}else if(v0[i]<=0&&v1[i]>0)p.ini.push(e.id);}}
   const VC=pr("Tendido de conductor","vanos con las seis fases tendidas"),VO=pr("Tendido de OPGW","vanos con OPGW tendido"),VT=pr("Vanos terminados","vanos con conductor y OPGW completos (todas sus actividades)");VC.ini=VO.ini=null;
@@ -3399,8 +3407,8 @@ function repDetalle(x){
    const fila=(t,c,a,b,w)=>`<tr><td>${c?`<span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${c}"></span>${esc(t)}</span>`:`<b>${esc(t)}</b>`}</td><td class="r num">${w!=null?fmtP(w,1):""}</td><td class="r num">${fmtP(a,1)}</td><td class="r num"><b>${fmtP(b,1)}</b></td><td class="r num">${ppHtml(b-a)}</td><td class="r num">${w!=null?ppTxt(w/100*(b-a)):""}</td></tr>`;
    h+=`<section class="panel stack"><h2>Avance físico</h2><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Parte</th><th class="r">Pondera</th><th class="r">Al ${f0}</th><th class="r">Al ${f1}</th><th class="r">Avance del período</th><th class="r">Aporte al global</th></tr></thead><tbody>
    ${list.map(s=>fila(s.nombre,secColor(s.id),P0.sec[s.id].pct,P1.sec[s.id].pct,pesoShare(s.peso))).join("")}${fila("S/E Tineo · "+SE_CONTRATISTA,"var(--c-se)",P0.se.total,P1.se.total,pesoShare(pesoSE()))}${fila("Línea (Continente, Cruce e Isla)",null,P0.lineaPct,P1.lineaPct,null)}${fila("Proyecto, global ponderado",null,P0.total,P1.total,100)}</tbody></table></div>
-   <span class="lbl">Línea por etapa</span><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Etapa</th><th class="r">Peso</th>${list.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}<th class="r">Línea al ${f0}</th><th class="r">Línea al ${f1}</th><th class="r">Período</th></tr></thead><tbody>
-   ${etapas().map(e=>{const a=lin(P0,e.id),b=lin(P1,e.id);return `<tr><td>${esc(e.nombre)}</td><td class="r num">${fmtP(num(e.peso,0))}</td>${list.map(s=>{const u=P0.sec[s.id].stg[e.id]||0,v=P1.sec[s.id].stg[e.id]||0;return `<td class="r num">${fmtP(v,1)}<small>${ppTxt(v-u)}</small></td>`;}).join("")}<td class="r num">${fmtP(a,1)}</td><td class="r num"><b>${fmtP(b,1)}</b></td><td class="r num">${ppHtml(b-a)}</td></tr>`;}).join("")}
+   <span class="lbl">Línea por etapa</span><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Etapa</th><th class="r">Peso por sector</th>${list.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}<th class="r">Línea al ${f0}</th><th class="r">Línea al ${f1}</th><th class="r">Período</th></tr></thead><tbody>
+   ${etapas().map(e=>{const a=lin(P0,e.id),b=lin(P1,e.id);return `<tr><td>${esc(e.nombre)}</td><td class="r num">${list.map(s=>{const w=pesoE(e.id,s.id);return fmtP(w,w%1!==0);}).join(" · ")}</td>${list.map(s=>{const u=P0.sec[s.id].stg[e.id]||0,v=P1.sec[s.id].stg[e.id]||0;return `<td class="r num">${fmtP(v,1)}<small>${ppTxt(v-u)}</small></td>`;}).join("")}<td class="r num">${fmtP(a,1)}</td><td class="r num"><b>${fmtP(b,1)}</b></td><td class="r num">${ppHtml(b-a)}</td></tr>`;}).join("")}
    <tr><td><b>Avance ponderado</b></td><td></td>${list.map(s=>`<td class="r num"><b>${fmtP(P1.sec[s.id].pct,1)}</b><small>${ppTxt(P1.sec[s.id].pct-P0.sec[s.id].pct)}</small></td>`).join("")}<td class="r num">${fmtP(P0.lineaPct,1)}</td><td class="r num"><b>${fmtP(P1.lineaPct,1)}</b></td><td class="r num">${ppHtml(P1.lineaPct-P0.lineaPct)}</td></tr></tbody></table></div>
    <p class="small muted" style="margin:0">El avance a cada fecha se rehace con el historial: en cada actividad vale el registro con la fecha más reciente hasta ese día, igual que en el resto de la app. Aporte al global = avance del período × lo que pondera la parte. En las columnas por sector, la cifra chica es la variación del período.</p></section>`;}
   /* programado vs real por contratista (programas cargados) */
@@ -3553,7 +3561,7 @@ async function repEnviar(prueba){const n=n8nCfg();if(!n||!n.url||S.rep.env)retur
 
 /* ---------- Configuración (solo administradores) ---------- */
 function makeDraft(){const c=S.cfg||{};
-  return {nombre:c.nombre||"",codigo:c.codigo||"",tension:c.tension||"",pesoSE:pesoSE(),sectores:secs().map(s=>Object.assign({},s)),etapas:etapas().map(e=>Object.assign({},e)),
+  return {nombre:c.nombre||"",codigo:c.codigo||"",tension:c.tension||"",pesoSE:pesoSE(),sectores:secs().map(s=>Object.assign({},s,{ep:Object.assign(Object.fromEntries(etapas().map(e=>[e.id,num(e.peso,0)])),s.ep||{}),ts:Object.assign((t=>({torre:num(t.torre,30),vano:num(t.vano,70),opgw:num(t.opgw,0)}))(etapaById("ten")||{}),s.ts||{})})),etapas:etapas().map(e=>Object.assign({},e)),
     actividades:acts().map(a=>Object.assign({},a)),vanos:Object.fromEntries(SECTORES_BASE.map(b=>[b.id,vanos(b.id).filter(v=>!v.ml).map(v=>v.a+"; "+v.b).join("\n")]))};}
 function sumTxt(v){return `<span class="num ${Math.abs(v-100)>.01?"warnline":"muted"} small">Suma: ${String(Math.round(v*10)/10).replace(".",",")}%${Math.abs(v-100)>.01?" (debería ser 100%)":""}</span>`;}
 function vConfig(){
@@ -3570,10 +3578,19 @@ function vConfig(){
   <div class="form-grid"><div class="field"><label for="i-gen">Matriz general (CSV)</label><input id="i-gen" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="i-cru">Matriz cruce (CSV)</label><input id="i-cru" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="i-fecha">Fecha de corte</label><input id="i-fecha" type="date" max="${today()}" value="${today()}"></div></div>
   <div class="row"><button class="btn" id="i-run" ${busy?"disabled":""}>Importar archivos</button></div></section>`;
   h+=`<section class="panel stack"><h2>Proyecto</h2><div class="form-grid"><div class="field"><label for="c-nombre">Nombre</label><input id="c-nombre" type="text" data-cf="nombre" value="${esc(d.nombre)}"></div><div class="field"><label for="c-codigo">Código</label><input id="c-codigo" type="text" data-cf="codigo" value="${esc(d.codigo)}"></div><div class="field"><label for="c-tension">Descripción corta</label><input id="c-tension" type="text" data-cf="tension" value="${esc(d.tension)}"></div></div></section>`;
-  const ss=d.sectores.reduce((x,s)=>x+num(s.peso,0),0)+num(d.pesoSE,0),es=d.etapas.reduce((x,e)=>x+num(e.peso,0),0);const ten=d.etapas.find(e=>e.id==="ten")||{};
+  const ss=d.sectores.reduce((x,s)=>x+num(s.peso,0),0)+num(d.pesoSE,0);
   h+=`<section class="panel stack"><div class="spread"><h2>Peso en el avance global del proyecto</h2>${sumTxt(ss)}</div><p class="muted small">Ponderador de cada parte en el % global del Resumen. Idealmente según el valorizado del contrato. Si no suman 100, la app los normaliza igual.</p><div class="form-grid">${d.sectores.map((s,i)=>`<div class="field"><label for="c-sp-${s.id}">${esc(s.nombre)} (%)</label><input id="c-sp-${s.id}" type="number" step="0.1" min="0" data-sp="${i}" value="${num(s.peso,0)}"></div>`).join("")}<div class="field"><label for="c-sp-se">Subestación Tineo (%)</label><input id="c-sp-se" type="number" step="0.1" min="0" data-pse="1" value="${num(d.pesoSE,0)}"></div></div></section>`;
-  h+=`<section class="panel stack"><div class="spread"><h2>Peso de cada etapa</h2>${sumTxt(es)}</div><div class="form-grid">${d.etapas.map((e,i)=>`<div class="field"><label for="c-ep-${e.id}">${esc(e.nombre)} (%)</label><input id="c-ep-${e.id}" type="number" step="0.1" min="0" data-ep="${i}" value="${num(e.peso,0)}"></div>`).join("")}</div>
-  <div class="spread"><h3>Tendido: reparto conductor / OPGW</h3>${sumTxt(num(ten.torre,30)+num(ten.vano,70)+num(ten.opgw,0))}</div><p class="muted small">En el programa maestro (STN4324-DK-PM-C-0001) el OPGW pesa 0,036 frente a 0,072 del conductor: un tercio del tendido. El OPGW se reparte entre torre y vano según el peso de sus actividades.</p><div class="form-grid"><div class="field"><label for="c-tt">Conductor en la torre (%)</label><input id="c-tt" type="number" min="0" step="0.1" data-tsp="torre" value="${num(ten.torre,30)}"></div><div class="field"><label for="c-tv">Conductor en el vano (%)</label><input id="c-tv" type="number" min="0" step="0.1" data-tsp="vano" value="${num(ten.vano,70)}"></div><div class="field"><label for="c-to">OPGW, torre y vano (%)</label><input id="c-to" type="number" min="0" step="0.1" data-tsp="opgw" value="${num(ten.opgw,0)}"></div></div></section>`;
+  /* pesos de etapa y reparto del tendido por sector: cada sector con el programa de su contratista (Texto30) */
+  const TSK=[["torre","Conductor en la torre"],["vano","Conductor en el vano"],["opgw","OPGW, torre y vano"]];
+  const cell=(id,lab,dk,v)=>`<td style="width:130px"><input id="${id}" type="number" step="0.1" min="0" ${dk} value="${v}" aria-label="${esc(lab)}"></td>`;
+  h+=`<section class="panel stack"><h2>Peso de cada etapa, por sector</h2><p class="muted small">Reparto de la torre según el programa de cada contratista (Texto30): Continente con el programa maestro STN4324-DK-PM-C-0001 (Elecnor), Cruce con el de CSTC e Isla con el de Globaltec. Las obras preliminares incluyen la malla de puesta a tierra, salvo en el cruce, donde la malla se mide por pata dentro de la fundación. Cada columna debe sumar 100.</p>
+  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${d.sectores.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}</tr></thead><tbody>
+  ${d.etapas.map(e=>`<tr><td>${esc(e.nombre)} (%)</td>${d.sectores.map((s,i)=>cell(`c-eps-${s.id}-${e.id}`,e.nombre+" · "+s.nombre,`data-eps="${i}|${e.id}"`,num((s.ep||{})[e.id],0))).join("")}</tr>`).join("")}
+  <tr><td></td>${d.sectores.map(s=>`<td class="r">${sumTxt(d.etapas.reduce((x,e)=>x+num((s.ep||{})[e.id],0),0))}</td>`).join("")}</tr></tbody></table></div>
+  <h3>Tendido: reparto conductor / OPGW, por sector</h3><p class="muted small">Parte del tendido que corresponde al conductor en la torre (vestido, engrapado y puentes), al conductor en el vano (piloto, tendido, flechado y separadores) y al OPGW, según el programa de cada contratista. El OPGW se reparte entre torre y vano según el peso de sus actividades.</p>
+  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Parte</th>${d.sectores.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}</tr></thead><tbody>
+  ${TSK.map(([k,n])=>`<tr><td>${n} (%)</td>${d.sectores.map((s,i)=>cell(`c-tss-${s.id}-${k}`,n+" · "+s.nombre,`data-tss="${i}|${k}"`,num((s.ts||{})[k],0))).join("")}</tr>`).join("")}
+  <tr><td></td>${d.sectores.map(s=>`<td class="r">${sumTxt(TSK.reduce((x,[k])=>x+num((s.ts||{})[k],0),0))}</td>`).join("")}</tr></tbody></table></div></section>`;
   h+=`<section class="panel stack"><h2>Actividades y pesos dentro de cada grupo</h2>${grupos().map(g=>{const list=d.actividades.map((a,i)=>[a,i]).filter(([a])=>a.g===g.id);const sm=list.reduce((x,[a])=>x+num(a.peso,0),0);
     /* el OPGW suma 100 entre torre y vano (pesos del programa maestro) */
     const op=g.id==="opt"||g.id==="opg",smO=op?d.actividades.filter(a=>a.g==="opt"||a.g==="opg").reduce((x,a)=>x+num(a.peso,0),0):sm;
@@ -3603,7 +3620,7 @@ async function guardarConfig(){
   if(errs.length){toast(errs.slice(0,2).join(" "),true);return;}
   S.saving=true;render();
   try{await updateConfig("proyecto",{nombre:d.nombre.trim(),codigo:d.codigo.trim(),tension:d.tension.trim(),pesoSE:num(d.pesoSE,0),
-      sectores:d.sectores.map(s=>({id:s.id,nombre:s.nombre,peso:num(s.peso,0),desc:s.desc||""})),
+      sectores:d.sectores.map(s=>({id:s.id,nombre:s.nombre,peso:num(s.peso,0),desc:s.desc||"",ep:Object.fromEntries(d.etapas.map(e=>[e.id,num((s.ep||{})[e.id],0)])),ts:{torre:num((s.ts||{}).torre,0),vano:num((s.ts||{}).vano,0),opgw:num((s.ts||{}).opgw,0)}})),
       etapas:d.etapas.map(e=>Object.assign({id:e.id,nombre:e.nombre,peso:num(e.peso,0)},e.id==="ten"?{torre:num(e.torre,30),vano:num(e.vano,70),opgw:num(e.opgw,0)}:{})),
       actividades:d.actividades.map(a=>Object.assign({id:a.id,nombre:String(a.nombre).trim(),g:a.g,peso:num(a.peso,0)},a.circ?{circ:a.circ,fase:a.fase}:{})),vanos:vn});
     S.draft=null;toast("Configuración guardada.");
@@ -3788,7 +3805,7 @@ function descargarCSV(){
   const q=v=>{const s=String(v==null?"":v);return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
   const f=n=>String(Math.round(n*10)/10).replace(".",",");
   const L=["ESTADO POR ESTRUCTURA al "+fmtD(today()),"Sector;N° Estructura;Vértice;Zona;Tramo tendido;Tipo;Torre;Contratista;Obras preliminares %;Fundación %;Tipo fundación;Montaje %;Conductor en torre %;OPGW en torre %;Total estructura %;Estado"];
-  for(const s of secs())for(const e of estr(s.id)){const st=S.P.sec[s.id].byE[e.id];L.push([s.nombre,e.id,vertice(e.id),e.zona,e.tt,e.tipo,e.torre,e.contr,f(st.pre),f(st.fun),st.fg?grupoById(st.fg).nombre:"",f(st.mon),f(st.tto),f(st.otT||0),f(totE(st)),EST_TXT[estado(st)]].map(q).join(";"));}
+  for(const s of secs())for(const e of estr(s.id)){const st=S.P.sec[s.id].byE[e.id];L.push([s.nombre,e.id,vertice(e.id),e.zona,e.tt,e.tipo,e.torre,e.contr,f(st.pre),f(st.fun),st.fg?grupoById(st.fg).nombre:"",f(st.mon),f(st.tto),f(st.otT||0),f(totE(st,s.id)),EST_TXT[estado(st)]].map(q).join(";"));}
   L.push("");L.push("VANOS (longitudes según actualización de terreno, "+ASB_DOC+")");L.push("Sector;Vano;Tramo tendido;Longitud m;"+actsG("tva").map(a=>a.nombre+" %").join(";")+";Total conductor %;"+actsG("opg").map(a=>a.nombre+" %").join(";")+";Total OPGW %;"+actsG("rem").map(a=>a.nombre+" %").join(";")+";Conductor C1 tendido m;Conductor C2 tendido m;OPGW tendido m");
   for(const s of secs())for(const v of vanos(s.id)){const p=S.P.sec[s.id].byV[v.key]||0,po=S.P.sec[s.id].byO[v.key]||0;const m=x=>v.len!=null?f(v.len*x/100):"";L.push([s.nombre,v.label,v.tt,v.len!=null?f(v.len):""].concat(actsG("tva").map(a=>f(cur(v.key,a.id))),[f(p)],actsG("opg").map(a=>v.ml&&OPG_NO_ML.has(a.id)?"":f(cur(v.key,a.id))),[f(po)],actsG("rem").map(a=>v.ml?f(cur(v.key,a.id)):""),[m(circPct(v.key,"1")),m(circPct(v.key,"2")),m(cur(v.key,"tv_opg"))]).map(q).join(";"));}
   L.push("");L.push("FUNDACIÓN GINE POLE (CRUCE)");L.push("Sector;"+actsG("gp").map(a=>a.nombre+" %").join(";")+";Total %");
@@ -3944,6 +3961,8 @@ document.addEventListener("input",ev=>{
   else if(ds.pse)S.draft.pesoSE=num(t.value,0);
   else if(ds.ep)S.draft.etapas[+ds.ep].peso=num(t.value,0);
   else if(ds.tsp){const e=S.draft.etapas.find(x=>x.id==="ten");if(e)e[ds.tsp]=num(t.value,0);}
+  else if(ds.eps){const [i,id]=ds.eps.split("|");const x=S.draft.sectores[+i];if(x){x.ep=Object.assign({},x.ep);x.ep[id]=num(t.value,0);}}
+  else if(ds.tss){const [i,k]=ds.tss.split("|");const x=S.draft.sectores[+i];if(x){x.ts=Object.assign({},x.ts);x.ts[k]=num(t.value,0);}}
   else if(ds.an)S.draft.actividades[+ds.an].nombre=t.value;
   else if(ds.ap)S.draft.actividades[+ds.ap].peso=num(t.value,0);
   else if(ds.vn)S.draft.vanos[ds.vn]=t.value;
