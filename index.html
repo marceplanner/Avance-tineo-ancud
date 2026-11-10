@@ -19,7 +19,7 @@
   --i-per:#eda100; --i-acc:#e87ba4; --i-fun:#008300; --i-mon:#4a3aa7;
   --seq-hi:#1c5cab; --on-seq:#ffffff; --vano-hi:#c9501d; --water:#d7e6f5;
   --good:#0ca30c; --good-ink:#006300; --eje:#3987e5; --warn:#fab219; --warn-ink:#8a5a00; --crit-ink:#b02a2a;
-  --c-se:#4a3aa7; --fill-ok:#bfe6bf; --concrete:#c3cacf; --steel:#1d2a33;
+  --c-se:#4a3aa7; --fill-ok:#bfe6bf; --concrete:#c3cacf; --steel:#1d2a33; --on-vano:#ffffff;
   --lib-ok:#1e8e43; --lib-tram:#b77900; --lib-res:#c4382b; --lib-pend:#7b8892; --lib-na:#4f7186;
   --sv-1:#2a78d6; --sv-2:#eb6834; --sv-3:#1baf7a;
   --shadow:0 1px 2px rgba(20,33,43,.06),0 4px 16px rgba(20,33,43,.05);
@@ -37,7 +37,7 @@
     --i-per:#c98500; --i-acc:#d55181; --i-fun:#0ca30c; --i-mon:#9085e9;
     --seq-hi:#86b6ef; --on-seq:#0e1316; --vano-hi:#f08a5d; --water:#16283a;
     --good:#0ca30c; --good-ink:#2fc22f; --eje:#5b9cf0; --warn-ink:#fab219; --crit-ink:#f07474;
-    --c-se:#9085e9; --fill-ok:#1f4d24; --concrete:#56626b; --steel:#dfe7ec;
+    --c-se:#9085e9; --fill-ok:#1f4d24; --concrete:#56626b; --steel:#dfe7ec; --on-vano:#0e1316;
     --lib-ok:#3cc169; --lib-tram:#f2b53c; --lib-res:#f17b6f; --lib-pend:#8d9aa3; --lib-na:#8fb0c4;
     --sv-1:#3987e5; --sv-2:#d95926; --sv-3:#199e70;
     --shadow:0 1px 2px rgba(0,0,0,.3);
@@ -72,14 +72,20 @@ button{cursor:pointer}
 .rotulo .cell:first-child{border-left:0}
 .rotulo .cell b{font-family:var(--f-mono);font-weight:600;font-size:1.05rem}
 .rotulo.solo{grid-template-columns:1fr}.rotulo.solo .main{border-right:0}
+/* franja de sesión del rótulo: quién está conectado y sus acciones (antes iba al final de las pestañas, fuera de la vista) */
+.rotulo .ses{grid-column:1/-1;border-top:1px solid var(--line-2);padding:6px 14px 6px 18px;display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;font-size:.8rem;color:var(--ink-2)}
+.rotulo .ses .who{margin-right:auto;display:inline-flex;gap:8px;align-items:center;min-width:0}
+.rotulo .ses button{border:1px solid var(--line-2);background:var(--surface);padding:5px 10px;border-radius:2px;font-size:.8rem}
+.rotulo .ses button:hover{border-color:var(--ink-2)}
 @media (max-width:760px){.rotulo{grid-template-columns:1fr}.rotulo .main{border-right:0;border-bottom:1.5px solid var(--ink)}.rotulo.solo .main{border-bottom:0}.rotulo .cells{grid-template-columns:repeat(3,1fr)}.rotulo .cell{padding:8px 10px}}
 
-nav.tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:4px;padding-block:10px;overflow-x:auto;scrollbar-width:none;align-items:center}
-nav.tabs button{border:1px solid var(--line-2);background:var(--surface);padding:9px 16px;border-radius:999px;font-weight:500;white-space:nowrap}
-nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.userbox{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:.8rem;white-space:nowrap;color:var(--ink-2);padding-left:10px}
-.userbox button{border:1px solid var(--line-2);background:var(--surface);padding:6px 10px;border-radius:999px;font-size:.8rem}
-.role{font-family:var(--f-disp);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;border:1px solid currentColor;border-radius:999px;padding:1px 8px}
+/* pestañas de lámina: apoyadas en una línea de tinta que las une con el contenido */
+nav.tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:0;padding-top:10px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;align-items:flex-end;border-bottom:1.5px solid var(--ink)}
+nav.tabs button{border:1px solid var(--line-2);border-bottom:0;background:var(--surface);padding:9px 14px;border-radius:2px 2px 0 0;margin-right:-1px;font-weight:500;white-space:nowrap;color:var(--ink-2)}
+nav.tabs:empty{display:none}
+nav.tabs button:hover{background:var(--surface-2);color:var(--ink)}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);position:relative;z-index:1}
+.role{font-family:var(--f-disp);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;border:1px solid currentColor;border-radius:2px;padding:1px 8px}
 
 .banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px dashed var(--warn);background:color-mix(in oklab,var(--warn) 10%,var(--surface));padding:10px 14px;margin-bottom:14px;font-size:.9rem}
 .banner b{font-family:var(--f-disp)}
@@ -91,30 +97,13 @@ nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);bord
 .stack{display:flex;flex-direction:column;gap:16px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .spread{display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;justify-content:space-between}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
 @media (max-width:900px){.grid2{grid-template-columns:1fr}}
 
 .auth{max-width:420px;margin:28px auto 0;display:flex;flex-direction:column;gap:14px}
 .auth .panel{display:flex;flex-direction:column;gap:14px}
 .auth .err{color:var(--crit-ink);font-size:.88rem}
 .linklike{all:unset;cursor:pointer;color:var(--accent);font-size:.88rem;text-decoration:underline;text-underline-offset:3px}
-
-.ringbox{position:relative;display:inline-grid;place-items:center;flex:none}
-.ringbox svg{display:block}
-.ringbox .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.05}
-.ringbox .rv b{font-family:var(--f-disp);font-weight:700}
-.ringbox .rv span{font-size:.68rem;color:var(--muted);font-family:var(--f-disp);text-transform:uppercase;letter-spacing:.06em}
-
-.hero{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}
-.hero .htxt{display:flex;flex-direction:column;gap:8px}
-.minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.mini{border:1.5px solid var(--line);background:var(--surface);padding:10px;display:flex;gap:12px;align-items:center;text-align:left;border-radius:6px}
-.mini:hover{border-color:var(--ink-2)}
-.mini[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
-.mini .mt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mini .mt b{font-family:var(--f-disp);font-size:1.05rem}
-.mini .mt span{font-size:.78rem;color:var(--ink-2)}
-@media (max-width:860px){.hero{grid-template-columns:1fr;justify-items:center}.hero .htxt{width:100%}.minis{grid-template-columns:1fr}}
 
 .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden;flex-wrap:wrap;max-width:100%}
 .seg button{border:0;background:var(--surface);padding:7px 12px;font-size:.85rem;border-left:1px solid var(--line-2);display:inline-flex;align-items:center;gap:6px}
@@ -150,7 +139,6 @@ button.hb:focus-visible{outline:2px solid var(--accent)}
 .stkrow{display:grid;grid-template-columns:110px 1fr 48px;gap:10px;align-items:center;font-size:.86rem}
 /* ===== Modelos en elevación / planta (lenguaje de plano) ===== */
 .panel{box-shadow:none}
-.mini,.kpic{border-radius:2px}
 .mdl{display:block;width:100%;height:auto}
 .mdl .ghost{fill:none;stroke:var(--line-2);stroke-width:.8;stroke-dasharray:2.5 2}
 .mdl .steel{fill:none;stroke:var(--steel);stroke-width:1.1;stroke-linejoin:round}
@@ -364,7 +352,6 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;font-size:.84rem}
 .meta div{display:flex;flex-direction:column}
 .meta span{color:var(--muted);font-size:.72rem;font-family:var(--f-disp);text-transform:uppercase;letter-spacing:.06em}
-.rings{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 .agrp{display:flex;flex-direction:column;gap:4px}
 .agrp h3{display:flex;justify-content:space-between;gap:8px;font-size:.95rem;padding-bottom:4px;border-bottom:1px solid var(--line)}
 .arow{all:unset;display:grid;grid-template-columns:1fr 92px 42px;gap:8px;align-items:center;padding:6px 4px;border-radius:4px;cursor:pointer;font-size:.86rem}
@@ -379,7 +366,7 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .qe .form-grid{grid-template-columns:1fr 1fr}
 .cgrid{display:grid;grid-template-columns:92px repeat(3,minmax(0,1fr));gap:4px;align-items:center;padding:6px 4px;border:1px solid var(--line);border-radius:6px;margin:2px 0}
 .cgrid .cf{border:1.5px solid var(--line-2);border-radius:4px;padding:8px 2px;font-family:var(--f-mono);font-size:.8rem;font-weight:600;background:color-mix(in oklab,var(--vano-hi) var(--p),var(--surface))}
-.cgrid .cf.hi{color:#fff}
+.cgrid .cf.hi{color:var(--on-vano)}
 .cgrid .cf.on,.cgrid .cf[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
 .cgrid .cf:disabled{cursor:default}
 .cgrid .cf.sel{background:var(--accent-soft);color:var(--ink)}
@@ -504,7 +491,7 @@ textarea.code{font-family:var(--f-mono);font-size:.82rem;min-height:120px}
 .libtip{font:500 12px var(--f-body);padding:4px 8px;border-radius:3px}
 .gtip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;padding:7px 10px;border-radius:4px;z-index:40;max-width:260px;white-space:pre-line;display:none;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;font-size:.92rem;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
-.toast.err{background:var(--crit-ink);color:#fff}
+.toast.err{background:var(--crit-ink);color:var(--surface)}
 .empty{padding:28px;text-align:center;color:var(--ink-2)}
 .skel{height:14px;background:var(--surface-3);border-radius:3px;width:60%}
 @media (prefers-reduced-motion:no-preference){.trk .tb i,.progress i,.col .cb{transition:width .5s ease,height .5s ease}.drawer{animation:slin .18s ease-out}@keyframes slin{from{transform:translateX(24px);opacity:.6}}}
@@ -598,6 +585,49 @@ table.rp td.nm{white-space:normal;min-width:240px;max-width:420px}
 .exdoc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 /* solo pantalla: en la impresión la hoja A4 mide ~700 px y no debe tomar el diseño de celular */
 @media screen and (max-width:760px){.exdoc{font-size:14px}.exhoja{padding:1.2em 1em}.exrot{grid-template-columns:1fr}.exrot .m{border-right:0;border-bottom:1.5px solid var(--ink)}.exstrip{grid-template-columns:1fr}.exstrip>div{border-left:0;border-top:1px solid var(--line)}.exstrip>div:first-child{border-top:0}.expv{grid-template-columns:1fr}}
+/* ===== Medidores y cifras (10-11-2026): un solo lenguaje para todo avance, sin anillos =====
+   .mtr = medidor fino con marcas en 25, 50 y 75 % (azul = avance parcial, verde = 100 %);
+   .mv = cifra con su medidor en una celda de tabla; .dist = franja de reparto por estado (2 px de separación entre partes);
+   .blt = avance real (relleno) frente al programado (marca vertical); .figs = cifras con medidor del panel lateral */
+.mtr{display:block;height:5px;min-width:40px;border-radius:1px;background:
+  linear-gradient(90deg,transparent calc(25% - .5px),var(--surface) calc(25% - .5px) calc(25% + .5px),transparent calc(25% + .5px) calc(50% - .5px),var(--surface) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px) calc(75% - .5px),var(--surface) calc(75% - .5px) calc(75% + .5px),transparent calc(75% + .5px)),
+  linear-gradient(90deg,var(--c,var(--seq-hi)) var(--p,0%),var(--surface-3) var(--p,0%))}
+.mtr.ok{--c:var(--good)}
+.mv{display:inline-grid;grid-template-columns:72px minmax(3.4em,auto);gap:8px;align-items:center;vertical-align:middle}
+.mv>span{text-align:right}
+.dist{display:flex;gap:2px;height:6px;min-width:96px}
+.dist i{flex:0 1 0px;min-width:3px;border-radius:1px;background:var(--c,var(--surface-3))}
+.dist .ter{--c:var(--good)}
+.dist .eje{--c:var(--eje)}
+td .dist{min-width:140px}
+th .sw{width:8px;height:8px;margin-right:3px}
+.blt{position:relative;display:block;height:6px;min-width:110px;margin-block:5px;border-radius:1px;background:linear-gradient(90deg,var(--c,var(--sv-1)) var(--p,0%),var(--surface-3) var(--p,0%))}
+.blt::after{content:"";position:absolute;left:var(--t,0%);top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 1px var(--surface)}
+.blt.nt::after{display:none}
+.figs{display:grid;grid-template-columns:1.25fr repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.figs>div{background:var(--surface);padding:8px 9px 9px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.figs .lbl{font-size:.66rem;letter-spacing:.05em;white-space:nowrap}
+.figs b{font-family:var(--f-disp);font-size:1.3rem;font-weight:700;line-height:1}
+.figs>div:first-child b{font-size:1.6rem}
+.figs.one{grid-template-columns:1fr}
+.figs.one b{font-size:2rem}
+@media (max-width:460px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}.figs>div:first-child{grid-column:1/-1}}
+.hfig .mtr{height:6px;max-width:420px;margin-top:10px}
+.sectab .mtr{margin:4px 0 3px}
+.tmfig .mtr{margin:5px 0 3px}
+.kpic .dist+.ktally{border-top:0;padding-top:0;flex-wrap:wrap;justify-content:flex-start;gap:2px 12px}
+.kpic .ktally span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.kpic .ktally .sw{width:8px;height:8px}
+.arow .ab{height:5px;border-radius:1px}
+table.tec tr.tot td{border-top:1.5px solid var(--ink-2);background:var(--surface-2);font-weight:600}
+/* simbología de los dibujos, enmarcada como en una lámina */
+.mlegend.sim{border:1px solid var(--line);padding:8px 12px 9px;gap:6px 18px}
+.mlegend.sim::before{content:"Simbología";flex-basis:100%;font-family:var(--f-disp);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+/* un solo radio para controles y recuadros, como el resto de los dibujos */
+.btn,.seg,.opt,.u,.qe,.kpic,.cgrid,.cgrid .cf,.quick button,.tabs2 button,.grpstats span,.smx-wrap,.plan-wrap,.toast,.gtip,.ibtn,.arow,
+input[type=text],input[type=email],input[type=password],input[type=search],input[type=number],input[type=date],select,textarea{border-radius:2px}
+.mtr,.dist i,.blt,.blt::after{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media (max-width:760px){.mv{grid-template-columns:40px minmax(3.4em,auto)}}
 /* Impresión (PDF): solo el contenido, en claro, sin menú ni paneles laterales */
 @media print{
   @page{size:A4;margin:12mm}
@@ -1023,8 +1053,17 @@ const autor=h=>h.imp?"Carga desde matriz Excel":(h.pn||"Inspector");
 const secColor=id=>`var(--c-${id})`;
 const estHtml=e=>`<span class="est ${e}">${EST_TXT[e]}</span>`;
 function heatTd(p,inner){const v=clamp(p,0,100);return `<td class="heat ${v>=55?"hi":""} ${v<=0?"zero":""}" style="--p:${v.toFixed(0)}%">${inner!=null?inner:Math.round(v)}</td>`;}
-function ring(p,size,col,label,sub){const sw=size>100?12:8;const r=(size-sw)/2-1,c=2*Math.PI*r,v=clamp(p,0,100),h=size/2;
-  return `<span class="ringbox" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="var(--surface-3)" stroke-width="${sw}"/>${v>0?`<circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="${v>=99.5?"butt":"round"}" stroke-dasharray="${(c*v/100).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 ${h} ${h})"/>`:""}</svg><span class="rv"><span><b style="font-size:${size>100?"2.1rem":size>70?"1.05rem":".85rem"}" class="num">${label!=null?label:fmtP(p,size>100)}</b>${sub?`<br><span>${sub}</span>`:""}</span></span></span>`;}
+/* Medidores: un solo lenguaje para todo avance (reemplazan a los anillos).
+   mtr = medidor fino graduado, azul mientras avanza y verde al 100 % (c = color fijo, p. ej. en Liberaciones);
+   mv = cifra con su medidor, para una celda de tabla; distBar = franja de reparto por estado, segs = [[cantidad, clase
+   (ter / eje / sin) o color CSS, rótulo], …]; blt = avance real (relleno) frente al programado (marca vertical);
+   figsHtml = cifras con medidor del panel lateral, L = [[rótulo, %, con un decimal], …] y la primera es el total */
+const mtr=(p,c)=>{const v=clamp(num(p,0),0,100);return `<i class="mtr${v>=99.95?" ok":""}" style="--p:${f1(v)}%${c?";--c:"+c:""}"></i>`;};
+const mv=(p,dec)=>p==null?"—":`<span class="mv">${mtr(p)}<span>${fmtP(p,dec)}</span></span>`;
+function distBar(segs,tip){const L=segs.filter(s=>s[0]>0);if(!L.length)return "";
+  return `<span class="dist" role="img" aria-label="${esc(segs.map(s=>s[0]+" "+s[2]).join(", "))}"${tip?` data-tip="${esc(segs.map(s=>s[2]+": "+s[0]).join("\n"))}"`:""}>${L.map(s=>/^(var|#)/.test(s[1])?`<i style="flex-grow:${s[0]};--c:${s[1]}"></i>`:`<i class="${s[1]}" style="flex-grow:${s[0]}"></i>`).join("")}</span>`;}
+const blt=(r,p)=>r==null?`<span class="muted">—</span>`:`<span class="blt${p==null?" nt":""}" style="--p:${f1(clamp(r,0,100))}%${p!=null?";--t:"+f1(clamp(p,0,100))+"%":""}" role="img" aria-label="${esc("Avance real "+fmtP(r,1)+(p!=null?", programado "+fmtP(p,1):""))}" data-tip="${esc("Avance real "+fmtP(r,1)+(p!=null?"\nProgramado "+fmtP(p,1):""))}"></span>`;
+const figsHtml=L=>`<div class="figs${L.length===1?" one":""}">${L.map(([t,v,dec])=>`<div><span class="lbl">${esc(t)}</span><b class="num">${fmtP(v,dec)}</b>${mtr(v)}</div>`).join("")}</div>`;
 
 /* ---------- render ---------- */
 let rq=0,pendingRender=false,ptrDown=false,mqT=0;
@@ -1045,9 +1084,9 @@ function renderChrome(){
   let ter=0,n=0;if(ok&&S.P)for(const s of secs()){ter+=S.P.sec[s.id].cnt.ter;n+=S.P.sec[s.id].n;}
   const r=$("#rotulo");r.className="rotulo"+(ok?"":" solo");
   r.innerHTML=`<div class="main"><span class="code">${esc(c.codigo||"STN4324")} · ${esc(c.tension||"Línea de transmisión")}</span><h1>${esc(c.nombre||"Línea Tineo – Ancud")}</h1><span class="sub">Control de avance físico · Continente · Cruce · Isla</span></div>
-  ${ok?`<div class="cells"><div class="cell"><span class="lbl">Avance físico</span><b class="num">${n?fmtP(S.P.total,1):"—"}</b></div><div class="cell"><span class="lbl">Terminadas</span><b class="num">${n?ter+" / "+n:"—"}</b></div><div class="cell"><span class="lbl">Último registro</span><b class="num">${esc(fmtD(lastUpdate()))}</b></div></div>`:""}`;
-  $("#tabs").innerHTML=ok?TABS.filter(t=>!t.admin||S.canAdmin).map(t=>`<button data-tab="${t.id}" aria-selected="${S.tab===t.id}">${t.t}</button>`).join("")+
-    `<span class="userbox"><span class="role" style="color:${S.canAdmin?"var(--accent)":"var(--good-ink)"}">${S.canAdmin?"Administrador":"Inspector"}</span><span title="${esc(S.userEmail)}">${esc(S.userName)}</span><button data-chpass="1">Cambiar contraseña</button><button data-logout="1">Salir</button></span>`:"";
+  ${ok?`<div class="cells"><div class="cell"><span class="lbl">Avance físico</span><b class="num">${n?fmtP(S.P.total,1):"—"}</b></div><div class="cell"><span class="lbl">Terminadas</span><b class="num">${n?ter+" / "+n:"—"}</b></div><div class="cell"><span class="lbl">Último registro</span><b class="num">${esc(fmtD(lastUpdate()))}</b></div></div>
+  <div class="ses noprint"><span class="who"><span class="role" style="color:${S.canAdmin?"var(--accent)":"var(--good-ink)"}">${S.canAdmin?"Administrador":"Inspector"}</span><span title="${esc(S.userEmail)}">${esc(S.userName)}</span></span><button data-chpass="1">Cambiar contraseña</button><button data-logout="1">Salir</button></div>`:""}`;
+  $("#tabs").innerHTML=ok?TABS.filter(t=>!t.admin||S.canAdmin).map(t=>`<button data-tab="${t.id}" aria-selected="${S.tab===t.id}">${t.t}</button>`).join(""):"";
 }
 function render(){
   CLIPN=0;
@@ -1215,7 +1254,7 @@ function mLegend(items){
     circ:ic(40,24,`<path class="steel" d="${glyphD(20,23,22,4.5,false).d}"/><text x="1" y="11" style="font:600 8px var(--f-mono);fill:var(--ink)">C1</text><text x="39" y="11" text-anchor="end" style="font:600 8px var(--f-mono);fill:var(--ink)">C2</text>`),
     vtx:ic(26,14,`<path d="M9.8 8.5H16.2L13 13Z" style="fill:var(--accent)"/><text x="13" y="6.5" text-anchor="middle" style="font:600 7.5px var(--f-mono);fill:var(--accent)">V2</text>`),
     half:ic(30,12,`<path class="wire none" d="${catD({x:1,y:2},{x:29,y:2},4)}"/><path class="wire" d="${catHalves({x:1,y:2},{x:29,y:2},4)[1]}"/>`)};
-  return `<div class="mlegend">${items.map(([k,t])=>`<span>${I[k]}${t}</span>`).join("")}<span class="muted">Esquema sin escala</span></div>`;}
+  return `<div class="mlegend sim">${items.map(([k,t])=>`<span>${I[k]}${t}</span>`).join("")}<span class="muted">Esquema sin escala</span></div>`;}
 
 /* ---------- Pictograma de la línea: láminas de perfil modeladas ---------- */
 /* Malla de puesta a tierra (en el cruce, promedio de las patas) y valores de las marcas P·A·F·M */
@@ -1448,18 +1487,18 @@ function vResumen(){
   const tp=tot.toFixed(1).split(".");
   let h=`<div class="stack">`;
   h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${sc==="total"?"proyecto, global ponderado":esc(secById(sc).nombre)}</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
-     <div class="sub">${sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VT} de ${NV} vanos tendidos (${VD} terminados)</div></div>
+     <div class="sub">${sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VT} de ${NV} vanos tendidos (${VD} terminados)</div>${mtr(tot)}</div>
    <div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">Proyecto</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}">${esc(s.nombre)}</button>`).join("")}</div></div>
-   <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span><span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
-   ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)" data-tip="S/E Tineo: mide solo las obras civiles (fundaciones, canaletas y drenajes) y las estructuras del patio registradas en la app. El avance real del programa de PINE incluye además ingeniería, suministros, permisos y obras preliminares; por eso es mayor."><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span><span class="d muted">Solo obras civiles y estructuras · pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
+   <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span>${mtr(r.pct)}<span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
+   ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)" data-tip="S/E Tineo: mide solo las obras civiles (fundaciones, canaletas y drenajes) y las estructuras del patio registradas en la app. El avance real del programa de PINE incluye además ingeniería, suministros, permisos y obras preliminares; por eso es mayor."><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span>${mtr(R.total)}<span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span><span class="d muted">Solo obras civiles y estructuras · pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
   if(S.canAdmin)h+=pgResumen();
   h+=kpiSection();
   h+=tendMetros();
   h+=`<section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades. El modelo de torre está en <button class="linkbtn" style="font-family:var(--f-body)" data-tab="linea">Pictograma de la línea</button>.</span></div>
    ${etapaTable()}
    ${S.dashEt?`<div class="stack" style="gap:6px"><div class="spread"><h3>${esc((etapaById(S.dashEt)||{}).nombre||"")} · actividades</h3><button class="btn small ghost" data-dashet="${S.dashEt}">Cerrar</button></div>${drillHtml(S.dashEt)}</div>`:""}</section>`;
-  h+=`<div class="grid2"><section class="panel stack"><h2>Estado de estructuras</h2>${estadoTable()}<p class="small muted">Terminada = montaje al 100 %. En ejecución = cualquier avance registrado. Vano tendido = las seis fases de conductor al 100 %; vano terminado = todo el conductor del vano al 100 % (además flechado y separadores).</p></section>
-    <section class="panel stack"><h2>Por contratista</h2>${contrTable()}</section></div>`;
+  h+=`<section class="panel stack"><h2>Estado de estructuras</h2>${estadoTable()}<p class="small muted">Terminada = montaje al 100 %. En ejecución = cualquier avance registrado. Vano tendido = las seis fases de conductor al 100 %; vano terminado = todo el conductor del vano al 100 % (además flechado y separadores).</p></section>
+    <section class="panel stack"><h2>Por contratista</h2>${contrTable()}</section>`;
   {const F=S.dashF;const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
   h+=`<section class="panel stack" style="gap:10px"><div class="spread"><h2>Detalle por estructura</h2><span class="small muted">${esc(amb)}${F.contr?" · contratista "+esc(F.contr):""} · usa los filtros de "Indicadores de avance"</span></div>${estMatrix()}</section>`;}
   h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en terreno</h2><button class="btn small ghost" data-csv="1">Descargar CSV</button></div>${feedHtml(allHist((k,d)=>sc==="total"||d.sector===sc).filter(x=>!x.imp).slice(0,10))}</section>`;
@@ -1483,7 +1522,8 @@ function kpiCard(titulo,c,unidad,layer,nota,kind,pctOver,masc){const pct=pctOver
   return `<button class="kpic" data-kpi="${layer}" data-tip="${esc(`${titulo}\n${c.ter} ${ter} · ${c.eje} en ejecución · ${c.sin} faltantes (de ${c.n})\nToca para verlo en el pictograma`)}">
   <span class="kh"><span class="lbl">${esc(titulo)}</span><span class="kp ${pct>=99.95?"ok":""}">${fmtP(pct)} <small class="kpl">${pl}</small></span></span>
   <span class="kbody"><svg class="mdl kicon" viewBox="0 0 92 62" aria-hidden="true">${kpiIcon(kind,pct)}</svg><span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span class="kv"><b class="num">${c.ter}</b><span class="of num">/ ${c.n}</span></span><span class="small" style="color:var(--ink-2)">${esc(unidad)}</span></span></span>
-  <span class="ktally"><span><b>${c.ter}</b> ${ter}</span><span><b>${c.eje}</b> en ejecución</span><span><b>${c.sin}</b> faltan</span></span>
+  ${distBar([[c.ter,"ter",ter],[c.eje,"eje","en ejecución"],[c.sin,"sin","faltan"]])}
+  <span class="ktally"><span><i class="sw" style="--c:var(--good)"></i><b>${c.ter}</b> ${ter}</span><span><i class="sw" style="--c:var(--eje)"></i><b>${c.eje}</b> en ejecución</span><span><i class="sw" style="--c:var(--surface-3)"></i><b>${c.sin}</b> faltan</span></span>
   ${nota?`<span class="ks">${nota}</span>`:""}</button>`;}
 function kpiSection(){
   const F=S.dashF;const ess=[].concat(...scopeSecs().map(s=>estr(s.id)));
@@ -1544,16 +1584,16 @@ function tendMetros(){
     if(tram.length===n0)sinAv.push(lab);}
   for(const t of tram)for(const k of ["n","L","eq","c1","c2","og","nb","mb"])TT[k]+=t[k];
   const pc=(a,b)=>b?fmtP(a/b*100,1):"—";
-  const fig=(t,v,sub)=>`<div><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;
-  const tr=(x,lab,b)=>`<tr><td>${b?`<b>${lab}</b>`:lab}</td><td class="r num">${x.L?fmtM(x.L):"sin longitud"}</td><td class="r num"><b>${pc(x.eq,x.L)}</b></td><td class="r num">${fmtM(x.c1)}</td><td class="r num">${fmtM(x.c2)}</td><td class="r num">${fmtM(x.og)}</td><td class="r num"><b>${fmtM(x.mb)}</b> <span class="muted">· ${x.nb} vanos</span></td><td class="r num">${fmtM(x.mt)} <span class="muted">· ${x.nt} vanos</span></td></tr>`;
-  const trT=t=>`<tr><td><b>${esc(t.lab)}</b></td><td class="mono small">${esc(t.a)} – ${esc(t.b)}</td><td class="r num">${t.n}</td><td class="r num">${t.sinL&&!t.L?"sin longitud":fmtM(t.L)}</td><td class="r num"><b>${pc(t.eq,t.L)}</b></td><td class="r num">${fmtM(t.c1)}</td><td class="r num">${fmtM(t.c2)}</td><td class="r num">${fmtM(t.og)}</td><td class="r num"><b>${fmtM(t.mb)}</b></td><td class="small">${t.okAll?"Tendido (conductores y OPGW)":t.okC?"Conductores tendidos":"En tendido"}</td></tr>`;
+  const fig=(t,v,sub,p)=>`<div><span>${t}</span><b class="num">${v}</b>${p!=null?mtr(p):""}<span>${sub}</span></div>`,de=(a,b)=>b?a/b*100:null;
+  const tr=(x,lab,b)=>`<tr${b?` class="tot"`:""}><td>${b?`<b>${lab}</b>`:lab}</td><td class="r num">${x.L?fmtM(x.L):"sin longitud"}</td><td class="r num">${mv(de(x.eq,x.L),1)}</td><td class="r num">${fmtM(x.c1)}</td><td class="r num">${fmtM(x.c2)}</td><td class="r num">${fmtM(x.og)}</td><td class="r num"><b>${fmtM(x.mb)}</b> <span class="muted">· ${x.nb} vanos</span></td><td class="r num">${fmtM(x.mt)} <span class="muted">· ${x.nt} vanos</span></td></tr>`;
+  const trT=t=>`<tr><td><b>${esc(t.lab)}</b></td><td class="mono small">${esc(t.a)} – ${esc(t.b)}</td><td class="r num">${t.n}</td><td class="r num">${t.sinL&&!t.L?"sin longitud":fmtM(t.L)}</td><td class="r num">${mv(de(t.eq,t.L),1)}</td><td class="r num">${fmtM(t.c1)}</td><td class="r num">${fmtM(t.c2)}</td><td class="r num">${fmtM(t.og)}</td><td class="r num"><b>${fmtM(t.mb)}</b></td><td class="small">${t.okAll?"Tendido (conductores y OPGW)":t.okC?"Conductores tendidos":"En tendido"}</td></tr>`;
   let h=`<section class="panel stack"><h2>Tendido en metros</h2>
-  <div class="tmfig">${fig("Avance del tendido",pc(T.eq,T.L),`medido por distancia en ${fmtKm(T.L)} de vanos`)}${fig("Conductor circuito 1",fmtM(T.c1),`${pc(T.c1,T.L)} de ${fmtM(T.L)}`)}${fig("Conductor circuito 2",fmtM(T.c2),`${pc(T.c2,T.L)} de ${fmtM(T.L)}`)}${fig("OPGW",fmtM(T.og),`${pc(T.og,T.L)} de ${fmtM(T.L)}`)}${fig("Vanos tendidos",fmtM(T.mb),`${T.nb} de ${T.n} vanos con ambos circuitos`)}</div>
+  <div class="tmfig">${fig("Avance del tendido",pc(T.eq,T.L),`medido por distancia en ${fmtKm(T.L)} de vanos`,de(T.eq,T.L))}${fig("Conductor circuito 1",fmtM(T.c1),`${pc(T.c1,T.L)} de ${fmtM(T.L)}`,de(T.c1,T.L))}${fig("Conductor circuito 2",fmtM(T.c2),`${pc(T.c2,T.L)} de ${fmtM(T.L)}`,de(T.c2,T.L))}${fig("OPGW",fmtM(T.og),`${pc(T.og,T.L)} de ${fmtM(T.L)}`,de(T.og,T.L))}${fig("Vanos tendidos",fmtM(T.mb),`${T.nb} de ${T.n} vanos con ambos circuitos`,de(T.mb,T.L))}</div>
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Longitud</th><th class="r">Avance tendido</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th class="r">Vanos tendidos</th><th class="r">Vanos terminados</th></tr></thead><tbody>
   ${bySec.map(x=>tr(x,esc(x.s.nombre))).join("")}${bySec.length>1?tr(T,"Total línea",1):""}</tbody></table></div>
   <h3 style="margin:4px 0 0">Tramos con tendido</h3>
   ${tram.length?`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Tramo de tendido</th><th>Estructuras con avance</th><th class="r">Vanos</th><th class="r">Longitud</th><th class="r">Avance</th><th class="r">Conductor C1</th><th class="r">Conductor C2</th><th class="r">OPGW</th><th class="r">Vanos tendidos</th><th>Estado</th></tr></thead><tbody>
-  ${tram.map(trT).join("")}<tr><td><b>Total</b></td><td class="small">${tram.length} ${tram.length===1?"tramo":"tramos"}</td><td class="r num"><b>${TT.n}</b></td><td class="r num"><b>${fmtM(TT.L)}</b></td><td class="r num"><b>${pc(TT.eq,TT.L)}</b></td><td class="r num"><b>${fmtM(TT.c1)}</b></td><td class="r num"><b>${fmtM(TT.c2)}</b></td><td class="r num"><b>${fmtM(TT.og)}</b></td><td class="r num"><b>${fmtM(TT.mb)}</b></td><td></td></tr></tbody></table></div>`:`<p class="muted small" style="margin:0">Aún no hay tendido registrado${F.contr?" para este contratista":""}.</p>`}
+  ${tram.map(trT).join("")}<tr class="tot"><td><b>Total</b></td><td class="small">${tram.length} ${tram.length===1?"tramo":"tramos"}</td><td class="r num"><b>${TT.n}</b></td><td class="r num"><b>${fmtM(TT.L)}</b></td><td class="r num">${mv(de(TT.eq,TT.L),1)}</td><td class="r num"><b>${fmtM(TT.c1)}</b></td><td class="r num"><b>${fmtM(TT.c2)}</b></td><td class="r num"><b>${fmtM(TT.og)}</b></td><td class="r num"><b>${fmtM(TT.mb)}</b></td><td></td></tr></tbody></table></div>`:`<p class="muted small" style="margin:0">Aún no hay tendido registrado${F.contr?" para este contratista":""}.</p>`}
   <p class="small muted" style="margin:0">Avance del tendido = Σ longitud del vano × avance del conductor en el vano (piloto, seis fases, flechado y separadores) ÷ longitud total; el OPGW se informa aparte. Conductor y OPGW = longitud × avance registrado de cada cable (conductor: promedio de sus tres fases). Vanos tendidos = vanos con las seis fases al 100 %; vanos terminados = todo el conductor del vano al 100 % (además flechado y separadores).${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
   return h;}
 /* Avance por etapa en cifras: % de cada etapa por sector y, con varios sectores, la línea ponderada por el peso de cada sector */
@@ -1562,24 +1602,26 @@ function etapaTable(){
   const lin=et=>list.reduce((x,s)=>x+s.peso*(S.P.sec[s.id].stg[et]||0),0)/WS;
   /* cada sector pondera sus etapas con el programa de su contratista: el peso va bajo el avance del sector */
   const pw=(id,s)=>{const w=pesoE(id,s.id);return `<small class="muted" style="display:block;font-weight:400">pesa ${fmtP(w,w%1!==0)}</small>`;};
-  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${list.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea</th>`:""}</tr></thead><tbody>`;
+  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${list.map(s=>`<th class="r"><span class="dot" style="--c:${secColor(s.id)}"></span> ${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea</th>`:""}</tr></thead><tbody>`;
   for(const e of etapas()){const on=S.dashEt===e.id;
-    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button>${e.id==="ten"?`<span class="small muted"> · conductor en torre, conductor en vano y OPGW con el reparto del programa de cada contratista; vanos medidos por distancia</span>`:""}</td>${list.map(s=>`<td class="r num">${fmtP(S.P.sec[s.id].stg[e.id]||0,1)}${pw(e.id,s)}</td>`).join("")}${many?`<td class="r num"><b>${fmtP(lin(e.id),1)}</b></td>`:""}</tr>`;}
-  h+=`<tr><td><b>Avance ponderado</b></td>${list.map(s=>`<td class="r num"><b>${fmtP(S.P.sec[s.id].pct,1)}</b></td>`).join("")}${many?`<td class="r num"><b>${fmtP(S.P.lineaPct,1)}</b></td>`:""}</tr>`;
+    h+=`<tr><td style="white-space:normal;min-width:190px"><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button>${e.id==="ten"?`<span class="small muted"> · conductor en torre, conductor en vano y OPGW con el reparto del programa de cada contratista; vanos medidos por distancia</span>`:""}</td>${list.map(s=>`<td class="r num">${mv(S.P.sec[s.id].stg[e.id]||0,1)}${pw(e.id,s)}</td>`).join("")}${many?`<td class="r num">${mv(lin(e.id),1)}</td>`:""}</tr>`;}
+  h+=`<tr class="tot"><td>Avance ponderado</td>${list.map(s=>`<td class="r num">${mv(S.P.sec[s.id].pct,1)}</td>`).join("")}${many?`<td class="r num">${mv(S.P.lineaPct,1)}</td>`:""}</tr>`;
   return h+`</tbody></table></div>`;
 }
 function estadoTable(){
   const rows=scopeSecs().map(s=>({s,r:S.P.sec[s.id]}));const T={n:0,ter:0,eje:0,sin:0,nv:0,vd:0,vt:0};
-  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Estructuras</th><th class="r">Terminadas</th><th class="r">En ejecución</th><th class="r">Sin iniciar</th><th class="r">Vanos tendidos</th><th class="r">Vanos terminados</th></tr></thead><tbody>`;
+  /* la franja reparte las estructuras por estado; los cuadros de color de los títulos son su leyenda */
+  const rep=c=>distBar([[c.ter,"ter","terminadas"],[c.eje,"eje","en ejecución"],[c.sin,"sin","sin iniciar"]],true);
+  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Estructuras</th><th>Reparto por estado</th><th class="r"><i class="sw" style="--c:var(--good)"></i>Terminadas</th><th class="r"><i class="sw" style="--c:var(--eje)"></i>En ejecución</th><th class="r"><i class="sw" style="--c:var(--surface-3)"></i>Sin iniciar</th><th class="r">Vanos tendidos</th><th class="r">Vanos terminados</th></tr></thead><tbody>`;
   for(const {s,r} of rows){T.n+=r.n;T.ter+=r.cnt.ter;T.eje+=r.cnt.eje;T.sin+=r.cnt.sin;T.nv+=r.nv;T.vd+=r.vdone;T.vt+=r.vten;
-    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-dash="${s.id}">${esc(s.nombre)}</button></td><td class="r num">${r.n}</td><td class="r num"><b>${r.cnt.ter}</b></td><td class="r num">${r.cnt.eje}</td><td class="r num">${r.cnt.sin}</td><td class="r num">${r.vten} / ${r.nv}</td><td class="r num">${r.vdone} / ${r.nv}</td></tr>`;}
-  if(rows.length>1)h+=`<tr><td><b>Total línea</b></td><td class="r num"><b>${T.n}</b></td><td class="r num"><b>${T.ter}</b></td><td class="r num"><b>${T.eje}</b></td><td class="r num"><b>${T.sin}</b></td><td class="r num"><b>${T.vt} / ${T.nv}</b></td><td class="r num"><b>${T.vd} / ${T.nv}</b></td></tr>`;
+    h+=`<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-dash="${s.id}">${esc(s.nombre)}</button></td><td class="r num">${r.n}</td><td>${rep(r.cnt)}</td><td class="r num"><b>${r.cnt.ter}</b></td><td class="r num">${r.cnt.eje}</td><td class="r num">${r.cnt.sin}</td><td class="r num">${r.vten} / ${r.nv}</td><td class="r num">${r.vdone} / ${r.nv}</td></tr>`;}
+  if(rows.length>1)h+=`<tr class="tot"><td><b>Total línea</b></td><td class="r num"><b>${T.n}</b></td><td>${rep(T)}</td><td class="r num"><b>${T.ter}</b></td><td class="r num"><b>${T.eje}</b></td><td class="r num"><b>${T.sin}</b></td><td class="r num"><b>${T.vt} / ${T.nv}</b></td><td class="r num"><b>${T.vd} / ${T.nv}</b></td></tr>`;
   return h+`</tbody></table></div>`;
 }
 function contrTable(){
   const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){const k=e.contr||"Sin contratista";const st=S.P.sec[s.id].byE[e.id];if(!m.has(k))m.set(k,{n:0,t:0,ter:0,f:0});const x=m.get(k);x.n++;x.t+=totE(st,s.id);if(estado(st)==="ter")x.ter++;if(st.fun>=99.95)x.f++;}
   const rows=[...m].sort((a,b)=>b[1].n-a[1].n);
-  return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio</th></tr></thead><tbody>${rows.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${fmtP(x.t/x.n,1)}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio</th></tr></thead><tbody>${rows.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${mv(x.t/x.n,1)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 /* --- Matriz de avance por estructura (responde a los filtros de "Indicadores de avance") --- */
 const MX_ROWS=[{k:"acc",t:"Camino de acceso"},{k:"pat",t:"Malla puesta a tierra"},{k:"fun",t:"Fundación"},{k:"mon",t:"Montaje"},{k:"tto",t:"Conductor en torre"},{k:"otT",t:"OPGW en torre"},{k:"vano",t:"Conductor del vano (al siguiente)"},{k:"opg",t:"OPGW del vano (al siguiente)"}];
@@ -1681,7 +1723,7 @@ function vCruce(){
   const planGP=u=>{const I=gpInfo(u);
     return `<div class="pl"><h4><span>Fundación Gine Pole <span class="muted small mono">${esc(u.id)}</span></span><b>${fmtP(I.tot,1)}</b></h4><span class="small muted">${I.step>=I.n?"Terminada":`${I.step}/${I.n} · sigue ${esc(I.next.nombre.toLowerCase())}`} · <button class="linkbtn" style="font-family:var(--f-body)" data-open="cruce|${esc(u.id)}">abrir</button></span>${gpPlanSvg(u)}<ul>${actsG("gp").map(a=>`<li>${esc(a.nombre)} · <b class="num">${fmtP(cur(I.k,a.id))}</b></li>`).join("")}</ul></div>`;};
   let h=`<div class="stack"><section class="panel stack" style="gap:10px"><div class="spread"><h2>Cruce aéreo del canal de Chacao · elevación</h2><div class="row small"><span>Fundaciones <b class="num">${fmtP(r.stg.fun,1)}</b></span><span>Montaje <b class="num">${fmtP(r.stg.mon,1)}</b></span><span>Tendido <b class="num">${fmtP(r.stg.ten,1)}</b></span><span>Cruce <b class="num">${fmtP(r.pct,1)}</b></span></div></div>
-  <div class="tmfig">${lados.map(z=>`<div><span>${esc(z.L.t)} · fundaciones</span><b class="num">${fmtP(z.fun,1)}</b><span>${z.ok} de ${z.np} patas terminadas · ${esc(z.det.map(d=>`${d.id} ${fmtP(d.fun)}`).join(" · "))} · Gine Pole ${fmtP(z.gp)} · montaje ${fmtP(z.mon,1)}</span></div>`).join("")}</div>
+  <div class="tmfig">${lados.map(z=>`<div><span>${esc(z.L.t)} · fundaciones</span><b class="num">${fmtP(z.fun,1)}</b>${mtr(z.fun)}<span>${z.ok} de ${z.np} patas terminadas · ${esc(z.det.map(d=>`${d.id} ${fmtP(d.fun)}`).join(" · "))} · Gine Pole ${fmtP(z.gp)} · montaje ${fmtP(z.mon,1)}</span></div>`).join("")}</div>
   <div class="mdl-wrap">${crossingSvg()}</div>
   ${mLegend([["circ","Circuito 1 a la izquierda y circuito 2 a la derecha"],["half","Medio vano: el lado de cada torre es su circuito"],["ghost","Torre por montar"],["steel","Estructura montada"],["fg","Fundación por construir"],["fz","Fundación hormigonada"],["wire","Conductor tendido"],["part","En tendido"],["none","Por tender"]])}
   <p class="small muted">Cada torre lleva el circuito 1 a la izquierda y el circuito 2 a la derecha, con sus fases superior, media e inferior, y el cable de guardia OPGW en la cúspide. En cada fase, la mitad del vano que sale del lado derecho de una torre muestra el tendido del circuito 2 y la que llega al lado izquierdo de la torre siguiente, el del circuito 1. Los anclajes 1CA y 4CA van atenuados porque quedan detrás de 1CB y 4CB. GP es la fundación de la Gine Pole de cada sector, en ubicación esquemática. Toca una torre o una GP para abrir su ficha.</p></section>`;
@@ -1751,10 +1793,11 @@ function sePlanSvg(){
 function vSE(){
   const R=S.SE;const pes=sePesos();
   let h=`<div class="stack">`;
-  h+=`<section class="panel hero">${ring(R.total,172,"var(--c-se)",fmtP(R.total,1),"S/E Tineo")}
-   <div class="htxt"><div class="spread"><h2>Subestación Tineo · Nueva Puerto Montt</h2><span class="chip" style="font-size:.85rem">Contratista <b class="mono" style="color:var(--ink)">${SE_CONTRATISTA}</b></span></div>
-   <p class="small muted">Obras civiles y montaje de estructuras del patio. Avance ponderado por partida: ${SE_CATS.map(c=>`${c.nombre} ${fmtP(pes[c.id])}`).join(" · ")}.</p>
-   <div class="minis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">${SE_CATS.map(c=>{const x=R.cat[c.id];return `<button class="mini" data-secat="${c.id}" aria-pressed="${S.seCat===c.id}" style="--c:var(--c-se)" data-tip="${esc(c.nombre)}: ${fmtP(x.pct,1)}\n${x.done} listas · ${x.eje} en avance · ${x.sin} sin iniciar">${ring(x.pct,62,x.done===x.n&&x.n?"var(--good)":"var(--c-se)")}<span class="mt"><b>${esc(c.nombre)}</b><span>${x.done}/${x.n} al 100%</span><span>${x.eje} en avance</span></span></button>`;}).join("")}</div></div></section>`;
+  /* mismo encabezado que el Resumen: cifra global y una celda por partida (al tocarla, cambia el detalle por actividad) */
+  const tp=R.total.toFixed(1).split(".");
+  h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · Subestación Tineo · Nueva Puerto Montt</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
+     <div class="sub">Obras civiles y montaje de estructuras del patio · contratista <b>${SE_CONTRATISTA}</b></div>${mtr(R.total)}</div></div>
+   <div class="sectab">${SE_CATS.map(c=>{const x=R.cat[c.id];return `<button data-secat="${c.id}" aria-pressed="${S.seCat===c.id}" style="--c:var(--c-se)" data-tip="${esc(`${c.nombre}: ${fmtP(x.pct,1)}\n${x.done} listas · ${x.eje} en avance · ${x.sin} sin iniciar\nToca para ver su detalle por actividad`)}"><span class="n">${esc(c.nombre)}</span><span class="v num">${fmtP(x.pct,1)}</span>${mtr(x.pct)}<span class="d">${x.done}/${x.n} al 100 % · ${x.eje} en avance</span><span class="d muted">Pondera ${fmtP(pes[c.id])} de la S/E</span></button>`;}).join("")}</div></section>`;
   // Pictograma de fundaciones
   const fc=R.cat.fun;
   h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Pictograma de fundaciones</h2><span class="small"><b class="num" style="color:var(--good-ink)">${fc.done}</b> de ${fc.n} fundaciones listas · ${fmtP(fc.pct,1)}</span></div>
@@ -1768,7 +1811,7 @@ function vSE(){
   ${seEstPlanSvg()}
   ${planGrpStats("est",["pil","vig","gis","pra","ais","n4","n5"])}</section>`;
   // Canaletas y drenajes
-  h+=`<div class="grid2">${["can","dre"].map(c=>{const x=R.cat[c];return `<section class="panel stack"><div class="spread"><h2>${SE_CAT_NAME[c]}</h2><span class="small">${x.done}/${x.n} listas · ${fmtP(x.pct,1)}</span></div><div class="hbars">${seItems(c).map(it=>{const p=seP(it);return `<button class="hb" data-ose="${c}|${esc(it.id)}"><span class="hl"><b class="mono">${esc(it.id)}</b><small>${esc(it.desc)}</small></span><span class="tracks"><span class="trk"><span class="tb"><i style="--w:${clamp(p,0,100)}%;--c:${p>=99.95?"var(--good)":"var(--c-se)"}"></i></span><span class="tv">${fmtP(p)}</span></span></span></button>`;}).join("")}</div></section>`;}).join("")}</div>`;
+  h+=`<div class="grid2">${["can","dre"].map(c=>{const x=R.cat[c];return `<section class="panel stack"><div class="spread"><h2>${SE_CAT_NAME[c]}</h2><span class="small">${x.done}/${x.n} listas · ${fmtP(x.pct,1)}</span></div><div class="hbars">${seItems(c).map(it=>{const p=seP(it);return `<button class="hb" data-ose="${c}|${esc(it.id)}"><span class="hl"><b class="mono">${esc(it.id)}</b><small>${esc(it.desc)}</small></span><span class="tracks"><span class="trk">${mtr(p)}<span class="tv">${fmtP(p)}</span></span></span></button>`;}).join("")}</div></section>`;}).join("")}</div>`;
   // Tabla de detalle
   const cat=S.seCat;const as=SE_ACTS[cat];
   h+=`<section class="panel stack"><div class="spread"><h2>Detalle por actividad</h2><div class="seg" role="group" aria-label="Partida">${SE_CATS.map(c=>`<button data-secat="${c.id}" aria-pressed="${cat===c.id}">${c.nombre}</button>`).join("")}</div></div>
@@ -1785,7 +1828,7 @@ function vDrawerSE(){
   const hist=allHist(kk=>kk===k).filter(x=>!x.imp).slice(0,12);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(it.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:var(--c-se)"></span>Subestación Tineo · ${esc(SE_CAT_NAME[D.cat])}</span><h2><span class="mono">${esc(it.id)}</span></h2>${estHtml(seEst(p))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
   h+=`<div class="meta"><div><span>Descripción</span>${esc(it.desc)}</div><div><span>Grupo</span>${esc(SE_GRP[it.grp]||"")}</div>${it.tipo?`<div><span>Tipo</span><b class="mono">${esc(it.tipo)}</b></div>`:""}<div><span>Contratista</span><b>${SE_CONTRATISTA}</b></div></div>`;
-  h+=`<div class="rings" style="justify-content:flex-start;gap:16px;align-items:center">${ring(p,96,p>=99.95?"var(--good)":"var(--c-se)",fmtP(p,1),"Avance")}<span class="small muted">${p>=99.95?`<b style="color:var(--good-ink)">${D.cat==="fun"?"Fundación lista":"Terminada"}.</b> `:""}Toca una actividad para registrar su avance acumulado.</span></div>`;
+  h+=figsHtml([["Avance",p,1]])+`<span class="small muted">${p>=99.95?`<b style="color:var(--good-ink)">${D.cat==="fun"?"Fundación lista":"Terminada"}.</b> `:""}Toca una actividad para registrar su avance acumulado.</span>`;
   h+=`<div class="agrp"><h3><span>Actividades</span><span class="num">${fmtP(p,1)}</span></h3>${actRows(k,null,p>=99.95?"var(--good)":"var(--c-se)",SE_ACTS[D.cat])}</div>`;
   h+=`<div class="agrp"><h3><span>Historial</span></h3>${hist.length?`<div class="feed">${hist.map(x=>{const a=actById(x.a);return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w">${esc(a?a.nombre:x.a)}<div class="o">${esc(autor(x))}${x.obs?" — "+esc(x.obs):""}</div></div><span class="p num">${fmtP(num(x.pct,0))}</span></div>`;}).join("")}</div>`:`<span class="small muted">Sin registros todavía.</span>`}</div>`;
   h+=`<div class="row" style="justify-content:space-between">${pv?`<button class="btn small ghost" data-ose="${D.cat}|${esc(pv.id)}">← ${esc(pv.id)}</button>`:"<span></span>"}${nx?`<button class="btn small ghost" data-ose="${D.cat}|${esc(nx.id)}">${esc(nx.id)} →</button>`:""}</div>`;
@@ -1823,7 +1866,7 @@ function vDrawerGP(){
   const hist=allHist(kk=>kk===k).filter(x=>!x.imp).slice(0,12);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc("Fundación "+u.nombre)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor("cruce")}"></span>${esc(secById("cruce").nombre)} · ${esc(u.sector)}</span><h2>Fundación ${esc(u.nombre)}</h2>${estHtml(seEst(I.tot))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
   h+=`<div class="meta"><div><span>Sector</span>${esc(u.sector)}</div><div><span>Contratista</span>${esc((e&&e.contr)||"—")}</div><div><span>Peso en las fundaciones del sector</span><b class="num">${fmtP(u.w*100,1)}</b></div></div>`;
-  h+=`<div class="rings" style="justify-content:flex-start;gap:16px;align-items:center">${ring(I.tot,96,I.tot>=99.95?"var(--good)":"var(--accent)",fmtP(I.tot,1),"Avance")}<span class="small muted">Toca una actividad para registrar su avance acumulado.</span></div>`;
+  h+=figsHtml([["Avance",I.tot,1]])+`<span class="small muted">Toca una actividad para registrar su avance acumulado.</span>`;
   h+=`<div class="agrp"><h3><span>Actividades</span><span class="num">${fmtP(I.tot,1)}</span></h3>${actRows(k,"gp")}</div>`;
   h+=`<div class="agrp"><h3><span>Historial en terreno</span></h3>${hist.length?`<div class="feed">${hist.map(x=>{const a=actById(x.a);return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w">${esc(a?a.nombre:x.a)}<div class="o">${esc(autor(x))}${x.obs?" — "+esc(x.obs):""}</div></div><span class="p num">${fmtP(num(x.pct,0))}</span></div>`;}).join("")}</div>`:`<span class="small muted">Sin registros en terreno.</span>`}</div>`;
   h+=`<div class="row" style="justify-content:flex-end"><button class="btn small ghost" data-open="cruce|${esc(otro.id)}">${esc(otro.nombre)} →</button></div>`;
@@ -1837,7 +1880,7 @@ function vDrawer(){
   const vs=vanosOf(sec,e.id);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Estructura ${esc(e.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor(sec)}"></span>${esc(secById(sec).nombre)} · ${esc(e.tt||"")}</span><h2>Estructura <span class="mono">${esc(e.id)}</span></h2>${estHtml(estado(st))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
   h+=`<div class="meta"><div><span>Tipo</span>${esc(e.tipo||"—")}</div><div><span>Torre</span><b class="mono">${esc(e.torre||"—")}</b></div><div><span>Contratista</span>${esc(e.contr||"—")}</div><div><span>Vértice</span>${esc(vertice(e.id)||"—")}</div><div><span>Liberación</span><button class="linkbtn" style="font-family:var(--f-body);text-align:left" data-libopen="${esc(kLibE(sec,e.id))}">${LIB_GEN[libGen(kLibE(sec,e.id))].t}</button></div><div><span>Fundación</span>${(()=>{const g=st.fun>0?st.fg:(sec==="cruce"?st.fg:(D.fgSel||e.fund||null));return g?esc(grupoById(g).nombre):"Sin definir";})()}</div></div>`;
-  h+=`<div class="rings">${[["Prelim.",st.pre],["Fundación",st.fun],["Montaje",st.mon],["Tend. torre",tenTorre(st,sec)],["Total",totE(st,sec)]].map(([t,v],i)=>`<span class="stack" style="gap:2px;align-items:center">${ring(v,68,i===4?"var(--accent)":"var(--seq-hi)")}<span class="small muted">${t}</span></span>`).join("")}</div>`;
+  h+=figsHtml([["Total",totE(st,sec),1],["Prelim.",st.pre],["Fundación",st.fun],["Montaje",st.mon],["Tend. torre",tenTorre(st,sec)]]);
   h+=`<div class="note small">Toca una actividad para registrar su avance acumulado.</div>`;
   h+=`<div class="agrp"><h3><span>Obras preliminares</span><span class="num">${fmtP(st.pre,1)}</span></h3>${actRows(k,"pre")}</div>`;
   if(sec==="cruce"&&patas(e.id).length){const ps=patas(e.id);const p=ps.find(x=>x.pata===D.pata)||ps[0];const kp=kP(sec,e.id,p.pata);
@@ -2261,13 +2304,14 @@ function vLiberaciones(){
   const F=S.lib;if(F.sec!=="total"&&!secById(F.sec))F.sec="total";const all=libUnits();const st=libStats(all);const fr=libFrentes(all);
   const tts=[...new Set(all.filter(u=>F.sec==="total"||u.s.id===F.sec).map(u=>u.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));if(F.tt&&!tts.includes(F.tt))F.tt="";
   const rows=all.filter(u=>libMatch(u));const pc=(a,b)=>b?fmtP(a/b*100):"—";const B=F.bulk;if(!B.fecha)B.fecha=today();
-  const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;const nRes=st.t.res+st.v.res;
+  /* p = parte ya liberada, en el verde de «apta» de esta pestaña */
+  const fig=(t,v,sub,cls,p)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b>${p!=null?mtr(p,"var(--lib-ok)"):""}<span>${sub}</span></div>`,de=(a,b)=>b?a/b*100:null;const nRes=st.t.res+st.v.res;
   let h=`<div class="stack"><section class="panel stack"><div class="spread"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción con el PMF aprobado (o sin PMF) y la servidumbre liberada.</span></div>
   <p class="small muted" style="margin:0">Estado inicial: planilla de estado PMF al ${fmtD(LIB_SEED_FECHA)} (PMF asociados, estado del PMF y propietarios). Cada código PMF se aprueba por separado y vale para todos los elementos que cubre. Cada cambio posterior se registra aquí y queda en la bitácora.</p>
   ${S.canAdmin?libPcHtml():""}
-  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`)}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`)}${fig("PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`PMF distintos, sin repetir · ${st.cod.res} restringidos · ${st.cod.pend+st.cod.tram} por confirmar o en trámite`)}${fig("Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,"propietarios; no cuentan los que no aplican")}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
-  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r">Torres aptas</th><th class="r">Vanos aptos</th><th class="r">Línea apta</th><th class="r">En proceso</th><th class="r">Restringidas</th><th class="r">Pendientes</th></tr></thead><tbody>
-  ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>
+  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`,"",de(st.t.apta,st.t.n))}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`,"",de(st.v.apta,st.v.n))}${fig("PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`PMF distintos, sin repetir · ${st.cod.res} restringidos · ${st.cod.pend+st.cod.tram} por confirmar o en trámite`,"",de(st.cod.ok,st.cod.n))}${fig("Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,"propietarios; no cuentan los que no aplican","",de(st.ser.ok,st.ser.n))}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
+  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r"><i class="sw" style="--c:var(--lib-ok)"></i>Torres aptas</th><th class="r"><i class="sw" style="--c:var(--lib-ok)"></i>Vanos aptos</th><th class="r">Línea apta</th><th>Reparto de torres y vanos</th><th class="r"><i class="sw" style="--c:var(--lib-tram)"></i>En proceso</th><th class="r"><i class="sw" style="--c:var(--lib-res)"></i>Restringidas</th><th class="r"><i class="sw" style="--c:var(--lib-pend)"></i>Pendientes</th></tr></thead><tbody>
+  ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td>${distBar([[x.t.apta+x.v.apta,"var(--lib-ok)","aptas"],[x.t.proc+x.v.proc,"var(--lib-tram)","en proceso"],[x.t.res+x.v.res,"var(--lib-res)","restringidas"],[x.t.pend+x.v.pend,"var(--lib-pend)","pendientes"]],true)}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>
   <div class="stack" style="gap:6px"><span class="lbl">PMF por serie · cada PMF se cuenta una vez, aunque cubra varios vanos o torres</span>
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Serie</th><th class="r">PMF distintos</th><th class="r">Aprobados</th><th class="r">Restringidos</th><th class="r">Por confirmar</th><th class="r">En trámite</th><th class="r">Aprobado</th></tr></thead><tbody>
   ${(()=>{const fila=(p,x,tot)=>`<tr><td>${tot?"<b>Total</b>":`<span class="mono">${esc(p)}</span>`}</td><td class="r num">${tot?`<b>${x.n}</b>`:x.n}</td><td class="r num"><b>${x.ok}</b></td><td class="r num">${x.res?(tot?`<button class="linkbtn crit" data-libpmff="__res" data-tip="Ver los elementos con PMF restringido">${x.res}</button>`:`<b class="crit">${x.res}</b>`):"0"}</td><td class="r num">${x.pend?(tot?`<button class="linkbtn" data-libpmff="__pend" data-tip="Ver los elementos con PMF por confirmar o en trámite">${x.pend}</button>`:x.pend):"0"}</td><td class="r num">${x.tram}</td><td class="r num">${pc(x.ok,x.n)}</td></tr>`;
@@ -3012,25 +3056,25 @@ function vProgramas(){
     <div class="field"><label for="pg-file">Programa (XML de MS Project)</label><input id="pg-file" type="file" accept=".xml,text/xml,application/xml"></div><button class="btn" id="pg-load" ${S.imp&&S.imp.running?"disabled":""}>Cargar programa</button></div>
     <p class="small muted" style="margin:0">En MS Project: Archivo → Guardar como → Formato XML. Un programa por contratista: una revisión nueva reemplaza a la anterior y queda en el registro de revisiones. El alcance se cruza con las estructuras que la app asigna a ese contratista.</p>`;}
   if(!ps.length)return h+`<p class="muted" style="margin:0">Aún no hay programas cargados.${S.canAdmin?"":" Un administrador debe cargarlos."}</p></section></div>`;
-  h+=`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista · programa</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Índice</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas alta / media</th></tr></thead><tbody>
+  h+=`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista · programa</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th>Real vs programado</th><th class="r">Desviación</th><th class="r">Índice</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas alta / media</th></tr></thead><tbody>
   ${ps.map(P=>{const k=progKey(P.contr),M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length,nm=X.al.filter(a=>a.sev==="media").length;
-    return `<tr${G.sel===k?` class="on"`:""}><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(k)}">${esc(progName(P.contr))}</button><small>${esc(P.titulo||P.archivo||"")}</small></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgIdxTxt(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"} / ${nm}</td></tr>`;}).join("")}</tbody></table></div>
-  <p class="small muted" style="margin:0">Programado = Texto28 y avance real = Texto27 de cada programa, a su fecha de estado, ponderados con los pesos del contratista. Índice = avance real ÷ programado (1,00 = al día). Terreno = lo registrado en la app en las tareas que tienen equivalente, junto al avance real que el programa informa para esas mismas tareas. Toca un contratista para ver su detalle.</p></section>`;
+    return `<tr${G.sel===k?` class="on"`:""}><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(k)}">${esc(progName(P.contr))}</button><small>${esc(P.titulo||P.archivo||"")}</small></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td>${blt(T0.r,T0.p)}</td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgIdxTxt(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"} / ${nm}</td></tr>`;}).join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado = Texto28 y avance real = Texto27 de cada programa, a su fecha de estado, ponderados con los pesos del contratista. En «Real vs programado», la barra es el avance real y la marca vertical, el programado. Índice = avance real ÷ programado (1,00 = al día). Terreno = lo registrado en la app en las tareas que tienen equivalente, junto al avance real que el programa informa para esas mismas tareas. Toca un contratista para ver su detalle.</p></section>`;
   const P=S.prog.get(G.sel);if(P)h+=pgDetalle(P);
   return h+`</div>`;}
 function pgDetalle(P){const G=S.pg,M=pgModel(P),X=pgNow(P),A=X.agg,T0=M.tot,R=M.root,k=progKey(P.contr),now=X.now,ref=X.ref,dv=R?pgDias(R.F,R.bF):null;
-  const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;
+  const fig=(t,v,sub,cls,p)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b>${p!=null?mtr(p):""}<span>${sub}</span></div>`;
   let h=`<section class="panel stack"><div class="spread"><div class="stack" style="gap:2px"><h2>${esc(progName(P.contr))} · ${esc(P.titulo||"")}</h2><span class="small muted">${esc(P.archivo||"")} · fecha de estado ${pgD(P.estado)} · cargado el ${pgD(P.cargado&&P.cargado.fecha)}${P.cargado&&P.cargado.por?" por "+esc(P.cargado.por):""}</span></div>${S.canAdmin?`<button class="btn small ghost" data-pgdel="${esc(k)}">Quitar programa</button>`:""}</div>
-  <div class="tmfig">${fig("Programado",fmtP(T0.p,1),`${M.campos?"Texto28 del programa":"calculado con la línea base"} · al ${pgD(P.estado)}`)}${fig("Avance real",fmtP(T0.r,1),`${M.campos?"Texto27 del programa":"% completado del programa"} · al ${pgD(P.estado)}`)}${fig("Desviación",T0.p!=null&&T0.r!=null?ppTxt(T0.r-T0.p):"—","avance real − programado",T0.p!=null&&T0.r!=null&&T0.r-T0.p<-5?"crit":"")}${fig("Índice de cumplimiento",pgIdxTxt(T0),"avance real ÷ programado")}${fig("Registrado en terreno",A?fmtP(A.ter,1):"—",A?`en la app; el programa informa ${fmtP(A.real,1)} en esas ${nTxt(A.n,"tarea","tareas")}`:"sin tareas con equivalente en la app",A&&Math.abs(A.ter-A.real)>=10?"crit":"")}${fig("Término vigente",R&&R.F?pgD(R.F):"—",dv?`${dv>0?"+":""}${dv} días vs línea base (${pgD(R.bF)})`:R&&R.bF?`línea base ${pgD(R.bF)}`:"",dv>0?"crit":"")}</div>
+  <div class="tmfig">${fig("Programado",fmtP(T0.p,1),`${M.campos?"Texto28 del programa":"calculado con la línea base"} · al ${pgD(P.estado)}`,"",T0.p)}${fig("Avance real",fmtP(T0.r,1),`${M.campos?"Texto27 del programa":"% completado del programa"} · al ${pgD(P.estado)}`,"",T0.r)}${fig("Desviación",T0.p!=null&&T0.r!=null?ppTxt(T0.r-T0.p):"—","avance real − programado",T0.p!=null&&T0.r!=null&&T0.r-T0.p<-5?"crit":"")}${fig("Índice de cumplimiento",pgIdxTxt(T0),"avance real ÷ programado")}${fig("Registrado en terreno",A?fmtP(A.ter,1):"—",A?`en la app; el programa informa ${fmtP(A.real,1)} en esas ${nTxt(A.n,"tarea","tareas")}`:"sin tareas con equivalente en la app",A&&Math.abs(A.ter-A.real)>=10?"crit":"")}${fig("Término vigente",R&&R.F?pgD(R.F):"—",dv?`${dv>0?"+":""}${dv} días vs línea base (${pgD(R.bF)})`:R&&R.bF?`línea base ${pgD(R.bF)}`:"",dv>0?"crit":"")}</div>
   <p class="small muted" style="margin:0">${nTxt(M.leaves.filter(t=>!t.m).length,"tarea","tareas")} ponderadas con ${M.basis==="peso"?"los pesos del programa (Texto30)":M.basis==="hh"?"las horas-hombre del programa":"la duración de cada tarea"}.${M.campos?"":" Este programa no trae Texto27/Texto28: el programado se calcula con la línea base a la fecha de estado y el avance real es el % completado."} ${M.meas.length} tienen equivalente en la app y se contrastan con lo registrado en terreno; ${M.sinEq} no (ingeniería, suministros, permisos, pruebas u obras que la app no registra).</p></section>`;
   h+=`<section class="panel stack"><div class="spread"><h2>Curva S</h2><span class="small muted">Todas las tareas del programa, con sus pesos</span></div>${pgChart(P)}</section>`;
   h+=`<section class="panel stack"><h2>Alertas del programa</h2>${pgAlertsHtml(X.al,k,false)}</section>`;
   /* partidas del programa (EDT) */
   {const tr=[];for(const t of P.T){if(!t.s||t.l<1||t.l>G.prof)continue;const p=M.pv.get(t.o),re=M.rv.get(t.o);
-    tr.push(`<tr${G.pref===t.o?` class="on"`:""}><td class="mono small">${esc(t.o)}</td><td class="nm" style="padding-left:${10+(t.l-1)*14}px"><button class="linkbtn" style="font-family:var(--f-body);text-align:left;white-space:normal" data-pgpref="${esc(t.o)}">${esc(t.n)}</button></td><td class="r num small">${pgD(t.bS)} – ${pgD(t.bF)}</td><td class="r num small">${pgD(t.S)} – ${pgD(t.F)}</td><td class="r num">${fmtP(p,1)}</td><td class="r num"><b>${fmtP(re,1)}</b></td><td class="r num">${pgDev({p,r:re})}</td><td class="r num">${pgTerTd(pgAgg(M,X.ter,t.o))}</td></tr>`);}
+    tr.push(`<tr${G.pref===t.o?` class="on"`:""}><td class="mono small">${esc(t.o)}</td><td class="nm" style="padding-left:${10+(t.l-1)*14}px"><button class="linkbtn" style="font-family:var(--f-body);text-align:left;white-space:normal" data-pgpref="${esc(t.o)}">${esc(t.n)}</button></td><td class="r num small">${pgD(t.bS)} – ${pgD(t.bF)}</td><td class="r num small">${pgD(t.S)} – ${pgD(t.F)}</td><td class="r num">${fmtP(p,1)}</td><td class="r num"><b>${fmtP(re,1)}</b></td><td>${blt(re,p)}</td><td class="r num">${pgDev({p,r:re})}</td><td class="r num">${pgTerTd(pgAgg(M,X.ter,t.o))}</td></tr>`);}
   h+=`<section class="panel stack"><div class="spread"><h2>Avance por partida del programa</h2><div class="row" style="gap:8px"><label for="pg-prof" class="small">Niveles de la EDT</label><select id="pg-prof" style="width:auto">${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${G.prof===n?"selected":""}>${n}</option>`).join("")}</select></div></div>
-  ${tr.length?`<div class="tbl-wrap" id="pg-wbs" data-keep-scroll="1" style="max-height:560px"><table class="tec rp"><thead><tr><th>EDT</th><th>Partida</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Terreno (app)</th></tr></thead><tbody>${tr.join("")}</tbody></table></div>
-  <p class="small muted" style="margin:0">Programado y avance real de cada partida tal como los informa el programa (Texto28 y Texto27) al ${pgD(P.estado)}. Terreno = lo registrado en la app en las tareas de la partida que tienen equivalente. Toca una partida para ver solo sus tareas.</p>`:`<p class="muted" style="margin:0">El programa no tiene partidas.</p>`}</section>`;}
+  ${tr.length?`<div class="tbl-wrap" id="pg-wbs" data-keep-scroll="1" style="max-height:560px"><table class="tec rp"><thead><tr><th>EDT</th><th>Partida</th><th class="r">Línea base</th><th class="r">Vigente</th><th class="r">Programado</th><th class="r">Avance real</th><th>Real vs programado</th><th class="r">Desviación</th><th class="r">Terreno (app)</th></tr></thead><tbody>${tr.join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado y avance real de cada partida tal como los informa el programa (Texto28 y Texto27) al ${pgD(P.estado)}. En «Real vs programado», la barra es el avance real y la marca vertical, el programado. Terreno = lo registrado en la app en las tareas de la partida que tienen equivalente. Toca una partida para ver solo sus tareas.</p>`:`<p class="muted" style="margin:0">El programa no tiene partidas.</p>`}</section>`;}
   /* tareas */
   {const q=nrm(G.q),inP=t=>!G.pref||t.o===G.pref||t.o.indexOf(G.pref+".")===0,alO=new Set(X.al.filter(a=>a.o).map(a=>a.o)),LIM=400;
   const VIS=[["alertas","Con alerta"],["curso","En ejecución"],["todas","Todas"],["comp","Con equivalencia en terreno"],["hitos","Hitos"],["sin","Sin equivalencia"]];
@@ -3058,10 +3102,10 @@ function pgDetalle(P){const G=S.pg,M=pgModel(P),X=pgNow(P),A=X.agg,T0=M.tot,R=M.
 function pgEdadTd(P){const e=pgMs(P.estado);if(!isFinite(e))return `<td class="r num">—</td>`;const dd=Math.max(0,Math.floor((Date.now()-e)/PG_DAY));
   return `<td class="r num">${pgD(P.estado)}<small class="${dd>14?"warn":""}">${dd>14?"sin actualizar · ":""}hace ${dd} día${dd===1?"":"s"}</small></td>`;}
 function pgResumen(){const ps=progs();if(!ps.length)return "";
-  return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th class="r">Desviación</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
+  return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th>Real vs programado</th><th class="r">Desviación</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
   ${ps.map(P=>{const M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length;
-    return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div>
-  <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de cada programa a su fecha de estado. Terreno = lo registrado en la app en las tareas con equivalente, junto al avance real que el programa informa para ellas. En la S/E Tineo el % del Resumen mide solo obras civiles y estructuras del patio; el programa de PINE suma además ingeniería, suministros, permisos y obras preliminares, por eso su avance real es mayor.</p></section>`;}
+    return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td>${blt(T0.r,T0.p)}</td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div>
+  <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de cada programa a su fecha de estado. En «Real vs programado», la barra es el avance real y la marca vertical, el programado. Terreno = lo registrado en la app en las tareas con equivalente, junto al avance real que el programa informa para ellas. En la S/E Tineo el % del Resumen mide solo obras civiles y estructuras del patio; el programa de PINE suma además ingeniería, suministros, permisos y obras preliminares, por eso su avance real es mayor.</p></section>`;}
 
 /* ---------- Reporte semanal ---------- */
 /* Compara el avance al cierre del día anterior al período con el avance al último día del período. El avance a una fecha se
