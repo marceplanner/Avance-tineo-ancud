@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 26'%3E%3Cpath d='M11 1 L15.5 8 L21 8 L21 10.5 L15.5 10.5 L17.5 25 L4.5 25 L6.5 10.5 L1 10.5 L1 8 L6.5 8 Z' fill='%231c5cab'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
 :root{
   color-scheme:light;
@@ -654,6 +654,97 @@ input[type=text],input[type=email],input[type=password],input[type=search],input
   .exq{min-width:0}
   .exsec,.exdoc tr{break-inside:avoid}
 }
+
+/* ===== Revisión de diseño (11-11-2026) =====
+   Tipografía Barlow (de la familia DIN, la de la señalética y los planos) con cifras tabulares en vez de monoespaciada,
+   rótulos sin mayúsculas forzadas, paleta más sobria y ancho útil mayor para que las tablas no queden cortadas.
+   Las gráficas usan estas mismas variables. */
+:root{
+  --f-disp:"Barlow Semi Condensed","Bahnschrift","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
+  --bg:#eceef0; --surface-2:#f5f6f7; --surface-3:#e1e5e8;
+  --ink:#17222c; --ink-2:#44515b; --muted:#6b7780; --line:#d7dce0; --line-2:#b8c1c8;
+  --accent:#1d4f91; --accent-soft:#e3ebf5;
+  --c-continente:#2b68b0; --c-cruce:#c4621c; --c-isla:#128f7a;
+  --seq-hi:#1d4f91; --eje:#5a8ed0; --good:#2f8a57; --good-ink:#1f6b40; --fill-ok:#c5e3d1;
+  --sv-1:#1d4f91; --sv-2:#bf7412; --sv-3:#66727b;
+}
+@media screen and (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1316; --surface-2:#1c262d; --surface-3:#26323b;
+    --ink:#ecf1f4; --ink-2:#b4c0c8; --muted:#86939c; --line:#26323b; --line-2:#394752;
+    --accent:#5b9cf0; --accent-soft:#1b2e47;
+    --c-continente:#3987e5; --c-cruce:#d95926; --c-isla:#199e70;
+    --seq-hi:#86b6ef; --eje:#5b9cf0; --good:#2e9e60; --good-ink:#4cc487; --fill-ok:#1f4d24;
+    --sv-1:#3987e5; --sv-2:#c98500; --sv-3:#7f8c95;
+  }
+}
+body{font-variant-numeric:tabular-nums}
+@media screen{body{font-size:15.5px}}
+.wrap{max-width:1480px}
+.lbl,.role,.tmfig>div>span:first-child,.sectab .n,.smx .gh,th,.meta span,.lse b,.exrot .c span,.exl,.expv tr.sub td,.mlegend.sim::before{text-transform:none;letter-spacing:0}
+.lbl{font-size:.82rem;color:var(--ink-2)}
+th{font-size:.84rem}
+.sectab .n{font-size:.92rem}
+.tmfig>div>span:first-child{font-size:.84rem}
+.figs .lbl{font-size:.76rem;letter-spacing:0}
+.exrot .c span,.exl{font-size:.76em}
+.role{font-size:.78rem}
+.rotulo .code,.exrot .k{letter-spacing:0;font-size:.84rem}
+.rotulo .cell b{font-family:var(--f-disp);font-size:1.3rem;line-height:1.15}
+.exrot .c b{font-size:.92em}
+nav.tabs{scrollbar-width:thin}
+/* indicadores: seis tarjetas en una fila, o en filas completas de tres, dos o una (antes quedaba una suelta) */
+.kgrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:1320px){.kgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:700px){.kgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:440px){.kgrid{grid-template-columns:1fr}}
+.kpic{border-width:1px}
+.kpic .kp,.kpic .ktally b,.kpic .kl b,.feed .p,.trk .tv,table.tec td.r b{font-weight:600}
+.mtr{height:6px;border-radius:0}
+.dist{height:8px}
+.dist i{border-radius:0}
+.blt{height:8px;border-radius:0;min-width:120px}
+.blt::after{top:-5px;bottom:-5px}
+/* Curva S: arriba el avance acumulado y abajo lo programado en cada mes, cada panel con su propia escala */
+.pgc{min-width:900px}
+.pgc text{font-family:var(--f-body);font-variant-numeric:tabular-nums}
+.pgc .ax{font:500 12px var(--f-body);fill:var(--muted)}
+.pgc .ax.an{font-weight:600;fill:var(--ink-2)}
+.pgc .cap{font:600 12.5px var(--f-body);fill:var(--ink-2)}
+.pgc .yr{stroke:var(--line-2);stroke-width:1;stroke-dasharray:2 3}
+.pgc .ln.k-lb{stroke:var(--sv-3);stroke-width:1.75;stroke-dasharray:6 4}
+.pgc .ln.k-vg{stroke:var(--sv-2)}
+.pgc .ln.k-re{stroke:var(--sv-1);stroke-width:2.5}
+.pgc .br.k-lb{fill:var(--sv-3)}
+.pgc .br.k-vg{fill:var(--sv-2)}
+.pgc .st{stroke:var(--ink);stroke-width:1}
+.pgc .dv{stroke-width:3}
+.pgc .dv.neg{stroke:var(--crit-ink)}
+.pgc .dv.pos{stroke:var(--good-ink)}
+.pgc .pr{fill:var(--surface);stroke:var(--ink-2);stroke-width:2}
+.pgc .rl{fill:var(--sv-1);stroke:var(--surface);stroke-width:2}
+.pgc .tg{font:600 13px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.pgc .tg.neg{fill:var(--crit-ink)}
+.pgc .tg.pos{fill:var(--good-ink)}
+.pgleg svg{overflow:visible}
+.pgleg .sq{width:10px;height:10px;background:var(--c);flex:none;display:inline-block}
+/* curvas S en miniatura del Resumen: una por programa, con el mismo eje de tiempo */
+.pgminis{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.pgmini{margin:0;padding:10px 12px 4px;background:var(--surface);display:flex;flex-direction:column;gap:4px;min-width:0}
+.pgmini figcaption{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:.86rem;color:var(--ink-2)}
+.pgmini figcaption .linkbtn{font-family:var(--f-disp);font-size:1rem;color:var(--ink)}
+.pgmini figcaption b{color:var(--ink)}
+.pgc.mini{min-width:0}
+.pgc.mini .ax{font-size:11px}
+.pgc.mini .ln{stroke-width:1.75}
+.pgc.mini .ln.k-lb{stroke-width:1.5;stroke-dasharray:4 3}
+.pgc.mini .ln.k-re{stroke-width:2.25}
+.pgminis,.pgc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pgc.mini .st{stroke:var(--ink-2)}
+@media (min-width:1100px){.mv{grid-template-columns:120px minmax(3.4em,auto)}}
+@media print{.pgc{min-width:0}}
 </style>
 </head>
 <body>
@@ -2973,31 +3064,79 @@ function pgCurve(P){const M=pgModel(P),c=PGC.get(P);if(c&&c.M===M)return c.C;
   PGC.set(P,{M,C});return C;}
 const MESES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 let PGCUR=null;
+/* Curva S (rediseño 11-11-2026). Arriba, el avance acumulado: línea base, programa vigente y el avance real de cada revisión
+   cargada, con la desviación marcada en la fecha de estado. Abajo, lo que cada programa avanza en cada mes. Cada panel tiene
+   su propia escala (no hay doble eje) y los dos comparten el eje de tiempo */
+const pgLeyenda=()=>`<div class="mlegend pgleg"><span><svg width="26" height="12" aria-hidden="true"><line x1="1" x2="25" y1="6" y2="6" style="stroke:var(--sv-1);stroke-width:2.5"/><circle cx="13" cy="6" r="4" style="fill:var(--sv-1);stroke:var(--surface);stroke-width:1.5"/></svg>Avance real</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/></svg>Programado a esa fecha</span><span><i class="lkey d" style="--c:var(--sv-3)"></i>Línea base</span><span><i class="lkey" style="--c:var(--sv-2)"></i>Programa vigente</span></div>`;
 function pgChart(P){const C=pgCurve(P);if(!C||C.pts.length<2)return `<p class="muted small" style="margin:0">No hay tareas con fechas para dibujar la curva.</p>`;
-  const W=760,H=290,ml=44,mr=110,mt=16,mb=30,pts=C.pts,t0=pgEnd(pts[0].d),t1=pgEnd(pts[pts.length-1].d);
-  const X=tm=>ml+(tm-t0)/((t1-t0)||1)*(W-ml-mr),Y=v=>mt+(100-clamp(v,0,100))/100*(H-mt-mb),f1=v=>v.toFixed(1);
-  let g="";for(const v of [0,25,50,75,100])g+=`<line class="${v?"gl":"bl"}" x1="${ml}" x2="${W-mr}" y1="${f1(Y(v))}" y2="${f1(Y(v))}"/><text class="ax" x="${ml-6}" y="${f1(Y(v)+4)}" text-anchor="end">${v}%</text>`;
-  const m0=new Date(t0);m0.setDate(1);m0.setHours(0,0,0,0);m0.setMonth(m0.getMonth()+1);const stp=Math.max(1,Math.ceil((t1-m0.getTime())/(30.4*PG_DAY)/8));
-  for(const d=new Date(m0);d.getTime()<=t1;d.setMonth(d.getMonth()+stp)){const x=f1(X(d.getTime()));g+=`<line class="bl" x1="${x}" x2="${x}" y1="${H-mb}" y2="${H-mb+4}"/><text class="ax" x="${x}" y="${H-mb+16}" text-anchor="middle">${MESES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}</text>`;}
-  const path=f=>{let s="";for(const p of pts){const v=f(p);if(v==null)continue;s+=(s?"L":"M")+f1(X(pgEnd(p.d)))+" "+f1(Y(v));}return s;};
-  g+=`<path class="ln" d="${path(p=>p.lb)}" style="stroke:var(--sv-3);stroke-dasharray:6 4"/><path class="ln" d="${path(p=>p.vig)}" style="stroke:var(--sv-2)"/>`;
-  const now=Date.now();if(now>t0&&now<t1){const x=f1(X(now));g+=`<line class="hoy" x1="${x}" x2="${x}" y1="${mt}" y2="${H-mb}"/><text class="ax" x="${f1(X(now)+4)}" y="${mt+10}">hoy</text>`;}
+  const W=1280,ml=48,mr=28,mt=30,hA=290,hB=62,yA=mt+hA,yB0=yA+48,yB=yB0+hB,H=yB+42;
+  const pts=C.pts,n=pts.length,tms=pts.map(p=>pgEnd(p.d)),t0=tms[0],t1=tms[n-1];
+  const X=tm=>ml+(tm-t0)/((t1-t0)||1)*(W-ml-mr),Y=v=>mt+(100-clamp(v,0,100))/100*hA,q=v=>v.toFixed(1);
+  /* valor de una curva en cualquier fecha: entre dos semanas se interpola */
+  const at=(f,tm)=>{if(tm<=t0)return f(pts[0]);if(tm>=t1)return f(pts[n-1]);let i=1;while(tms[i]<tm)i++;return f(pts[i-1])+(f(pts[i])-f(pts[i-1]))*(tm-tms[i-1])/((tms[i]-tms[i-1])||1);};
+  /* meses del eje, cada uno con lo que la línea base y el programa vigente avanzan dentro de él */
+  const ms=[];{const d=new Date(t0);d.setDate(1);d.setHours(0,0,0,0);
+    for(;d.getTime()<t1;d.setMonth(d.getMonth()+1)){const e=new Date(d);e.setMonth(e.getMonth()+1);const a=Math.max(t0,d.getTime()),b=Math.min(t1,e.getTime());
+      ms.push({m:d.getMonth(),y:d.getFullYear(),a,b,lb:Math.max(0,at(p=>p.lb,b)-at(p=>p.lb,a)),vg:Math.max(0,at(p=>p.vig,b)-at(p=>p.vig,a))});}}
+  const bw=(W-ml-mr)/ms.length,cada=bw>=30?1:bw>=15?2:bw>=10?3:6;
+  let g="";
+  for(const v of [0,20,40,60,80,100])g+=`<line class="${v?"gl":"bl"}" x1="${ml}" x2="${W-mr}" y1="${q(Y(v))}" y2="${q(Y(v))}"/><text class="ax" x="${ml-8}" y="${q(Y(v)+4)}" text-anchor="end">${v}%</text>`;
+  /* panel inferior: avance programado por mes, en puntos porcentuales */
+  const tope=Math.max(0.1,...ms.map(z=>Math.max(z.lb,z.vg))),mx=[1,2,3,4,5,6,8,10,12,15,20,25,30,40,50,100].find(v=>v>=tope)||100,YB=v=>yB-Math.min(v,mx)/mx*hB,pp=v=>String(v).replace(".",",");
+  g+=`<text class="cap" x="${ml}" y="${yB0-14}">Avance programado en cada mes</text>`;
+  for(const v of [mx/2,mx])g+=`<line class="gl" x1="${ml}" x2="${W-mr}" y1="${q(YB(v))}" y2="${q(YB(v))}"/><text class="ax" x="${ml-8}" y="${q(YB(v)+4)}" text-anchor="end">${pp(v)}${v===mx?" pp":""}</text>`;
+  const wb=clamp((bw-5)/2,1.5,13);let ya=null;
+  ms.forEach((z,i)=>{const xa=X(z.a),xb=X(z.b),xc=(xa+xb)/2;
+    if(z.m===0&&i)g+=`<line class="yr" x1="${q(xa)}" x2="${q(xa)}" y1="${mt}" y2="${yB+34}"/>`;
+    if(z.lb>0.02)g+=`<rect class="br k-lb" x="${q(xc-wb-0.75)}" y="${q(YB(z.lb))}" width="${q(wb)}" height="${q(yB-YB(z.lb))}"/>`;
+    if(z.vg>0.02)g+=`<rect class="br k-vg" x="${q(xc+0.75)}" y="${q(YB(z.vg))}" width="${q(wb)}" height="${q(yB-YB(z.vg))}"/>`;
+    if(z.m%cada===0&&xb-xa>=bw*0.6)g+=`<text class="ax" x="${q(xc)}" y="${yB+16}" text-anchor="middle">${MESES[z.m]}</text>`;
+    /* año: centrado bajo sus meses */
+    if(!ya||ya.y!==z.y){ya={y:z.y,a:xa,b:xb};ms.yrs=(ms.yrs||[]).concat(ya);}else ya.b=xb;});
+  for(const a of ms.yrs||[])if(a.b-a.a>=36)g+=`<text class="ax an" x="${q((a.a+a.b)/2)}" y="${yB+33}" text-anchor="middle">${a.y}</text>`;
+  g+=`<line class="bl" x1="${ml}" x2="${W-mr}" y1="${yB}" y2="${yB}"/>`;
+  const path=f=>pts.map((p,i)=>(i?"L":"M")+q(X(tms[i]))+" "+q(Y(f(p)))).join("");
+  g+=`<path class="ln k-lb" d="${path(p=>p.lb)}"/><path class="ln k-vg" d="${path(p=>p.vig)}"/>`;
   /* avance real (Texto27) de cada revisión, unido por una línea; anillo = programado (Texto28) de esa revisión */
-  const rv=C.rev.filter(v=>{const t=pgEnd(v.d);return t>=t0&&t<=t1;});
-  if(rv.length){g+=`<path class="ln" d="${rv.map((v,i)=>(i?"L":"M")+f1(X(pgEnd(v.d)))+" "+f1(Y(v.r))).join("")}" style="stroke:var(--sv-1)"/>`;
-    for(const v of rv){const x=f1(X(pgEnd(v.d)));if(v.p!=null)g+=`<circle cx="${x}" cy="${f1(Y(v.p))}" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/>`;g+=`<circle cx="${x}" cy="${f1(Y(v.r))}" r="4" style="fill:var(--sv-1);stroke:var(--surface);stroke-width:2"/>`;}
-    const u=rv[rv.length-1],ux=X(pgEnd(u.d)),uy=Y(u.r);g+=`<text class="lb" x="${f1(ux+8)}" y="${f1(uy+4)}">Real ${fmtP(u.r,1)}</text>`;}
-  const ult=rv[rv.length-1],td=ult?ult.d:today();let li=0,bd=Infinity;pts.forEach((p,i)=>{const d=Math.abs(pgEnd(p.d)-pgEnd(td));if(d<bd){bd=d;li=i;}});
+  const rv=C.rev.filter(v=>{const t=pgEnd(v.d);return t>=t0&&t<=t1;}),ult=rv[rv.length-1],now=Date.now();
+  const marca=(tm,txt)=>{const x=X(tm);return `<line class="st" x1="${q(x)}" x2="${q(x)}" y1="${mt-8}" y2="${yB}"/><text class="cap" x="${q(clamp(x,ml+90,W-mr-90))}" y="${mt-14}" text-anchor="middle">${txt}</text>`;};
+  if(ult)g+=marca(pgEnd(ult.d),"Fecha de estado "+fmtD(ult.d));else if(now>t0&&now<t1)g+=marca(now,"Hoy");
+  if(ult){const x=X(pgEnd(ult.d)),yr=Y(ult.r),izq=x-ml>170,der=W-mr-x>170;
+    const tag=(arriba,y,txt,cls)=>arriba?`<text class="tg${cls||""}" x="${q(izq?x-10:x+10)}" y="${q(y-9)}" text-anchor="${izq?"end":"start"}">${txt}</text>`:`<text class="tg${cls||""}" x="${q(der?x+10:x-10)}" y="${q(y+19)}" text-anchor="${der?"start":"end"}">${txt}</text>`;
+    let t="";
+    if(ult.p!=null){const yp=Y(ult.p),d=ult.r-ult.p;
+      if(Math.abs(d)>=0.05)g+=`<line class="dv ${d<0?"neg":"pos"}" x1="${q(x)}" x2="${q(x)}" y1="${q(yp)}" y2="${q(yr)}"/>`;
+      t+=tag(d<0,yp,"Programado "+fmtP(ult.p,1))+tag(d>=0,yr,"Real "+fmtP(ult.r,1));
+      if(Math.abs(yp-yr)>=30)t+=`<text class="tg ${d<0?"neg":"pos"}" x="${q(der?x+10:x-10)}" y="${q((yp+yr)/2+4.5)}" text-anchor="${der?"start":"end"}">${ppTxt(d)}</text>`;}
+    else t+=tag(false,yr,"Real "+fmtP(ult.r,1));
+    if(rv.length>1)g+=`<path class="ln k-re" d="${rv.map((v,i)=>(i?"L":"M")+q(X(pgEnd(v.d)))+" "+q(Y(v.r))).join("")}"/>`;
+    for(const v of rv){const vx=q(X(pgEnd(v.d))),u=v===ult;if(v.p!=null)g+=`<circle class="pr" cx="${vx}" cy="${q(Y(v.p))}" r="${u?5:3.5}"/>`;g+=`<circle class="rl" cx="${vx}" cy="${q(Y(v.r))}" r="${u?5.5:4}"/>`;}
+    g+=t;}
+  const td=ult?ult.d:today();let li=0,bd=Infinity;tms.forEach((tm,i)=>{const d=Math.abs(tm-pgEnd(td));if(d<bd){bd=d;li=i;}});
   const key=progKey(P.contr);PGCUR={key,pts,rev:C.rev,X,W,i:li};
-  g+=`<line id="pg-xh" class="xh" x1="0" x2="0" y1="${mt}" y2="${H-mb}" style="display:none"/><rect class="pgc-hit" x="${ml}" y="${mt}" width="${W-ml-mr}" height="${H-mt-mb}" data-scurve="${esc(key)}" tabindex="0" aria-label="${esc("Curva S de "+progName(P.contr)+": usa las flechas izquierda y derecha para recorrer las semanas")}"/>`;
-  return `<div class="mlegend"><span><i class="lkey" style="--c:var(--sv-1)"></i>Avance real (Texto27) de cada revisión cargada</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:2"/></svg>Programado (Texto28) de cada revisión</span><span><i class="lkey d" style="--c:var(--sv-3)"></i>Programado con la línea base</span><span><i class="lkey" style="--c:var(--sv-2)"></i>Programado con las fechas vigentes</span></div>
+  g+=`<line id="pg-xh" class="xh" x1="0" x2="0" y1="${mt}" y2="${yB}" style="display:none"/><rect class="pgc-hit" x="${ml}" y="${mt}" width="${W-ml-mr}" height="${yB-mt}" data-scurve="${esc(key)}" tabindex="0" aria-label="${esc("Curva S de "+progName(P.contr)+": usa las flechas izquierda y derecha para recorrer las semanas")}"/>`;
+  return `${pgLeyenda()}
   <div class="mdl-wrap"><svg class="pgc" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Curva S de ${progName(P.contr)}${ult?`: avance real ${fmtP(ult.r,1)} y programado ${fmtP(ult.p,1)} al ${fmtD(ult.d)}`:""}`)}">${g}</svg></div>
+  <p class="small muted" style="margin:0">Avance real y programado a cada fecha: los que informa cada revisión cargada del programa (Texto27 y Texto28). Línea base y programa vigente: se calculan con las fechas de todas las tareas y sus pesos; las barras muestran cuánto avanza cada uno en el mes.</p>
   <details><summary class="small" style="cursor:pointer;color:var(--ink-2)">Ver los datos de la curva</summary><div class="tbl-wrap" style="max-height:320px;margin-top:6px"><table class="tec"><thead><tr><th>Semana</th><th class="r">Programado línea base</th><th class="r">Programado fechas vigentes</th></tr></thead><tbody>${pts.map(p=>`<tr><td class="num">${fmtD(p.d)}</td><td class="r num">${fmtP(p.lb,1)}</td><td class="r num">${fmtP(p.vig,1)}</td></tr>`).join("")}</tbody></table></div>
   ${C.rev.length?`<div class="tbl-wrap" style="margin-top:6px"><table class="tec"><thead><tr><th>Fecha de estado</th><th class="r">Programado (Texto28)</th><th class="r">Avance real (Texto27)</th></tr></thead><tbody>${C.rev.map(v=>`<tr><td class="num">${fmtD(v.d)}</td><td class="r num">${fmtP(v.p,1)}</td><td class="r num">${fmtP(v.r,1)}</td></tr>`).join("")}</tbody></table></div>`:""}</details>`;}
+/* Curvas S en miniatura para el Resumen: una por programa y todas con el mismo eje de tiempo, para comparar plazos y desvíos */
+function pgMinis(ps){const L=ps.map(P=>({P,C:pgCurve(P),T:pgModel(P).tot})).filter(z=>z.C&&z.C.pts.length>1);if(!L.length)return "";
+  let t0=Infinity,t1=-Infinity;for(const z of L){t0=Math.min(t0,pgEnd(z.C.pts[0].d));t1=Math.max(t1,pgEnd(z.C.pts[z.C.pts.length-1].d));}
+  const W=340,H=150,ml=34,mr=8,mt=8,mb=20,X=tm=>ml+(tm-t0)/((t1-t0)||1)*(W-ml-mr),Y=v=>mt+(100-clamp(v,0,100))/100*(H-mt-mb),q=v=>v.toFixed(1);
+  let ax="";for(const v of [0,50,100])ax+=`<line class="${v?"gl":"bl"}" x1="${ml}" x2="${W-mr}" y1="${q(Y(v))}" y2="${q(Y(v))}"/><text class="ax" x="${ml-6}" y="${q(Y(v)+4)}" text-anchor="end">${v}%</text>`;
+  const y0=new Date(t0).getFullYear();if(X(new Date(y0+1,0,1).getTime())-ml>=40)ax+=`<text class="ax" x="${ml+4}" y="${H-6}">${y0}</text>`;
+  for(let y=y0+1;;y++){const t=new Date(y,0,1).getTime();if(t>=t1)break;const x=X(t);ax+=`<line class="yr" x1="${q(x)}" x2="${q(x)}" y1="${mt}" y2="${H-mb+5}"/>`;if(W-mr-x>=34)ax+=`<text class="ax" x="${q(x+4)}" y="${H-6}">${y}</text>`;}
+  return `<div class="pgminis">${L.map(z=>{const pts=z.C.pts,T=z.T,rv=z.C.rev,u=rv[rv.length-1],path=f=>pts.map((p,i)=>(i?"L":"M")+q(X(pgEnd(p.d)))+" "+q(Y(f(p)))).join("");
+    let g=ax+`<path class="ln k-lb" d="${path(p=>p.lb)}"/><path class="ln k-vg" d="${path(p=>p.vig)}"/>`;
+    if(u){const x=q(X(pgEnd(u.d)));g+=`<line class="st" x1="${x}" x2="${x}" y1="${mt}" y2="${H-mb}"/>`;
+      if(rv.length>1)g+=`<path class="ln k-re" d="${rv.map((v,i)=>(i?"L":"M")+q(X(pgEnd(v.d)))+" "+q(Y(v.r))).join("")}"/>`;
+      if(u.p!=null)g+=`<circle class="pr" cx="${x}" cy="${q(Y(u.p))}" r="3.5"/>`;g+=`<circle class="rl" cx="${x}" cy="${q(Y(u.r))}" r="4"/>`;}
+    return `<figure class="pgmini"><figcaption><button class="linkbtn" data-pgsel="${esc(progKey(z.P.contr))}" data-tab="programas">${esc(progName(z.P.contr))}</button><span class="num">Real <b>${fmtP(T.r,1)}</b> de ${fmtP(T.p,1)} programado</span></figcaption><svg class="pgc mini" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Curva S de ${progName(z.P.contr)}: avance real ${fmtP(T.r,1)}, programado ${fmtP(T.p,1)}`)}">${g}</svg></figure>`;}).join("")}</div>`;}
 function pgXhShow(i,cx,cy){const C=PGCUR;if(!C||!C.pts[i])return;C.i=i;const p=C.pts[i],xh=document.getElementById("pg-xh");if(!xh)return;const x=C.X(pgEnd(p.d));
   xh.setAttribute("x1",x.toFixed(1));xh.setAttribute("x2",x.toFixed(1));xh.style.display="";
   const v=[...C.rev].reverse().find(z=>z.d<=p.d);
-  const g=tipEl();g.textContent=`Semana del ${fmtD(p.d)}\n${fmtP(p.lb,1)} · programado con la línea base\n${fmtP(p.vig,1)} · programado con las fechas vigentes${v?`\n${fmtP(v.r,1)} · avance real al ${fmtD(v.d)}${v.p!=null?` (programado ${fmtP(v.p,1)})`:""}`:""}`;g.style.display="block";
+  const g=tipEl();g.textContent=`Semana del ${fmtD(p.d)}\n${fmtP(p.lb,1)} · línea base\n${fmtP(p.vig,1)} · programa vigente${v?`\n${fmtP(v.r,1)} · avance real al ${fmtD(v.d)}${v.p!=null?` (programado ${fmtP(v.p,1)})`:""}`:""}`;g.style.display="block";
   if(cx==null){const bb=xh.ownerSVGElement.getBoundingClientRect();cx=bb.left+x/C.W*bb.width;cy=bb.top+bb.height*0.3;}
   const w=g.offsetWidth,hh=g.offsetHeight;let tx=cx+14,ty=cy+16;if(tx+w>innerWidth-8)tx=cx-w-12;if(ty+hh>innerHeight-8)ty=cy-hh-12;g.style.left=tx+"px";g.style.top=ty+"px";}
 const pgXhOff=()=>{const xh=document.getElementById("pg-xh");if(xh)xh.style.display="none";tipEl().style.display="none";};
@@ -3102,7 +3241,7 @@ function pgDetalle(P){const G=S.pg,M=pgModel(P),X=pgNow(P),A=X.agg,T0=M.tot,R=M.
 function pgEdadTd(P){const e=pgMs(P.estado);if(!isFinite(e))return `<td class="r num">—</td>`;const dd=Math.max(0,Math.floor((Date.now()-e)/PG_DAY));
   return `<td class="r num">${pgD(P.estado)}<small class="${dd>14?"warn":""}">${dd>14?"sin actualizar · ":""}hace ${dd} día${dd===1?"":"s"}</small></td>`;}
 function pgResumen(){const ps=progs();if(!ps.length)return "";
-  return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div><div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th>Real vs programado</th><th class="r">Desviación</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
+  return `<section class="panel stack"><div class="spread"><h2>Programado vs real</h2><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas">Ver programas y alertas</button></div>${pgLeyenda()}${pgMinis(ps)}<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th>Real vs programado</th><th class="r">Desviación</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas altas</th></tr></thead><tbody>
   ${ps.map(P=>{const M=pgModel(P),X=pgNow(P),T0=M.tot,R=M.root,dv=R?pgDias(R.F,R.bF):null,na=X.al.filter(a=>a.sev==="alta").length;
     return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-pgsel="${esc(progKey(P.contr))}" data-tab="programas">${esc(progName(P.contr))}</button></td>${pgEdadTd(P)}<td class="r num">${fmtP(T0.p,1)}</td><td class="r num"><b>${fmtP(T0.r,1)}</b></td><td>${blt(T0.r,T0.p)}</td><td class="r num">${pgDev(T0)}</td><td class="r num">${pgTerTd(X.agg)}</td><td class="r num">${R&&R.F?pgD(R.F):"—"}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días</small>`:""}</td><td class="r num">${na?`<b class="crit">${na}</b>`:"0"}</td></tr>`;}).join("")}</tbody></table></div>
   <p class="small muted" style="margin:0">Programado (Texto28) y avance real (Texto27) de cada programa a su fecha de estado. En «Real vs programado», la barra es el avance real y la marca vertical, el programado. Terreno = lo registrado en la app en las tareas con equivalente, junto al avance real que el programa informa para ellas. En la S/E Tineo el % del Resumen mide solo obras civiles y estructuras del patio; el programa de PINE suma además ingeniería, suministros, permisos y obras preliminares, por eso su avance real es mayor.</p></section>`;}
@@ -4046,6 +4185,7 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="t-est")return set(()=>{S.tbl.est=t.value;});
   if(t.id==="q-pct"||t.id==="q-fecha"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
 /* al imprimir el reporte se redibuja: el comentario que se está escribiendo (y su firma) sale en la hoja aunque no se haya guardado */
+window.addEventListener("hashchange",()=>{const h=(location.hash||"").slice(1);if(S.state!=="ok"||h===S.tab)return;const tb=TABS.find(t=>t.id===h);if(tb&&(!tb.admin||S.canAdmin)){S.tab=h;tipEl().style.display="none";render();window.scrollTo({top:0});}});
 window.addEventListener("beforeprint",()=>{if(S.state==="ok"&&S.tab==="reporte"){pendingRender=false;render();}});
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&S.state==="ok"&&Date.now()-S.lastLoad>120000){try{await conSesion(loadAll);render();}catch(e){}}});
 
