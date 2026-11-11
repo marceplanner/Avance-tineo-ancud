@@ -745,6 +745,14 @@ nav.tabs{scrollbar-width:thin}
 .pgc.mini .st{stroke:var(--ink-2)}
 @media (min-width:1100px){.mv{grid-template-columns:120px minmax(3.4em,auto)}}
 @media print{.pgc{min-width:0}}
+/* modelos: perfiles principales y diagonales con distinto grosor; lo que falta por montar, en trazo fino */
+:root{--steel:#263642}
+@media screen and (prefers-color-scheme: dark){:root{--steel:#dfe7ec}}
+.mdl .ghost{stroke-dasharray:3 2}
+.mdl .ghost.br{stroke-width:.5;stroke-dasharray:none}
+.mdl .steel.br{stroke-linecap:round}
+.mdl .ghost{stroke:color-mix(in srgb,var(--line-2) 55%,var(--muted))}
+.mdl .wire.none{stroke:color-mix(in srgb,var(--line-2) 70%,var(--muted));stroke-dasharray:2 3}
 </style>
 </head>
 <body>
@@ -801,17 +809,18 @@ const OPG_NO_ML=new Set(["op_des","op_bal"]);
    STN4324-DK-PM-C-0001, partida 4.3.2.1 (Texto30): Tendido Conductor 0,0288 y Flechado y Engrapado Conductor 0,0144, o sea 2/3 y 1/3 */
 const REM_ACTS=[{id:"rm_c1",nombre:"Remate conductor circuito 1",peso:50},{id:"rm_c2",nombre:"Remate conductor circuito 2",peso:50}];
 const ML_REM=0.0144/(0.0288+0.0144);
-/* Fundación de la Gine Pole, una por sector del cruce, según «Avance físico al 01-11-2026» y el programa de CML (1.5.2.1.3.5 y 1.5.2.2.3.5).
+/* Fundación de la Gine Pole. Hay una sola y está en el sector sur del cruce (corrección del 11-11-2026: antes se modelaba
+   una por sector). Según «Avance físico al 01-11-2026» y el programa de CML (1.5.2.1.3.5 y 1.5.2.2.3.5).
    En ese programa cuelga de «Construcción fundación torre suspensión» y su peso está dentro del de la suspensión. Por eso entra a las
    fundaciones de su sector (no a las de la torre) con su peso del programa (Texto30) sobre el del sector, suspensión más anclajes:
-   norte 0,0044 / (0,07033 + 0,03218), sur 0,0044 / (0,09231 + 0,0471). No es una estructura: tiene documento de avance propio (kind "gp") */
+   0,0044 / (0,09231 + 0,0471). El sector norte no tiene Gine Pole: sus fundaciones son solo las de sus torres. No es una estructura: tiene documento de avance propio (kind "gp") */
 const GP_ACTS=[{id:"gp_exc",nombre:"Excavación",peso:25},{id:"gp_enf",nombre:"Enfierradura y moldaje",peso:25},{id:"gp_hor",nombre:"Hormigonado",peso:25},{id:"gp_ret",nombre:"Retiro de moldaje",peso:12.5},{id:"gp_rel",nombre:"Relleno y compactado",peso:12.5}];
-const GP_UNITS=[{id:"GP-N",lado:"norte",nombre:"Gine Pole norte",sector:"Sector norte · Continente",susp:"2C",w:0.0044/(0.07033+0.03218)},{id:"GP-S",lado:"sur",nombre:"Gine Pole sur",sector:"Sector sur · Isla de Chiloé",susp:"3C",w:0.0044/(0.09231+0.0471)}];
+const GP_UNITS=[{id:"GP-S",lado:"sur",nombre:"Gine Pole",sector:"Sector sur · Isla de Chiloé",susp:"3C",w:0.0044/(0.09231+0.0471)}];
 const gpU=id=>GP_UNITS.find(u=>u.id===id);
 const gpLado=l=>GP_UNITS.find(u=>u.lado===l);
 const gpMix=(tor,gp,u)=>tor*(1-u.w)+gp*u.w;
-/* Avance de partida del adjunto; el sector sur está en 0 % y no necesita registro. Lo carga un administrador una vez, desde la pestaña Cruce */
-const GP_CARGA={u:"GP-N",fecha:"2026-11-01",obs:"Avance físico al 01-11-2026",ch:{gp_exc:100,gp_enf:76}};
+/* Avance de partida del adjunto, de la Gine Pole del sector sur. Lo carga un administrador una vez, desde la pestaña Cruce */
+const GP_CARGA={u:"GP-S",fecha:"2026-11-01",obs:"Avance físico al 01-11-2026",ch:{gp_exc:100,gp_enf:76}};
 function normCfg(c){if(!c||!Array.isArray(c.actividades))return c;
   let A=c.actividades.map(a=>a&&a.circ?Object.assign({},a,{nombre:`Conductor circuito ${a.circ} · fase ${faseTxt(a.fase).toLowerCase()}`}):a),G=c.grupos||[],E=c.etapas||[];
   /* separadores del conductor (antes «espaciadores») */
@@ -1106,9 +1115,9 @@ const opgW=()=>{const c=gc();return c.m.opgW||(c.m.opgW={t:actsG("opt").reduce((
 function tenTorre(st,sec){const sp=tenSplit(sec),ow=opgW(),ot=(ow.t+ow.v)?sp.o*ow.t/(ow.t+ow.v):0;return (sp.t+ot)?(sp.t*st.tto+ot*(st.otT||0))/(sp.t+ot):st.tto;}
 function totE(st,sec){const w={pre:pesoE("pre",sec),fun:pesoE("fun",sec),mon:pesoE("mon",sec),ten:pesoE("ten",sec)};const W=w.pre+w.fun+w.mon+w.ten;return W?(w.pre*st.pre+w.fun*st.fun+w.mon*st.mon+w.ten*tenTorre(st,sec))/W:0;}
 function estado(st){if(st.mon>=99.95)return "ter";if(st.pre+st.fun+st.mon+st.tto+(st.otT||0)<=0)return "sin";return "eje";}
-/* fundaciones del cruce: promedio de sus dos sectores, cada uno con sus torres y su Gine Pole */
+/* fundaciones del cruce: promedio de sus dos sectores, cada uno con sus torres; el sur, además, con la Gine Pole */
 function crFunGP(get,byE,def){
-  const v=CR_LADOS.map(L=>{const u=gpLado(L.id),st=L.ids.map(id=>byE[id]).filter(Boolean);return u&&st.length?gpMix(st.reduce((x,s)=>x+s.fun,0)/st.length,gPct(get,kGP(u.id),"gp"),u):null;}).filter(x=>x!=null);
+  const v=CR_LADOS.map(L=>{const u=gpLado(L.id),st=L.ids.map(id=>byE[id]).filter(Boolean);if(!st.length)return null;const t=st.reduce((x,s)=>x+s.fun,0)/st.length;return u?gpMix(t,gPct(get,kGP(u.id),"gp"),u):t;}).filter(x=>x!=null);
   return v.length?v.reduce((a,b)=>a+b,0)/v.length:def;}
 function calcSec(get,sec){
   const es=estr(sec);const acc={pre:0,fun:0,mon:0,tto:0,otT:0};const cnt={sin:0,eje:0,ter:0};const byE={};const ind={per:0,acc:0,fun:0,mon:0};
@@ -1262,24 +1271,31 @@ let CLIPN=0;
    arms.L/R[k] = amarre del conductor (bajo la cadena); arms.LT/RT[k] = punta de la cruceta */
 const LVL=[0.64,0.76,0.88],ARM_F=[0.92,1,0.85];
 function latticeGeom(cx,gy,H,wb,wt,panels,anc,o){o=o||{};
-  const yW=gy-H*0.58,yT=gy-H*0.93,yH=gy-H;const P=(x,y)=>f1(x)+" "+f1(y);const s=[];
-  const lx=y=>cx-(wb-(wb-wt)*(gy-y)/(gy-yW)),rx=y=>cx+(wb-(wb-wt)*(gy-y)/(gy-yW));
-  /* cuerpo troncocónico con diagonales en X */
-  s.push(`M${P(cx-wb,gy)}L${P(cx-wt,yW)}M${P(cx+wb,gy)}L${P(cx+wt,yW)}`);
-  for(let i=0;i<panels;i++){const y0=gy-(gy-yW)*i/panels,y1=gy-(gy-yW)*(i+1)/panels;s.push(`M${P(lx(y0),y0)}L${P(rx(y1),y1)}M${P(rx(y0),y0)}L${P(lx(y1),y1)}M${P(lx(y1),y1)}L${P(rx(y1),y1)}`);}
+  const yW=gy-H*0.58,yT=gy-H*0.93,yH=gy-H;const P=(x,y)=>f1(x)+" "+f1(y);const m=[],b=[];
+  /* montantes con quiebre: abajo la pata abre más y arriba cierra hacia la cintura, como en una torre de celosía real */
+  const yK=gy-(gy-yW)*0.36,wK=wt+(wb-wt)*0.5,hw=y=>y>=yK?wK+(wb-wK)*(y-yK)/(gy-yK):wt+(wK-wt)*(y-yW)/(yK-yW);
+  m.push(`M${P(cx-wb,gy)}L${P(cx-wK,yK)}L${P(cx-wt,yW)}M${P(cx+wb,gy)}L${P(cx+wK,yK)}L${P(cx+wt,yW)}`);
+  /* paneles más altos abajo que arriba (uno de sus niveles cae en el quiebre); en cada uno, diagonales en X y un horizontal que lo cierra */
+  const ys=[];for(let i=0;i<=panels;i++)ys.push(gy-(gy-yW)*Math.pow(i/panels,0.82));
+  {let k=1;for(let i=1;i<panels;i++)if(Math.abs(ys[i]-yK)<Math.abs(ys[k]-yK))k=i;ys[k]=yK;}
+  for(let i=0;i<ys.length-1;i++){const y0=ys[i],y1=ys[i+1],a=hw(y0),c=hw(y1);
+    b.push(`M${P(cx-a,y0)}L${P(cx+c,y1)}M${P(cx+a,y0)}L${P(cx-c,y1)}`);
+    (i===ys.length-2?m:b).push(`M${P(cx-c,y1)}H${f1(cx+c)}`);}
   /* fuste recto donde se apoyan las crucetas, con diagonales entre niveles, y cúspide del OPGW */
-  const ys=[yW,...LVL.map(f=>gy-H*f),yT];
-  s.push(`M${P(cx-wt,yW)}V${f1(yT)}M${P(cx+wt,yW)}V${f1(yT)}`);
-  for(let i=0;i<ys.length-1;i++)s.push(`M${P(cx-wt,ys[i])}L${P(cx+wt,ys[i+1])}M${P(cx+wt,ys[i])}L${P(cx-wt,ys[i+1])}`);
-  s.push(`M${P(cx-wt,yT)}H${f1(cx+wt)}M${P(cx-wt,yT)}L${P(cx,yH)}L${P(cx+wt,yT)}`);
-  /* crucetas: cordón horizontal y diagonal inferior hasta la punta; la media es la más larga (torre tipo barril).
-     o.noIns: las cadenas de aisladores se dibujan aparte (vestido); o.armK: largo de cruceta en múltiplos de wt */
-  const arms={L:[],R:[],LT:[],RT:[]};const ins=Math.max(3.5,H*0.05);const ak=o.armK||(anc?2.9:2.6);const ad=H*0.035;
-  LVL.forEach((f,k)=>{const y=gy-H*f;const L=wt*(1+ak*ARM_F[k]);
-    s.push(`M${P(cx-L,y)}L${P(cx+L,y)}M${P(cx-wt,y+ad)}L${P(cx-L,y)}M${P(cx+wt,y+ad)}L${P(cx+L,y)}`);
-    if(!o.noIns)s.push(`M${P(cx-L,y)}L${P(cx-L,y+ins)}M${P(cx+L,y)}L${P(cx+L,y+ins)}`);
+  const yl=[yW,...LVL.map(f=>gy-H*f),yT];
+  m.push(`M${P(cx-wt,yW)}V${f1(yT)}M${P(cx+wt,yW)}V${f1(yT)}M${P(cx-wt,yT)}L${P(cx,yH)}L${P(cx+wt,yT)}`);
+  for(let i=0;i<yl.length-1;i++)b.push(`M${P(cx-wt,yl[i])}L${P(cx+wt,yl[i+1])}M${P(cx+wt,yl[i])}L${P(cx-wt,yl[i+1])}`);
+  b.push(`M${P(cx-wt,yT)}H${f1(cx+wt)}`);
+  /* crucetas: cordón superior horizontal, cordón inferior hasta la punta y un montante que los une; la media es la más larga
+     (torre tipo barril). o.noIns: las cadenas de aisladores se dibujan aparte (vestido); o.armK: largo de cruceta en múltiplos de wt */
+  const arms={L:[],R:[],LT:[],RT:[]};const ins=Math.max(3.5,H*0.05);const ak=o.armK||(anc?2.9:2.6);const ad=H*0.04;
+  LVL.forEach((f,k)=>{const y=gy-H*f;const L=wt*(1+ak*ARM_F[k]),xm=wt+(L-wt)*0.42,ym=y+ad*(1-0.42);
+    m.push(`M${P(cx-L,y)}L${P(cx+L,y)}M${P(cx-wt,y+ad)}L${P(cx-L,y)}M${P(cx+wt,y+ad)}L${P(cx+L,y)}`);
+    b.push(`M${P(cx-xm,y)}V${f1(ym)}M${P(cx+xm,y)}V${f1(ym)}M${P(cx-wt,y+ad)}H${f1(cx+wt)}`);
+    if(!o.noIns)m.push(`M${P(cx-L,y)}L${P(cx-L,y+ins)}M${P(cx+L,y)}L${P(cx+L,y+ins)}`);
     arms.L.push({x:cx-L,y:y+ins});arms.R.push({x:cx+L,y:y+ins});arms.LT.push({x:cx-L,y});arms.RT.push({x:cx+L,y});});
-  return {d:s.join(""),arms,peak:{x:cx,y:yH},reach:Math.max(wb,wt*(1+ak)+2),ins};
+  /* d = perfiles principales | diagonales: steelDraw los traza con distinto grosor */
+  return {d:m.join("")+"|"+b.join(""),arms,peak:{x:cx,y:yH},reach:Math.max(wb,wt*(1+ak)+2),ins};
 }
 /* Torre simplificada para perfiles largos: cuerpo, cúspide y tres crucetas por lado. arm0/arm/arm2 = nivel inferior/medio/superior */
 function glyphD(cx,gy,h,b,anc){const t=b*0.32,yW=gy-h*0.6,yT=gy-h*0.93,yH=gy-h;
@@ -1290,11 +1306,12 @@ function glyphD(cx,gy,h,b,anc){const t=b*0.32,yW=gy-h*0.6,yT=gy-h*0.93,yH=gy-h;
   const at=k=>({L:{x:cx-lv[k].L,y:lv[k].y},R:{x:cx+lv[k].L,y:lv[k].y}});
   return {d,arm0:at(0),arm:at(1),arm2:at(2)};}
 /* Estructura montada: trazo fantasma completo + trazo sólido recortado desde el suelo según el % de montaje */
-function steelDraw(d,cx,gy,top,reach,p,sw){const st=sw?` style="stroke-width:${sw}"`:"";
-  if(p>=99.95)return `<path class="steel"${st} d="${d}"/>`;
-  if(p<=0)return `<path class="ghost" d="${d}"/>`;
+function steelDraw(d,cx,gy,top,reach,p,sw){const [dm,db]=d.split("|"),w=sw||1.1,st=sw?` style="stroke-width:${sw}"`:"",sb=` style="stroke-width:${f1(Math.max(0.45,w*0.48))}"`;
+  const gh=`<path class="ghost" d="${dm}"/>`+(db?`<path class="ghost br" d="${db}"/>`:""),so=c=>`<path class="steel"${st}${c} d="${dm}"/>`+(db?`<path class="steel br"${sb}${c} d="${db}"/>`:"");
+  if(p>=99.95)return so("");
+  if(p<=0)return gh;
   const id="ck"+(CLIPN++);const hh=(gy-top+6)*clamp(p,0,100)/100;
-  return `<path class="ghost" d="${d}"/><clipPath id="${id}"><rect x="${f1(cx-reach-4)}" y="${f1(gy+2-hh)}" width="${f1(2*reach+8)}" height="${f1(hh+2)}"/></clipPath><path class="steel"${st} clip-path="url(#${id})" d="${d}"/>`;}
+  return gh+`<clipPath id="${id}"><rect x="${f1(cx-reach-4)}" y="${f1(gy+2-hh)}" width="${f1(2*reach+8)}" height="${f1(hh+2)}"/></clipPath>`+so(` clip-path="url(#${id})"`);}
 /* Relleno ascendente genérico */
 function clipUp(inner,x,y,w,h,p){if(p<=0)return "";if(p>=99.95)return inner;const id="ck"+(CLIPN++);const hh=h*clamp(p,0,100)/100;return `<clipPath id="${id}"><rect x="${f1(x)}" y="${f1(y+h-hh)}" width="${f1(w)}" height="${f1(hh+0.5)}"/></clipPath><g clip-path="url(#${id})">${inner}</g>`;}
 /* Fundación en corte (dado + zapata), hormigonada desde abajo según el % */
@@ -1541,7 +1558,7 @@ function crossingSvg(){
     g+=`<text class="tx b" x="${t.x}" y="${gy+56}" text-anchor="middle" style="font-size:12px">${esc(id)}</text><text class="tx" x="${t.x}" y="${gy+70}" text-anchor="middle" style="font-size:9.5px">Fund. ${fmtP(st.fun)}</text><text class="tx" x="${t.x}" y="${gy+82}" text-anchor="middle" style="font-size:9.5px">Mont. ${fmtP(st.mon)}</text>`;
     const tip=`Torre ${e.torre||id} (${id}) · ${e.tipo||""}\nFundación ${fmtP(st.fun,1)} (promedio de 4 patas)\nMontaje ${fmtP(st.mon,1)} · ${EST_TXT[estado(st)]}`;
     g+=`<rect class="hit" x="${f1(t.x-G.reach-6)}" y="${f1(gy-t.h-8)}" width="${f1(2*G.reach+12)}" height="${f1(t.h+40)}" data-open="cruce|${esc(id)}" data-tip="${esc(tip)}" role="button" tabindex="0" aria-label="${esc("Torre "+id)}"/>`;}
-  /* fundación de la Gine Pole de cada sector, en ubicación esquemática entre el anclaje y la suspensión */
+  /* fundación de la Gine Pole (solo sector sur), en ubicación esquemática entre la suspensión y el anclaje */
   for(const u of GP_UNITS){const x=u.lado==="norte"?278:973,I=gpInfo(u);
     g+=footModel(x,gy,14,18,"cr",I.tot)+`<text class="tx b" x="${x}" y="${gy+56}" text-anchor="middle" style="font-size:12px">GP</text><text class="tx" x="${x}" y="${gy+70}" text-anchor="middle" style="font-size:9.5px">Gine Pole</text><text class="tx" x="${x}" y="${gy+82}" text-anchor="middle" style="font-size:9.5px">Fund. ${fmtP(I.tot)}</text>`;
     g+=`<rect class="hit" x="${x-26}" y="${gy-10}" width="52" height="96" data-open="cruce|${u.id}" data-tip="${esc(gpTip(u,I))}" role="button" tabindex="0" aria-label="${esc("Fundación "+u.nombre+" "+fmtP(I.tot))}"/>`;}
@@ -1794,8 +1811,8 @@ function crLado(L,P,get){get=get||cur;P=P||S.P;const r=P.sec.cruce;let sp=0,np=0
   for(const id of L.ids){const e=estById("cruce",id);if(!e||!r||!r.byE[id])continue;const st=r.byE[id],ps=patas(id);ne++;mon+=st.mon;det.push({id,fun:st.fun});
     if(ps.length)for(const p of ps){const v=gPct(get,kP("cruce",id,p.pata),"cr");sp+=v;np++;if(v>=99.95)ok++;}
     else{sp+=4*st.fun;np+=4;if(st.fun>=99.95)ok+=4;}}
-  const u=gpLado(L.id),gp=gPct(get,kGP(u.id),"gp");
-  return {fun:gpMix(np?sp/np:0,gp,u),u,gp,np,ok,mon:ne?mon/ne:0,det};}
+  const u=gpLado(L.id)||null,gp=u?gPct(get,kGP(u.id),"gp"):null,t=np?sp/np:0;
+  return {fun:u?gpMix(t,gp,u):t,u,gp,np,ok,mon:ne?mon/ne:0,det};}
 /* carga única del avance de partida de la Gine Pole (se ofrece a los administradores mientras no exista) */
 const gpCargaPend=()=>!(((S.av.get(kGP(GP_CARGA.u))||{}).act||{}).gp_exc);
 async function gpCargar(){if(S.saving||!S.canAdmin||!gpCargaPend())return;
@@ -1814,14 +1831,14 @@ function vCruce(){
   const planGP=u=>{const I=gpInfo(u);
     return `<div class="pl"><h4><span>Fundación Gine Pole <span class="muted small mono">${esc(u.id)}</span></span><b>${fmtP(I.tot,1)}</b></h4><span class="small muted">${I.step>=I.n?"Terminada":`${I.step}/${I.n} · sigue ${esc(I.next.nombre.toLowerCase())}`} · <button class="linkbtn" style="font-family:var(--f-body)" data-open="cruce|${esc(u.id)}">abrir</button></span>${gpPlanSvg(u)}<ul>${actsG("gp").map(a=>`<li>${esc(a.nombre)} · <b class="num">${fmtP(cur(I.k,a.id))}</b></li>`).join("")}</ul></div>`;};
   let h=`<div class="stack"><section class="panel stack" style="gap:10px"><div class="spread"><h2>Cruce aéreo del canal de Chacao · elevación</h2><div class="row small"><span>Fundaciones <b class="num">${fmtP(r.stg.fun,1)}</b></span><span>Montaje <b class="num">${fmtP(r.stg.mon,1)}</b></span><span>Tendido <b class="num">${fmtP(r.stg.ten,1)}</b></span><span>Cruce <b class="num">${fmtP(r.pct,1)}</b></span></div></div>
-  <div class="tmfig">${lados.map(z=>`<div><span>${esc(z.L.t)} · fundaciones</span><b class="num">${fmtP(z.fun,1)}</b>${mtr(z.fun)}<span>${z.ok} de ${z.np} patas terminadas · ${esc(z.det.map(d=>`${d.id} ${fmtP(d.fun)}`).join(" · "))} · Gine Pole ${fmtP(z.gp)} · montaje ${fmtP(z.mon,1)}</span></div>`).join("")}</div>
+  <div class="tmfig">${lados.map(z=>`<div><span>${esc(z.L.t)} · fundaciones</span><b class="num">${fmtP(z.fun,1)}</b>${mtr(z.fun)}<span>${z.ok} de ${z.np} patas terminadas · ${esc(z.det.map(d=>`${d.id} ${fmtP(d.fun)}`).join(" · "))}${z.u?` · Gine Pole ${fmtP(z.gp)}`:""} · montaje ${fmtP(z.mon,1)}</span></div>`).join("")}</div>
   <div class="mdl-wrap">${crossingSvg()}</div>
   ${mLegend([["circ","Circuito 1 a la izquierda y circuito 2 a la derecha"],["half","Medio vano: el lado de cada torre es su circuito"],["ghost","Torre por montar"],["steel","Estructura montada"],["fg","Fundación por construir"],["fz","Fundación hormigonada"],["wire","Conductor tendido"],["part","En tendido"],["none","Por tender"]])}
-  <p class="small muted">Cada torre lleva el circuito 1 a la izquierda y el circuito 2 a la derecha, con sus fases superior, media e inferior, y el cable de guardia OPGW en la cúspide. En cada fase, la mitad del vano que sale del lado derecho de una torre muestra el tendido del circuito 2 y la que llega al lado izquierdo de la torre siguiente, el del circuito 1. Los anclajes 1CA y 4CA van atenuados porque quedan detrás de 1CB y 4CB. GP es la fundación de la Gine Pole de cada sector, en ubicación esquemática. Toca una torre o una GP para abrir su ficha.</p></section>`;
+  <p class="small muted">Cada torre lleva el circuito 1 a la izquierda y el circuito 2 a la derecha, con sus fases superior, media e inferior, y el cable de guardia OPGW en la cúspide. En cada fase, la mitad del vano que sale del lado derecho de una torre muestra el tendido del circuito 2 y la que llega al lado izquierdo de la torre siguiente, el del circuito 1. Los anclajes 1CA y 4CA van atenuados porque quedan detrás de 1CB y 4CB. GP es la fundación de la Gine Pole, que está solo en el sector sur, en ubicación esquemática. Toca una torre o la GP para abrir su ficha.</p></section>`;
   h+=`<section class="panel stack"><div class="spread"><h2>Fundaciones en planta</h2><span class="small muted">Patas D–A arriba, C–B abajo. El hormigón sube según el avance acumulado de cada pata. Toca una pata para registrar.</span></div>
-  ${S.canAdmin&&gpCargaPend()?`<div class="note small spread"><span>Gine Pole según el avance físico al ${esc(fmtD(GP_CARGA.fecha))}: norte 44 % (excavación 100 %, enfierradura y moldaje 76 %) y sur 0 %. Falta cargarlo; este aviso solo lo ven los administradores.</span><button class="btn small primary" id="gp-seed" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Cargar este avance"}</button></div>`:""}
-  <div class="plans">${lados.map(z=>`<div class="grp cap lbl">${esc(z.L.t)} · fundaciones ${fmtP(z.fun,1)} (${z.ok} de ${z.np} patas)</div>${z.L.ids.map(plan).join("")}${planGP(z.u)}`).join("")}</div>
-  <p class="small muted" style="margin:0">El avance de fundaciones de cada sector suma los dos anclajes y la suspensión (lo hormigonado en todas sus patas sobre el total de patas, cada pata con el mismo peso) y la fundación de la Gine Pole con su peso en el programa del contratista: ${GP_UNITS.map(u=>`${fmtP(u.w*100,1)} en el ${u.lado}`).join(" y ")}.</p>
+  ${S.canAdmin&&gpCargaPend()?`<div class="note small spread"><span>Gine Pole (sector sur) según el avance físico al ${esc(fmtD(GP_CARGA.fecha))}: 44 % (excavación 100 %, enfierradura y moldaje 76 %). Falta cargarlo; este aviso solo lo ven los administradores.</span><button class="btn small primary" id="gp-seed" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Cargar este avance"}</button></div>`:""}
+  <div class="plans">${lados.map(z=>`<div class="grp cap lbl">${esc(z.L.t)} · fundaciones ${fmtP(z.fun,1)} (${z.ok} de ${z.np} patas)</div>${z.L.ids.map(plan).join("")}${z.u?planGP(z.u):""}`).join("")}</div>
+  <p class="small muted" style="margin:0">El avance de fundaciones de cada sector suma los dos anclajes y la suspensión (lo hormigonado en todas sus patas sobre el total de patas, cada pata con el mismo peso). En el sector sur se suma la fundación de la Gine Pole, con su peso en el programa del contratista (${fmtP(GP_UNITS[0].w*100,1)}).</p>
   <div class="stack" style="gap:6px"><span class="lbl">Secuencia de actividades por pata</span><div class="steps-legend plain">${as.map((a,i)=>`<span><i>${i+1}</i>${esc(a.nombre)} <span class="muted num">${fmtP(num(a.peso,0))}</span></span>`).join("")}</div></div>
   <div class="stack" style="gap:6px"><span class="lbl">Secuencia de actividades de la Gine Pole</span><div class="steps-legend plain">${actsG("gp").map((a,i)=>`<span><i>${i+1}</i>${esc(a.nombre)} <span class="muted num">${fmtP(num(a.peso,0),num(a.peso,0)%1!==0)}</span></span>`).join("")}</div></div></section>`;
   const vs=vanos("cruce");
@@ -1960,7 +1977,7 @@ function vDrawerGP(){
   h+=figsHtml([["Avance",I.tot,1]])+`<span class="small muted">Toca una actividad para registrar su avance acumulado.</span>`;
   h+=`<div class="agrp"><h3><span>Actividades</span><span class="num">${fmtP(I.tot,1)}</span></h3>${actRows(k,"gp")}</div>`;
   h+=`<div class="agrp"><h3><span>Historial en terreno</span></h3>${hist.length?`<div class="feed">${hist.map(x=>{const a=actById(x.a);return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w">${esc(a?a.nombre:x.a)}<div class="o">${esc(autor(x))}${x.obs?" — "+esc(x.obs):""}</div></div><span class="p num">${fmtP(num(x.pct,0))}</span></div>`;}).join("")}</div>`:`<span class="small muted">Sin registros en terreno.</span>`}</div>`;
-  h+=`<div class="row" style="justify-content:flex-end"><button class="btn small ghost" data-open="cruce|${esc(otro.id)}">${esc(otro.nombre)} →</button></div>`;
+  if(otro)h+=`<div class="row" style="justify-content:flex-end"><button class="btn small ghost" data-open="cruce|${esc(otro.id)}">${esc(otro.nombre)} →</button></div>`;
   return h+`</div></aside>`;
 }
 function vDrawer(){
@@ -2062,7 +2079,7 @@ function vRegistrar(){
     if(r.sec==="se")h+=`<div class="grp"><span class="lbl">Partida</span><div class="opts">${SE_CATS.map(c=>`<button class="opt" data-rgrp="se_${c.id}" aria-pressed="${r.grp==="se_"+c.id}"><span class="t">${esc(c.nombre)}</span><span class="s num">${S.SE.cat[c.id].n} elementos · ${fmtP(S.SE.cat[c.id].pct,1)}</span></button>`).join("")}</div></div>`;
     else h+=`<div class="grp"><span class="lbl">Etapa</span><div class="opts">${etapas().map(e=>`<button class="opt" data-retapa="${e.id}" aria-pressed="${r.etapa===e.id}"><span class="t">${esc(e.nombre)}</span><span class="s num">${fmtP(stg[e.id]||0,1)} en el sector</span></button>`).join("")}</div></div>`;
     if(r.etapa==="fun"&&r.sec==="cruce"){const pg=GP_UNITS.reduce((x,u)=>x+gPct(cur,kGP(u.id),"gp"),0)/GP_UNITS.length;
-      h+=`<div class="grp"><span class="lbl">¿Qué fundación?</span><div class="opts"><button class="opt" data-rgrp="cr" aria-pressed="${r.grp==="cr"}"><span class="t">Torres</span><span class="s">Por pata</span></button><button class="opt" data-rgrp="gp" aria-pressed="${r.grp==="gp"}"><span class="t">Gine Pole</span><span class="s num">Norte y sur · ${fmtP(pg,1)}</span></button></div></div>`;}
+      h+=`<div class="grp"><span class="lbl">¿Qué fundación?</span><div class="opts"><button class="opt" data-rgrp="cr" aria-pressed="${r.grp==="cr"}"><span class="t">Torres</span><span class="s">Por pata</span></button><button class="opt" data-rgrp="gp" aria-pressed="${r.grp==="gp"}"><span class="t">Gine Pole</span><span class="s num">Sector sur · ${fmtP(pg,1)}</span></button></div></div>`;}
     if(r.etapa==="fun"&&r.sec!=="cruce"){const es=estr(r.sec);
       h+=`<div class="grp"><span class="lbl">Tipo de fundación</span><div class="opts">${FUNG.map(g=>{const n=es.filter(e=>e.fund===g).length;return `<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${esc(grupoById(g).nombre)}</span><span class="s">${n} estructura(s)${es.some(e=>!e.fund)?" + sin tipo definido":""}</span></button>`;}).join("")}</div></div>`;}
     if(r.etapa==="ten"){const o=(g,t,s,v)=>`<button class="opt" data-rgrp="${g}" aria-pressed="${r.grp===g}"><span class="t">${t}</span><span class="s">${s} · ${fmtP(v||0,1)}</span></button>`;
@@ -2833,7 +2850,7 @@ function pgFallback(E,ctx){const id=x=>String(x.e.id).toUpperCase();
   else if(/\banclaje\b/.test(ctx.replace(/pernos de anclaje/g,"")))E=E.filter(x=>/ancl/.test(nrm(x.e.tipo)));
   if(/\bisla\b/.test(ctx))E=E.filter(x=>x.s==="isla");else if(/continente/.test(ctx))E=E.filter(x=>x.s==="continente");
   return E;}
-/* Fundación de la Gine Pole: se mide en su ficha por sector. Su traslado y las demás tareas de la Gine Pole siguen sin equivalencia */
+/* Fundación de la Gine Pole: hay una sola (sector sur) y se mide en su ficha; las tareas del programa que la nombran, en cualquiera de sus dos sectores, apuntan a ella. Su traslado y las demás tareas de la Gine Pole siguen sin equivalencia */
 const PG_GP=/fundacion gin(?:e)? ?pole (norte|sur)/;
 function pgGpSteps(t){return GP_ACTS.filter(a=>({gp_exc:/excav/,gp_enf:/enfierr/,gp_hor:/hormig/,gp_ret:/retiro/,gp_rel:/relleno|compact/})[a.id].test(t)).map(a=>a.id);}
 function pgFType(ctx){if(/\bpilas?\b/.test(ctx))return ["pila"];if(/helicoidal|\(ah\)|\bah\b|pilote|cabezales? metalic/.test(ctx))return ["amet","ahor"];if(/zapata/.test(ctx))return ["zv"];return null;}
@@ -2946,7 +2963,7 @@ function pgModel(P){const g=gc(),c=PGM.get(P);if(c&&c.g===g)return c.M;
     const path=pathOf(t),ctx=path.join(" > "),own=path[path.length-1]||"";
     const r={t,path,ctx,parts:null,E:[],V:[],pata:null,soloV:false,sl:"",ml:"",why:"",w:0};recs.push(r);
     /* bajadas, reserva y mufa (cajas de empalme) del OPGW sí se miden: actividad de torre; sus suministros y la fusión de fibra no */
-    {const gm=se?null:PG_GP.exec(ctx);if(gm){const u=gpLado(gm[1]),ids=pgGpSteps(own);r.parts=[{t:"gp",u:u.id,ids,l:"Fundación Gine Pole · "+(ids.length?ids.map(id=>GP_ACTS.find(a=>a.id===id).nombre.toLowerCase()).join(", "):"completa")}];r.sl=u.nombre;r.ml=r.parts[0].l;continue;}}
+    {const gm=se?null:PG_GP.exec(ctx);if(gm){const u=gpLado(gm[1])||GP_UNITS[0],ids=pgGpSteps(own);r.parts=[{t:"gp",u:u.id,ids,l:"Fundación Gine Pole · "+(ids.length?ids.map(id=>GP_ACTS.find(a=>a.id===id).nombre.toLowerCase()).join(", "):"completa")}];r.sl=u.nombre;r.ml=r.parts[0].l;continue;}}
     const opOk=!se&&/opgw|cable de guardia/.test(ctx)&&/mufa|caja|bajad|reserva/.test(own)&&!/suministr|procurement|compra|transporte|ingenier|fusion|fibra/.test(ctx);
     if(!opOk&&(PG_EXCL.test(ctx)||(se?PG_EXCL_SE:PG_EXCL_LIN).test(ctx))){r.why="Fuera de lo que mide la app (ingeniería, suministros, permisos, pruebas u obras auxiliares)";continue;}
     if(se){const p=pgRuleSE(own,ctx);if(!p){r.why="Sin partida equivalente en la S/E de la app";continue;}r.parts=p;r.sl=p[0].sl;r.ml=p[0].l;continue;}
@@ -3481,10 +3498,10 @@ function exPvE(x){if(x.pve)return x.pve;
           if((p1!=null&&(p1-(p0||0)>0.01||(p1>0.01&&p1<99.95)||p1-e1>0.5))||e1-(e0||0)>0.01||(e1>0.01&&e1<99.95))rows.push({t:a.nombre,u:"%",p:p1,e:e1});}
         return {t:t+" "+ids.join(" y "),rows:rows.slice(0,5)};});
       /* Gine Pole del lado: se agrega solo si tiene actividades en el período, con el mismo criterio */
-      {const u=gpLado(L.id),k=kGP(u.id),rows=[],pGP=(a,t)=>{if(!M)return null;const v=[];for(const r of M.meas)if(r.parts.some(p=>p.t==="gp"&&p.u===u.id&&(!p.ids.length||p.ids.includes(a.id)))){const z=pl(r,t);if(z!=null)v.push(z);}return pgAvgN(v);};
+      {const u=gpLado(L.id);if(u){const k=kGP(u.id),rows=[],pGP=(a,t)=>{if(!M)return null;const v=[];for(const r of M.meas)if(r.parts.some(p=>p.t==="gp"&&p.u===u.id&&(!p.ids.length||p.ids.includes(a.id)))){const z=pl(r,t);if(z!=null)v.push(z);}return pgAvgN(v);};
         for(const a of actsG("gp")){const e1=x.g1(k,a.id),e0=x.g0(k,a.id),p1=pGP(a,tm),p0=pGP(a,tm0);
           if((p1!=null&&(p1-(p0||0)>0.01||(p1>0.01&&p1<99.95)||p1-e1>0.5))||e1-e0>0.01||(e1>0.01&&e1<99.95))rows.push({t:a.nombre,u:"%",p:p1,e:e1});}
-        if(rows.length)grs.push({t:"Fundación Gine Pole",rows});}
+        if(rows.length)grs.push({t:"Fundación Gine Pole",rows});}}
       if(grs.some(g=>g.rows.length))out.cru.push({L,f:fc.f,grs});}}
   return x.pve=out;}
 /* estructuras de un frente en tramos continuos de la línea («estructuras 1–14 y 42–180»); muy repartidas, solo la cantidad */
