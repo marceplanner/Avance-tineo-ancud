@@ -758,6 +758,106 @@ nav.tabs{scrollbar-width:thin}
 @media (max-width:700px){.hctl{align-items:flex-start}}
 .exsrc{font-size:.8em;color:var(--ink-2);margin:.4em 0 0;line-height:1.35}
 @media (max-width:700px){.exstrip.m4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ===== Revisión del 16-11-2026: carga y descarga, liberaciones y ayudas generales ===== */
+/* Zona para soltar o elegir un archivo. El archivo elegido se guarda en el estado de la app, así no se pierde cuando la página
+   se redibuja (por ejemplo, al llegar un registro de otro usuario). El campo de archivo cubre toda la zona, invisible:
+   recibe el clic y también el archivo que se arrastra encima */
+.drop{position:relative;display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:66px;padding:10px 42px 10px 12px;border:1.5px dashed var(--line-2);background:var(--surface-2);min-width:0}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.drop.has{border-style:solid;border-color:var(--good-ink);background:color-mix(in oklab,var(--good) 8%,var(--surface))}
+.drop .drop-l{font-size:.84rem;font-weight:500;color:var(--ink-2)}
+.drop .drop-h{font-size:.84rem;color:var(--muted)}
+.drop .drop-f{font-size:.9rem;overflow-wrap:anywhere}
+.drop .drop-f b{font-weight:600}
+.drop input[type=file]{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;cursor:pointer}
+.drop .drop-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:1;width:26px;height:26px;border:1px solid var(--line-2);background:var(--surface);border-radius:2px;padding:0;line-height:1}
+.drop .drop-x:hover{border-color:var(--ink-2)}
+/* Carga y descarga: una tarjeta por fuente (qué actualiza, última carga, archivos, revisión) y una fila por descarga */
+.dcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;align-items:start}
+@media (max-width:420px){.dcards{grid-template-columns:1fr}}
+.dcard{border:1px solid var(--line);background:var(--surface);padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dcard>header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dcard>p{font-size:.88rem;color:var(--ink-2)}
+.dtag{font-size:.76rem;font-weight:600;color:var(--ink-2);border:1px solid var(--line-2);padding:1px 7px;border-radius:2px;white-space:nowrap}
+.dlast{font-size:.84rem;color:var(--ink-2);border-left:3px solid var(--line-2);padding-left:9px}
+.dlast.ok{border-left-color:var(--good-ink)}
+.dlast.warn{border-left-color:var(--warn);color:var(--warn-ink)}
+.dzone{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;align-items:end}
+.dprev{border:1px solid var(--accent);background:var(--accent-soft);padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:.9rem;min-width:0}
+.dprev table{font-size:.82rem;background:var(--surface)}
+.dprev .dn{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:baseline}
+.dprev .dn b{font-family:var(--f-disp);font-size:1.2rem}
+.dlist{display:flex;flex-direction:column;border:1px solid var(--line)}
+.drow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
+.drow:first-child{border-top:0}
+.drow h3{font-size:1rem;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.drow p{font-size:.86rem;color:var(--ink-2)}
+.drow .dact{display:flex;gap:6px;flex-wrap:wrap;align-items:end;justify-content:flex-end}
+.drow .dact .field{max-width:165px}
+@media (max-width:700px){.drow{grid-template-columns:1fr}.drow .dact{justify-content:flex-start}}
+.btn.danger{border-color:var(--crit-ink);color:var(--crit-ink)}
+.bx{margin-left:auto;flex:none;border:1px solid var(--line-2);background:var(--surface);width:28px;height:28px;border-radius:2px;padding:0;line-height:1}
+.bx:hover{border-color:var(--ink-2)}
+/* Configuración: índice de secciones y barra de guardado siempre a la vista */
+.jump{display:flex;flex-wrap:wrap;gap:6px}
+.jump button{border:1px solid var(--line-2);background:var(--surface);padding:5px 10px;border-radius:2px;font-size:.84rem}
+.jump button:hover{border-color:var(--ink-2)}
+.panel[id]{scroll-margin-top:64px}
+.savebar{position:sticky;bottom:0;z-index:4;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--line-2);border-top:1.5px solid var(--ink);box-shadow:0 -6px 18px rgba(20,33,43,.08)}
+.savebar .st{margin-right:auto;font-size:.88rem;color:var(--ink-2)}
+.savebar .st.dirty{color:var(--warn-ink);font-weight:600}
+/* rótulo: versión de la página y acceso directo a la ficha de una estructura */
+.rotulo .ses .ver{color:var(--muted);font-size:.76rem;white-space:nowrap}
+.rotulo .ses input.gq{width:158px;padding:5px 8px;font-size:.8rem;border-width:1px}
+/* Liberaciones: cifras que filtran, franja de la línea y filtros por estado */
+.lkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));border:1px solid var(--line);overflow:hidden}
+.lkpis button{all:unset;box-sizing:border-box;cursor:pointer;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;box-shadow:-1px -1px 0 var(--line)}
+.lkpis button:hover{background:var(--surface-2)}
+.lkpis button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.lkpis button[aria-pressed="true"]{background:var(--surface-2);box-shadow:-1px -1px 0 var(--line),inset 0 3px 0 var(--ink)}
+.lkpis .k{font-family:var(--f-disp);font-weight:600;font-size:.86rem;color:var(--ink-2)}
+.lkpis b{font-family:var(--f-disp);font-size:1.55rem;font-weight:700;line-height:1.1}
+.lkpis .s{font-size:.78rem;color:var(--ink-2)}
+.lkpis .mtr{margin:5px 0 3px}
+.lkpis .crit b{color:var(--crit-ink)}
+/* franja: torre = barra alta, vano = barra corta. Lleno = apto, medio = en proceso, hueco = pendiente y con franja = restringido
+   (la forma repite lo que dice el color) */
+.lstrips{display:flex;flex-direction:column;gap:8px}
+.lsrow{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;align-items:start}
+.lsrow .nm{font-family:var(--f-disp);font-weight:600;font-size:.9rem;padding-top:11px;display:flex;flex-direction:column;gap:1px}
+.lsrow .nm small{font-family:var(--f-body);font-weight:400;font-size:.76rem;color:var(--muted)}
+.lstrip{display:flex;flex-wrap:wrap;align-items:center;gap:15px 1px;padding-top:13px}
+.lc{all:unset;box-sizing:border-box;display:inline-block;position:relative;flex:none;width:9px;height:18px;border:1.5px solid var(--c);background:var(--c)}
+button.lc{cursor:pointer}
+.lc.v{width:7px;height:7px}
+.lc.g-pend{background:transparent}
+.lc.g-proc{background:linear-gradient(to top,var(--c) 50%,transparent 50%)}
+.lc.g-res{background:linear-gradient(135deg,var(--c) 36%,var(--surface) 36% 64%,var(--c) 64%)}
+.lc.dim{opacity:.18}
+button.lc:hover,.lc.on{outline:2px solid var(--ink);outline-offset:1px;z-index:1}
+.lc[data-n]::before{content:attr(data-n);position:absolute;left:-1px;bottom:calc(100% + 2px);font:500 10px/11px var(--f-body);color:var(--muted);white-space:nowrap}
+.lc,.lkpis .mtr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media (max-width:700px){.lsrow{grid-template-columns:1fr;gap:0}.lsrow .nm{padding-top:0;flex-direction:row;gap:8px;align-items:baseline}.lc{width:7px;height:16px}.lc.v{width:5px;height:6px}}
+.lfchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lfc{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);padding:5px 10px;border-radius:2px;font-size:.84rem;white-space:nowrap}
+.lfc::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.lfc.nc::before{display:none}
+.lfc b{font-weight:600}
+.lfc:hover{border-color:var(--ink-2)}
+.lfc[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lfsep{width:1px;align-self:stretch;background:var(--line-2);margin:0 4px}
+.seg.vw button{padding:9px 14px;font-size:.9rem;font-weight:500}
+/* la actualización masiva queda pegada al borde inferior mientras hay elementos marcados */
+.libbulk{position:sticky;bottom:0;z-index:4;box-shadow:0 -6px 18px rgba(20,33,43,.1)}
+/* ficha: los dos permisos lado a lado y lo que falta para quedar apto */
+.lsem{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.lsem>div{background:var(--surface);padding:8px 10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;min-width:0}
+.lfalta{border-left:3px solid var(--c,var(--line-2));background:var(--surface-2);padding:7px 10px;font-size:.88rem}
+.feed .it.lh{padding-left:10px;box-shadow:inset 3px 0 0 var(--c,var(--line-2))}
+.ltab tr.ed td{background:var(--surface-2);white-space:normal}
+.ltab td.acc{white-space:nowrap;text-align:right}
 </style>
 </head>
 <body>
@@ -773,7 +873,7 @@ nav.tabs{scrollbar-width:thin}
   <pattern id="pat-earth" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" style="stroke:var(--line-2);stroke-width:1"/></pattern>
   <pattern id="pat-water" width="24" height="8" patternUnits="userSpaceOnUse"><rect width="24" height="8" style="fill:var(--water)"/><path d="M0 4 Q3 2 6 4 T12 4" style="fill:none;stroke:var(--accent);stroke-width:.6;opacity:.45"/></pattern>
 </defs></svg>
-<div id="toast" class="toast" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -782,7 +882,9 @@ nav.tabs{scrollbar-width:thin}
 "use strict";
 const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"Cruce"},{id:"isla",nombre:"Isla"}];
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
-const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"config",t:"Configuración",admin:true}];
+const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
+/* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
+const APP_VER="16-11-2026";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -973,8 +1075,11 @@ const S={me:null,userName:"",userEmail:"",canWrite:false,canAdmin:false,
   se:null,SE:null,seCat:"fun",seDraft:null,
   rep:{modo:"7d",desde:"",hasta:"",env:false,vista:"ejecutivo",anexo:false,notaEd:null},n8nDraft:null,rnotas:{},n8n:null,
   prog:new Map(),pg:{sel:"",contr:"",vista:"alertas",prof:3,pref:"",q:"",open:new Set()},
-  lib:{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:"",sel:new Set(),base:"sat",bulk:{v:"ser",est:"lib",fecha:"",ref:"",obs:""}},pmfEd:null,
-  tr:{a:"",b:"",lista:null}};
+  lib:{vista:"planilla",tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:"",pq:"",pe:"",sel:new Set(),base:"sat",bulk:{v:"ser",est:"lib",fecha:"",ref:"",obs:""}},pmfEd:null,
+  tr:{a:"",b:"",lista:null},
+  /* carga y descarga: up = archivo elegido en cada zona (por id), prev = revisión pendiente antes de cargar, cargas = historial,
+     dat = fechas de corte y período de las descargas; gq = «Ir a estructura» del rótulo; dirty = configuración sin guardar */
+  up:{},prev:null,cargas:null,dat:{fLin:"",fSE:"",fPc:"",desde:"",hasta:"",conImp:false},gq:"",dirty:false};
 
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -1011,6 +1116,7 @@ async function loadAll(){
   S.prog=new Map((cf||[]).filter(r=>r.id.indexOf("prog__")===0&&r.data).map(r=>[r.id,r.data]));
   S.rnotas=((cf||[]).find(r=>r.id==="rep_notas")||{}).data||{};
   S.n8n=((cf||[]).find(r=>r.id==="n8n")||{}).data||null;
+  S.cargas=((cf||[]).find(r=>r.id==="cargas")||{}).data||null;
   const av=new Map();for(let from=0;;from+=1000){const {data,error}=await sb.from("avance").select("id,data").order("id").range(from,from+999);if(error)throw mapErr(error);for(const r of data)av.set(r.id,r.data);if(data.length<1000)break;}
   S.av=av;S.lastLoad=Date.now();
 }
@@ -1018,7 +1124,7 @@ function subscribe(){
   if(S.chan)return;
   S.chan=sb.channel("cambios-avance")
     .on("postgres_changes",{event:"*",schema:"public",table:"avance"},p=>{const m=new Map(S.av);if(p.eventType==="DELETE"){if(p.old&&p.old.id)m.delete(p.old.id);}else if(p.new&&p.new.id)m.set(p.new.id,p.new.data);S.av=m;schedule();})
-    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto"){if(r.data)S.cfg=normCfg(r.data);else sb.from("config").select("id,data").eq("id","proyecto").maybeSingle().then(({data})=>{if(data&&data.data){S.cfg=normCfg(data.data);schedule();}});}if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;if(r&&r.id==="rep_notas")S.rnotas=r.data||{};if(r&&r.id==="n8n")S.n8n=r.data||null;
+    .on("postgres_changes",{event:"*",schema:"public",table:"config"},p=>{const r=p.new;if(r&&r.id==="proyecto"){if(r.data)S.cfg=normCfg(r.data);else sb.from("config").select("id,data").eq("id","proyecto").maybeSingle().then(({data})=>{if(data&&data.data){S.cfg=normCfg(data.data);schedule();}});}if(r&&r.id==="unidades")S.uni=normUni(r.data);if(r&&r.id==="se")S.se=r.data;if(r&&r.id==="rep_notas")S.rnotas=r.data||{};if(r&&r.id==="n8n")S.n8n=r.data||null;if(r&&r.id==="cargas"&&r.data)S.cargas=r.data;
       /* programas de los contratistas: si el aviso llega sin datos (fila grande), se vuelve a leer la fila */
       if(r&&r.id&&r.id.indexOf("prog__")===0){if(r.data){const m=new Map(S.prog);m.set(r.id,r.data);S.prog=m;}else sb.from("config").select("id,data").eq("id",r.id).maybeSingle().then(({data})=>{if(data&&data.data){const m=new Map(S.prog);m.set(data.id,data.data);S.prog=m;schedule();}});}
       if(p.eventType==="DELETE"&&p.old&&p.old.id&&String(p.old.id).indexOf("prog__")===0){const m=new Map(S.prog);m.delete(p.old.id);S.prog=m;}
@@ -1028,8 +1134,14 @@ function subscribe(){
 async function rpcAvance(key,base,act,hist){const {error}=await sb.rpc("registrar_avance",{p_id:key,p_base:base,p_act:act,p_hist:hist});if(error)throw mapErr(error);}
 function mergeLocal(key,base,act,hist){const prev=S.av.get(key);const d=Object.assign({},prev||base);d.act=Object.assign({},(prev&&prev.act)||{});d.hist=Object.assign({},(prev&&prev.hist)||{},hist);
   for(const [k,v] of Object.entries(act)){const p=d.act[k];if(!p||(p.fecha||"")<=(v.fecha||""))d.act[k]=v;}const m=new Map(S.av);m.set(key,d);S.av=m;}
-async function setConfig(id,data){await withRetry(async()=>{const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);});if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;else if(id==="rep_notas")S.rnotas=data;else if(id==="n8n")S.n8n=data;else if(id.indexOf("prog__")===0){const m=new Map(S.prog);m.set(id,data);S.prog=m;}}
+async function setConfig(id,data){await withRetry(async()=>{const {error}=await sb.from("config").upsert({id,data,updated_at:new Date().toISOString()});if(error)throw mapErr(error);});if(id==="proyecto")S.cfg=normCfg(data);else if(id==="unidades")S.uni=normUni(data);else if(id==="se")S.se=data;else if(id==="rep_notas")S.rnotas=data;else if(id==="n8n")S.n8n=data;else if(id==="cargas")S.cargas=data;else if(id.indexOf("prog__")===0){const m=new Map(S.prog);m.set(id,data);S.prog=m;}}
 async function updateConfig(id,patch){const base=(id==="proyecto"?S.cfg:S.uni)||{};await setConfig(id,Object.assign({},base,patch));}
+/* Historial de cargas (fila "cargas" de config): qué se cargó, con qué archivo, cuándo, quién y con qué resultado.
+   Se conservan las últimas 40. Si no se puede anotar, la carga igual queda hecha */
+const CARGA_T={lin:"Matrices de la línea",se:"Matrices de la S/E",lib:"Planilla de control de liberaciones",prog:"Programa de contratista",maestro:"Programa maestro",resp:"Respaldo restaurado"};
+async function logCarga(tipo,archivo,det){if(!S.canAdmin)return;
+  try{const L=[{ts:Date.now(),tipo,archivo:String(archivo||"").slice(0,160),det:String(det||"").slice(0,420),por:S.userName}].concat((S.cargas&&S.cargas.L)||[]).slice(0,40);await setConfig("cargas",{L});}catch(e){}}
+const ultCarga=tipo=>((S.cargas&&S.cargas.L)||[]).find(x=>x.tipo===tipo)||null;
 
 /* ---------- modelo ---------- */
 const cfgOk=()=>!!(S.cfg&&S.cfg.v===2);
@@ -1170,26 +1282,35 @@ const blt=(r,p)=>r==null?`<span class="muted">—</span>`:`<span class="blt${p==
 const figsHtml=L=>`<div class="figs${L.length===1?" one":""}">${L.map(([t,v,dec])=>`<div><span class="lbl">${esc(t)}</span><b class="num">${fmtP(v,dec)}</b>${mtr(v)}</div>`).join("")}</div>`;
 
 /* ---------- render ---------- */
-let rq=0,pendingRender=false,ptrDown=false,mqT=0;
+let rq=0,pendingRender=false,ptrDown=false,mqT=0,dlgOpen=false;
 /* Mientras el mouse/dedo está presionado no se redibuja: si no, el botón tocado (p. ej. "Guardar")
    se reemplaza entre el pointerdown y el click y el click se pierde. Se redibuja al soltar. */
 document.addEventListener("pointerdown",()=>{ptrDown=true;},true);
-const ptrRelease=()=>{if(!ptrDown)return;setTimeout(()=>{ptrDown=false;if(pendingRender){const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();}},0);};
+const ptrRelease=()=>{if(!ptrDown)return;setTimeout(()=>{ptrDown=false;if(pendingRender){if(dlgOpen)return;const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();}},0);};
 document.addEventListener("pointerup",ptrRelease,true);
 document.addEventListener("pointercancel",ptrRelease,true);
+/* Tampoco se redibuja con la ventana de «elegir archivo» abierta: el campo de archivo se reemplazaría y el archivo elegido
+   se perdería. Se retoma al elegir el archivo o al cerrar la ventana */
+document.addEventListener("click",ev=>{dlgOpen=!!(ev.target&&ev.target.type==="file");},true);
+const dlgClose=()=>{if(!dlgOpen)return;setTimeout(()=>{if(!dlgOpen)return;dlgOpen=false;if(pendingRender&&!ptrDown){pendingRender=false;render();}},400);};
+window.addEventListener("focus",dlgClose);
+document.addEventListener("cancel",dlgClose,true);
 function schedule(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;const ae=document.activeElement;
-  if(ptrDown){pendingRender=true;return;}
+  if(ptrDown||dlgOpen){pendingRender=true;return;}
   if(ae&&($("#main").contains(ae)||$("#drawer").contains(ae))&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file"){pendingRender=true;renderChrome();return;}
   render();});}
-document.addEventListener("focusout",()=>{if(pendingRender){setTimeout(()=>{if(ptrDown)return;const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();},60);}});
+document.addEventListener("focusout",()=>{if(pendingRender){setTimeout(()=>{if(ptrDown||dlgOpen)return;const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=="file")return;pendingRender=false;render();},60);}});
 
 function renderChrome(){
   const c=S.cfg||{};const ok=S.state==="ok";
   let ter=0,n=0;if(ok&&S.P)for(const s of secs()){ter+=S.P.sec[s.id].cnt.ter;n+=S.P.sec[s.id].n;}
   const r=$("#rotulo");r.className="rotulo"+(ok?"":" solo");
+  /* «Ir a estructura» vive en el rótulo, que se redibuja entero: se conserva el foco y la posición del cursor */
+  const gqA=document.activeElement,gqPos=gqA&&gqA.id==="g-q"?gqA.selectionStart:null;
   r.innerHTML=`<div class="main"><span class="code">${esc(c.codigo||"STN4324")} · ${esc(c.tension||"Línea de transmisión")}</span><h1>${esc(c.nombre||"Línea Tineo – Ancud")}</h1><span class="sub">Control de avance físico · Continente · Cruce · Isla</span></div>
   ${ok?`<div class="cells"><div class="cell"><span class="lbl">Avance físico</span>${mm()&&S.TER?mmHdr():`<b class="num">${n?fmtP(S.P.total,1):"—"}</b>`}</div><div class="cell"><span class="lbl">Terminadas</span><b class="num">${n?ter+" / "+n:"—"}</b></div><div class="cell"><span class="lbl">Último registro</span><b class="num">${esc(fmtD(lastUpdate()))}</b></div></div>
-  <div class="ses noprint"><span class="who"><span class="role" style="color:${S.canAdmin?"var(--accent)":"var(--good-ink)"}">${S.canAdmin?"Administrador":"Inspector"}</span><span title="${esc(S.userEmail)}">${esc(S.userName)}</span></span><button data-chpass="1">Cambiar contraseña</button><button data-logout="1">Salir</button></div>`:""}`;
+  <div class="ses noprint"><span class="who"><span class="role" style="color:${S.canAdmin?"var(--accent)":"var(--good-ink)"}">${S.canAdmin?"Administrador":"Inspector"}</span><span title="${esc(S.userEmail)}">${esc(S.userName)}</span><span class="ver" title="Versión de la página. Si no coincide con la última que subiste, recarga con Ctrl + F5">versión ${APP_VER}</span></span>${cfgOk()&&allEst().length?`<input class="gq" id="g-q" type="search" value="${esc(S.gq)}" placeholder="Ir a estructura N°" aria-label="Ir a la ficha de una estructura: escribe su número y presiona Enter" autocomplete="off" enterkeyhint="go">`:""}<button data-chpass="1">Cambiar contraseña</button><button data-logout="1">Salir</button></div>`:""}`;
+  if(gqPos!=null){const el=$("#g-q");if(el){el.focus({preventScroll:true});try{el.setSelectionRange(gqPos,gqPos);}catch(e){}}}
   $("#tabs").innerHTML=ok?TABS.filter(t=>!t.admin||S.canAdmin).map(t=>`<button data-tab="${t.id}" aria-selected="${S.tab===t.id}">${t.t}</button>`).join(""):"";
 }
 function render(){
@@ -1203,11 +1324,11 @@ function render(){
   if(S.state!=="ok"){m.innerHTML=vAuth();$("#drawer").innerHTML="";restoreFocus(fid,selS);return;}
   let html=importBanner();
   if(!cfgOk()||!allEst().length){
-    if(S.canAdmin&&S.tab==="config"){html+=vConfig();}
-    else html+=`<div class="panel empty stack" style="align-items:center"><h2>La app aún no tiene datos cargados</h2><p>${S.canAdmin?"Ve a <b>Configuración</b> e importa el respaldo de la app anterior (archivo JSON).":"Un administrador debe cargar los datos del proyecto."}</p>${S.canAdmin?`<button class="btn primary" data-tab="config">Ir a Configuración</button>`:""}</div>`;
+    if(S.canAdmin&&(S.tab==="datos"||S.tab==="config")){html+=vDatos();}
+    else html+=`<div class="panel empty stack" style="align-items:center"><h2>La app aún no tiene datos cargados</h2><p>${S.canAdmin?"Ve a <b>Carga y descarga</b> y restaura el respaldo de la app (archivo JSON).":"Un administrador debe cargar los datos del proyecto."}</p>${S.canAdmin?`<button class="btn primary" data-tab="datos">Ir a Carga y descarga</button>`:""}</div>`;
     m.innerHTML=html;$("#drawer").innerHTML="";restoreFocus(fid,selS);return;}
   {const tb=TABS.find(t=>t.id===S.tab);if(tb&&tb.admin&&!S.canAdmin)S.tab="resumen";}
-  html+=({resumen:vResumen,reporte:vReporte,programas:vProgramas,linea:vLinea,cruce:vCruce,se:vSE,registrar:vRegistrar,liberaciones:vLiberaciones,estructuras:vEstructuras,herramientas:vHerramientas,config:vConfig}[S.tab]||vResumen)();
+  html+=({resumen:vResumen,reporte:vReporte,programas:vProgramas,linea:vLinea,cruce:vCruce,se:vSE,registrar:vRegistrar,liberaciones:vLiberaciones,estructuras:vEstructuras,herramientas:vHerramientas,datos:vDatos,config:vConfig}[S.tab]||vResumen)();
   /* las tablas con scroll propio (data-keep-scroll) conservan su posición al redibujar */
   const keep=[...document.querySelectorAll("[data-keep-scroll]")].map(el=>[el.id,el.scrollTop]);
   m.innerHTML=html;
@@ -1220,9 +1341,11 @@ function render(){
 function restoreFocus(fid,selS){if(!fid)return;const el=document.getElementById(fid);if(el&&document.activeElement!==el){el.focus({preventScroll:true});if(selS!=null&&el.setSelectionRange){try{el.setSelectionRange(selS,selS);}catch(e){}}}}
 function importBanner(){
   const I=S.imp;
-  if(I&&I.running){const w=I.total?Math.round(I.done/I.total*100):5;return `<div class="panel stack" style="margin-bottom:14px;gap:8px"><b style="font-family:var(--f-disp)">${esc(I.title||"Cargando datos…")}</b><div class="progress"><i style="--w:${w}%"></i></div><span class="small muted">${esc(I.msg)} ${I.total?`${I.done} de ${I.total}`:""}. No cierres esta pestaña.</span></div>`;}
-  if(I&&!I.running&&I.msg)return `<div class="${I.ok?"note":"banner"}" style="margin-bottom:14px">${I.ok?"✓ ":"<b>No se pudo completar.</b> "}${esc(I.msg)}${I.chk?` <span class="muted">${esc(I.chk)}</span>`:""}</div>`;
-  return "";
+  /* sin red: se avisa antes de que alguien registre y crea que quedó guardado */
+  const off=navigator.onLine===false?`<div class="banner noprint" role="status"><b>Sin conexión a internet.</b><span>Lo que ves puede no estar al día y los registros no se guardarán hasta que vuelva la conexión.</span></div>`:"";
+  if(I&&I.running){const w=I.total?Math.round(I.done/I.total*100):5;return off+`<div class="panel stack" style="margin-bottom:14px;gap:8px"><b style="font-family:var(--f-disp)">${esc(I.title||"Cargando datos…")}</b><div class="progress"><i style="--w:${w}%"></i></div><span class="small muted">${esc(I.msg)} ${I.total?`${I.done} de ${I.total}`:""}. No cierres esta pestaña.</span></div>`;}
+  if(I&&!I.running&&I.msg)return off+`<div class="${I.ok?"note":"banner"} noprint" style="margin-bottom:14px;display:flex;gap:10px;align-items:flex-start" role="status"><span style="flex:1;min-width:0">${I.ok?"✓ ":"<b>No se pudo completar.</b> "}${esc(I.msg)}${I.chk?` <span class="muted">${esc(I.chk)}</span>`:""}</span><button class="bx" data-impx="1" aria-label="Cerrar este aviso">×</button></div>`;
+  return off;
 }
 
 /* ---------- Inicio de sesión ---------- */
@@ -2391,8 +2514,9 @@ const pad2=n=>String(n).padStart(2,"0");
 const fmtTs=t=>{const d=new Date(t);return pad2(d.getDate())+"-"+pad2(d.getMonth()+1)+"-"+d.getFullYear()+" "+pad2(d.getHours())+":"+pad2(d.getMinutes());};
 const ICO_PIN=`<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 .8v3.4M8 11.8v3.4M.8 8h3.4M11.8 8h3.4" stroke="currentColor" stroke-width="1.6"/></svg>`;
 /* sinTipo: el mapa solo muestra torres, así que ignora el filtro Torres/Vanos */
-function libMatch(u,sinTipo){const F=S.lib;if(!sinTipo&&F.tipo!=="todo"&&u.t!==F.tipo)return false;if(F.sec!=="total"&&u.s.id!==F.sec)return false;if(F.tt&&u.tt!==F.tt)return false;
-  if(F.est==="fpmf"){if(libOk(libEst(u.key,"pmf")))return false;}else if(F.est==="fser"){if(libOk(libEst(u.key,"ser")))return false;}else if(F.est&&libGen(u.key)!==F.est)return false;
+/* sinEst: sin el filtro de estado, para contar cuántos elementos hay en cada estado con los demás filtros puestos */
+function libMatch(u,sinTipo,sinEst){const F=S.lib;if(!sinTipo&&F.tipo!=="todo"&&u.t!==F.tipo)return false;if(F.sec!=="total"&&u.s.id!==F.sec)return false;if(F.tt&&u.tt!==F.tt)return false;
+  if(sinEst){}else if(F.est==="fpmf"){if(libOk(libEst(u.key,"pmf")))return false;}else if(F.est==="fser"){if(libOk(libEst(u.key,"ser")))return false;}else if(F.est&&libGen(u.key)!==F.est)return false;
   if(F.pmf){const cs=libCodes(u.key);
     if(F.pmf==="__con"?!cs.length:F.pmf==="__sin"?cs.length>0:F.pmf==="__res"?!cs.some(c=>pmfEst(c)==="res"):F.pmf==="__pend"?!cs.some(c=>{const e=pmfEst(c);return e==="pend"||e==="tram";}):!cs.includes(F.pmf))return false;}
   /* busca por N° (acepta "4-5" para el vano 4–5) o por código de PMF */
@@ -2417,61 +2541,113 @@ function vLiberaciones(){
   const F=S.lib;if(F.sec!=="total"&&!secById(F.sec))F.sec="total";const all=libUnits();const st=libStats(all);const fr=libFrentes(all);
   const tts=[...new Set(all.filter(u=>F.sec==="total"||u.s.id===F.sec).map(u=>u.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));if(F.tt&&!tts.includes(F.tt))F.tt="";
   const rows=all.filter(u=>libMatch(u));const pc=(a,b)=>b?fmtP(a/b*100):"—";const B=F.bulk;if(!B.fecha)B.fecha=today();
-  /* p = parte ya liberada, en el verde de «apta» de esta pestaña */
-  const fig=(t,v,sub,cls,p)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b>${p!=null?mtr(p,"var(--lib-ok)"):""}<span>${sub}</span></div>`,de=(a,b)=>b?a/b*100:null;const nRes=st.t.res+st.v.res;
-  let h=`<div class="stack"><section class="panel stack"><div class="spread"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción con el PMF aprobado (o sin PMF) y la servidumbre liberada.</span></div>
-  <p class="small muted" style="margin:0">Estado inicial: planilla de estado PMF al ${fmtD(LIB_SEED_FECHA)} (PMF asociados, estado del PMF y propietarios). Cada código PMF se aprueba por separado y vale para todos los elementos que cubre. Cada cambio posterior se registra aquí y queda en la bitácora.</p>
-  ${S.canAdmin?libPcHtml():""}
-  <div class="tmfig">${fig("Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`,"",de(st.t.apta,st.t.n))}${fig("Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`,"",de(st.v.apta,st.v.n))}${fig("PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`PMF distintos, sin repetir · ${st.cod.res} restringidos · ${st.cod.pend+st.cod.tram} por confirmar o en trámite`,"",de(st.cod.ok,st.cod.n))}${fig("Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,"propietarios; no cuentan los que no aplican","",de(st.ser.ok,st.ser.n))}${fig("Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,nRes?"crit":"")}</div>
-  <div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r"><i class="sw" style="--c:var(--lib-ok)"></i>Torres aptas</th><th class="r"><i class="sw" style="--c:var(--lib-ok)"></i>Vanos aptos</th><th class="r">Línea apta</th><th>Reparto de torres y vanos</th><th class="r"><i class="sw" style="--c:var(--lib-tram)"></i>En proceso</th><th class="r"><i class="sw" style="--c:var(--lib-res)"></i>Restringidas</th><th class="r"><i class="sw" style="--c:var(--lib-pend)"></i>Pendientes</th></tr></thead><tbody>
-  ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td>${distBar([[x.t.apta+x.v.apta,"var(--lib-ok)","aptas"],[x.t.proc+x.v.proc,"var(--lib-tram)","en proceso"],[x.t.res+x.v.res,"var(--lib-res)","restringidas"],[x.t.pend+x.v.pend,"var(--lib-pend)","pendientes"]],true)}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>
-  <div class="stack" style="gap:6px"><span class="lbl">PMF por serie · cada PMF se cuenta una vez, aunque cubra varios vanos o torres</span>
+  if(!["planilla","pmf","mapa","resumen"].includes(F.vista))F.vista="planilla";
+  const de=(a,b)=>b?a/b*100:null;const nRes=st.t.res+st.v.res;
+  /* cifras que además filtran: al tocarlas se ve en la planilla (o en el mapa) justo lo que cuentan. p = parte ya liberada */
+  const kpi=(act,t,v,sub,p,cls,on)=>`<button data-libkpi="${act}" aria-pressed="${!!on}"${cls?` class="${cls}"`:""}><span class="k">${t}</span><b class="num">${v}</b>${p!=null?mtr(p,"var(--lib-ok)"):""}<span class="s">${sub}</span></button>`;
+  let h=`<div class="stack"><section class="panel stack"><div class="spread"><div class="stack" style="gap:2px"><h2>Control de liberaciones</h2><span class="small muted">Una torre o un vano queda apto para construcción con el PMF aprobado (o sin PMF) y la servidumbre liberada.</span></div>
+  <div class="row noprint" style="gap:6px"><button class="btn small ghost" data-libcsv="1">Descargar planilla (CSV)</button><button class="btn small ghost" data-libkml="1">Descargar KML</button>${S.canAdmin?`<button class="btn small" data-tab="datos">Cargar planilla de control</button>`:""}</div></div>
+  <div class="lkpis">${kpi("taptas","Torres aptas",`${st.t.apta} de ${st.t.n}`,`${pc(st.t.apta,st.t.n)} · ${st.t.res} restringidas`,de(st.t.apta,st.t.n),"",F.tipo==="torre"&&F.est==="apta")}${kpi("vaptos","Vanos aptos",`${st.v.apta} de ${st.v.n}`,`${fmtKm(st.v.m)} de ${fmtKm(st.v.mT)} de línea`,de(st.v.apta,st.v.n),"",F.tipo==="vano"&&F.est==="apta")}${kpi("pmf","PMF aprobados",`${st.cod.ok} de ${st.cod.n}`,`PMF distintos · ${st.cod.res} restringidos · ${st.cod.pend+st.cod.tram} por confirmar o en trámite`,de(st.cod.ok,st.cod.n),"",F.vista==="pmf")}${kpi("fser","Servidumbre liberada",`${st.ser.ok} de ${st.ser.n}`,`faltan ${st.ser.n-st.ser.ok} · no cuentan los que no aplican`,de(st.ser.ok,st.ser.n),"",F.tipo==="todo"&&F.est==="fser")}${kpi("res","Restringidas",String(nRes),`${st.t.res} torres · ${st.v.res} vanos`,null,nRes?"crit":"",F.tipo==="todo"&&F.est==="res")}</div>
+  ${libStrip(all)}
+  <p class="small muted" style="margin:0">Estado inicial: planilla de estado PMF al ${fmtD(LIB_SEED_FECHA)}. Cada código PMF se aprueba por separado y vale para todos los elementos que cubre, y cada cambio queda en la bitácora. Toca una cifra para filtrar, o una torre o un vano de la franja para abrir su ficha.</p></section>`;
+  /* piezas de cada vista: se arman abajo según la vista elegida */
+  const tSec=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Sector</th><th class="r"><i class="sw" style="--c:var(--lib-ok)"></i>Torres aptas</th><th class="r"><i class="sw" style="--c:var(--lib-ok)"></i>Vanos aptos</th><th class="r">Línea apta</th><th>Reparto de torres y vanos</th><th class="r"><i class="sw" style="--c:var(--lib-tram)"></i>En proceso</th><th class="r"><i class="sw" style="--c:var(--lib-res)"></i>Restringidas</th><th class="r"><i class="sw" style="--c:var(--lib-pend)"></i>Pendientes</th></tr></thead><tbody>
+  ${[...st.sec.values()].map(x=>`<tr><td><span class="chip" style="color:inherit;font-size:.88rem"><span class="dot" style="--c:${secColor(x.s.id)}"></span>${esc(x.s.nombre)}</span></td><td class="r num"><b>${x.t.apta}</b> / ${x.t.n}</td><td class="r num"><b>${x.v.apta}</b> / ${x.v.n}</td><td class="r num">${x.v.mT?fmtKm(x.v.m)+" de "+fmtKm(x.v.mT):"—"}</td><td>${distBar([[x.t.apta+x.v.apta,"var(--lib-ok)","aptas"],[x.t.proc+x.v.proc,"var(--lib-tram)","en proceso"],[x.t.res+x.v.res,"var(--lib-res)","restringidas"],[x.t.pend+x.v.pend,"var(--lib-pend)","pendientes"]],true)}</td><td class="r num">${x.t.proc+x.v.proc}</td><td class="r num">${x.t.res+x.v.res?`<b class="crit">${x.t.res+x.v.res}</b>`:"0"}</td><td class="r num">${x.t.pend+x.v.pend}</td></tr>`).join("")}</tbody></table></div>`;
+  const tSerie=`<div class="stack" style="gap:6px"><span class="lbl">PMF por serie · cada PMF se cuenta una vez, aunque cubra varios vanos o torres</span>
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Serie</th><th class="r">PMF distintos</th><th class="r">Aprobados</th><th class="r">Restringidos</th><th class="r">Por confirmar</th><th class="r">En trámite</th><th class="r">Aprobado</th></tr></thead><tbody>
   ${(()=>{const fila=(p,x,tot)=>`<tr><td>${tot?"<b>Total</b>":`<span class="mono">${esc(p)}</span>`}</td><td class="r num">${tot?`<b>${x.n}</b>`:x.n}</td><td class="r num"><b>${x.ok}</b></td><td class="r num">${x.res?(tot?`<button class="linkbtn crit" data-libpmff="__res" data-tip="Ver los elementos con PMF restringido">${x.res}</button>`:`<b class="crit">${x.res}</b>`):"0"}</td><td class="r num">${x.pend?(tot?`<button class="linkbtn" data-libpmff="__pend" data-tip="Ver los elementos con PMF por confirmar o en trámite">${x.pend}</button>`:x.pend):"0"}</td><td class="r num">${x.tram}</td><td class="r num">${pc(x.ok,x.n)}</td></tr>`;
-    return [...st.serie].sort((a,b)=>a[0].localeCompare(b[0])).map(([p,x])=>fila(p,x)).join("")+fila("",st.cod,true);})()}</tbody></table></div></div>
-  <div class="stack" style="gap:6px"><span class="lbl">Frentes continuos aptos para construcción</span>${fr.length?`<div class="frentes">${fr.map(r=>`<span>${esc(r.a)} – ${esc(r.b)} <b>${fmtKm(r.m)}</b></span>`).join("")}</div>`:`<span class="small muted">Aún no hay tramos continuos de torres y vanos aptos.</span>`}</div></section>`;
+    return [...st.serie].sort((a,b)=>a[0].localeCompare(b[0])).map(([p,x])=>fila(p,x)).join("")+fila("",st.cod,true);})()}</tbody></table></div></div>`;
+  const tFr=`<div class="stack" style="gap:6px"><span class="lbl">Frentes continuos aptos para construcción</span>${fr.length?`<div class="frentes">${fr.map(r=>`<span>${esc(r.a)} – ${esc(r.b)} <b>${fmtKm(r.m)}</b></span>`).join("")}</div>`:`<span class="small muted">Aún no hay tramos continuos de torres y vanos aptos.</span>`}</div>`;
   /* planilla */
   const cidx=libCodeIdx();if(F.pmf&&!F.pmf.startsWith("__")&&!cidx.has(F.pmf))F.pmf="";
   const grupos=new Map();for(const c of [...cidx.keys()].sort(pmfSort)){const p=(/^[A-Z]+/.exec(c)||["Otros"])[0];if(!grupos.has(p))grupos.set(p,[]);grupos.get(p).push(c);}
   const filt=F.tipo!=="todo"||F.sec!=="total"||F.tt||F.est||F.pmf||F.q.trim();const allSel=rows.length>0&&rows.every(u=>F.sel.has(u.key)),someSel=rows.some(u=>F.sel.has(u.key));
-  h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Planilla de liberaciones</h2><button class="btn small ghost" data-libcsv="1">Descargar planilla (CSV)</button></div>
-  <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Ver</label><div class="seg" role="group" aria-label="Elementos">${[["todo","Todo"],["torre","Torres"],["vano","Vanos"]].map(([k,t])=>`<button data-libtipo="${k}" aria-pressed="${F.tipo===k}">${t}</button>`).join("")}</div></div>
+  /* filtro por estado con la cantidad de cada uno (contada con los demás filtros puestos) */
+  const base=all.filter(u=>libMatch(u,false,true)),cE={apta:0,proc:0,res:0,pend:0},cF={fpmf:0,fser:0};
+  for(const u of base){cE[libGen(u.key)]++;if(!libOk(libEst(u.key,"pmf")))cF.fpmf++;if(!libOk(libEst(u.key,"ser")))cF.fser++;}
+  const chip=(k,t,n,c)=>`<button class="lfc${c?"":" nc"}" data-libfe="${k}" aria-pressed="${F.est===k}"${c?` style="--c:${c}"`:""}>${t} <b class="num">${n}</b></button>`;
+  const tChips=`<div class="lfchips" role="group" aria-label="Filtrar por estado">${chip("","Todos",base.length)}${Object.entries(LIB_GEN).map(([g,x])=>chip(g,x.t,cE[g],x.c)).join("")}<i class="lfsep"></i>${chip("fpmf","Falta PMF",cF.fpmf)}${chip("fser","Falta servidumbre",cF.fser)}</div>`;
+  let tBar="";
+  const tFil=`<div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Ver</label><div class="seg" role="group" aria-label="Elementos">${[["todo","Todo"],["torre","Torres"],["vano","Vanos"]].map(([k,t])=>`<button data-libtipo="${k}" aria-pressed="${F.tipo===k}">${t}</button>`).join("")}</div></div>
    <div class="field"><label for="lib-sec">Sector</label><select id="lib-sec"><option value="total">Todos</option>${secs().map(s=>`<option value="${s.id}" ${F.sec===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
    <div class="field"><label for="lib-tt">Tramo de tendido</label><select id="lib-tt"><option value="">Todos</option>${tts.map(t=>`<option ${F.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
-   <div class="field"><label for="lib-est">Estado</label><select id="lib-est"><option value="">Todos</option>${[["apta","Apta para construcción"],["proc","En proceso"],["res","Restringida"],["pend","Pendiente"],["fpmf","Falta PMF"],["fser","Falta servidumbre"]].map(([k,t])=>`<option value="${k}" ${F.est===k?"selected":""}>${t}</option>`).join("")}</select></div>
    <div class="field"><label for="lib-pmf">PMF</label><select id="lib-pmf"><option value="">Todos</option><option value="__con" ${F.pmf==="__con"?"selected":""}>Con PMF asociado</option><option value="__res" ${F.pmf==="__res"?"selected":""}>Con PMF restringido</option><option value="__pend" ${F.pmf==="__pend"?"selected":""}>Con PMF por confirmar o en trámite</option><option value="__sin" ${F.pmf==="__sin"?"selected":""}>Sin PMF</option>${[...grupos].map(([p,cs])=>`<optgroup label="${esc(p)}">${cs.map(c=>`<option value="${esc(c)}" ${F.pmf===c?"selected":""}>${esc(c)} · ${estTxt("pmf",pmfEst(c)).toLowerCase()} (${cidx.get(c).length})</option>`).join("")}</optgroup>`).join("")}</select></div>
    <div class="field"><label for="lib-q">Buscar N°</label><input id="lib-q" type="search" value="${esc(F.q)}" placeholder="Ej.: 172A" autocomplete="off"></div>
    ${filt?`<button class="btn small ghost" data-libclear="1">Quitar filtros</button>`:""}</div>`;
   /* PMF elegido en el filtro: su estado, los elementos que cubre, su bitácora y la actualización */
   if(F.pmf&&!F.pmf.startsWith("__")){const c=F.pmf,us=pmfUnitsOf(c),x=pmfAct(c),e=pmfEst(c),hl=pmfHist(c),open=S.pmfEd&&S.pmfEd.code===c&&S.pmfEd.src==="bar";
-    h+=`<div class="pmfbar"><div class="pmfbar-h"><span class="lbl">PMF</span><b class="mono">${esc(c)}</b>${lchip(e,"pmf")}<span class="small muted">cubre ${us.length} ${us.length===1?"elemento":"elementos"}: ${esc(unitsTxt(us))}</span>${S.canWrite&&!open?`<button class="btn small" data-pmfed="${esc(c)}" data-pmfsrc="bar">Actualizar ${esc(c)}</button>`:""}</div>
+    tBar=`<div class="pmfbar"><div class="pmfbar-h"><span class="lbl">PMF</span><b class="mono">${esc(c)}</b>${lchip(e,"pmf")}<span class="small muted">cubre ${us.length} ${us.length===1?"elemento":"elementos"}: ${esc(unitsTxt(us))}</span>${S.canWrite&&!open?`<button class="btn small" data-pmfed="${esc(c)}" data-pmfsrc="bar">Actualizar ${esc(c)}</button>`:""}</div>
     <span class="small muted">${x?`Desde ${fmtD(x.fecha)}${x.ref?" · "+esc(x.ref):""}${x.pn?" · "+esc(x.pn):""}`:"Sin registro: pendiente"}</span>${x&&x.obs?`<span class="small">${esc(x.obs)}</span>`:""}
     ${open?pmfForm(c):""}${hl.length>1?`<details><summary class="small">Bitácora de ${esc(c)} (${hl.length} registros)</summary><div class="feed">${hl.map(pmfHistItem).join("")}</div></details>`:""}</div>`;}
-  if(S.canWrite&&F.sel.size)h+=`<div class="libbulk"><b>${F.sel.size} ${F.sel.size===1?"seleccionado":"seleccionados"}</b>
+  const tBulk=S.canWrite&&F.sel.size?`<div class="libbulk"><b>${F.sel.size} ${F.sel.size===1?"seleccionado":"seleccionados"}</b>
    <div class="field"><label for="lib-b-v">Variable</label><select id="lib-b-v">${[["ser","Servidumbre"],["pmf","PMF (solo elementos sin PMF asociado)"],["ambas","PMF y servidumbre"]].map(([k,t])=>`<option value="${k}" ${B.v===k?"selected":""}>${t}</option>`).join("")}</select></div>
    <div class="field"><label for="lib-b-est">Nuevo estado</label><select id="lib-b-est">${(B.v==="pmf"?LIB_ORD_PMF:LIB_ORD).map(k=>`<option value="${k}" ${B.est===k?"selected":""}>${estTxt(B.v==="ambas"?"":B.v,k)}</option>`).join("")}</select></div>
    <div class="field" style="max-width:170px"><label for="lib-b-fecha">Fecha</label><input id="lib-b-fecha" type="date" max="${today()}" value="${esc(B.fecha)}"></div>
    <div class="field"><label for="lib-b-ref">Referencia</label><input id="lib-b-ref" type="text" value="${esc(B.ref)}" placeholder="Resolución, escritura, rol…"></div>
    <div class="field" style="flex:2;min-width:220px"><label for="lib-b-obs">Observación</label><input id="lib-b-obs" type="text" value="${esc(B.obs)}" placeholder="Queda en la bitácora de cada elemento"></div>
-   <div class="row" style="gap:6px"><button class="btn primary" id="lib-b-apply" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Aplicar a "+F.sel.size}</button><button class="btn small ghost" data-libselclear="1">Quitar selección</button></div></div>`;
-  h+=`<p class="small muted" style="margin:0">${rows.length} ${rows.length===1?"elemento":"elementos"}${filt?" con estos filtros":""}. Toca el N° para abrir su ficha y bitácora${S.canWrite?"; marca varios para actualizarlos juntos":""}.</p>
+   <div class="row" style="gap:6px"><button class="btn primary" id="lib-b-apply" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Aplicar a "+F.sel.size}</button><button class="btn small ghost" data-libselclear="1">Quitar selección</button></div></div>`:"";
+  let tTab=`<p class="small muted" style="margin:0">${rows.length} ${rows.length===1?"elemento":"elementos"}${filt?" con estos filtros":""}. Toca el N° para abrir su ficha y bitácora${S.canWrite?"; marca varios para actualizarlos juntos":""}.</p>
   <div class="tbl-wrap" id="lib-tbl" data-keep-scroll="1" style="max-height:620px"><table class="ltab"><thead><tr>${S.canWrite?`<th class="ck"><button class="ckb" data-libckall="1" role="checkbox" aria-checked="${allSel?"true":someSel?"mixed":"false"}" aria-label="Seleccionar todo lo filtrado"></button></th>`:""}<th>Elemento</th><th>Sector · tramo</th><th>PMF</th><th>Servidumbre<small style="display:block;font-size:.66rem;text-transform:none;letter-spacing:0;font-weight:500">propietarios</small></th><th>Estado</th><th>Última observación</th><th><span class="sr">Mapa</span></th></tr></thead><tbody>`;
   for(const u of rows){const g=libGen(u.key),p=libAct(u.key,"pmf"),s=libAct(u.key,"ser"),o=libLast(u.key),T=u.t==="torre";const ll=T?libLL(u.e.id):libMid(u.v);
-    h+=`<tr class="${u.t}">${S.canWrite?`<td class="ck"><button class="ckb" data-libck="${esc(u.key)}" role="checkbox" aria-checked="${F.sel.has(u.key)}" aria-label="${esc("Seleccionar "+u.lab)}"></button></td>`:""}<td class="el" style="--c:${LIB_GEN[g].c}"><button class="linkbtn" data-libopen="${esc(u.key)}">${T?"":"Vano "}${esc(u.lab)}</button><small>${T?esc([vertice(u.e.id),u.e.tipo].filter(Boolean).join(" · ")):(u.v.len!=null?fmtM(u.v.len):"sin longitud")}</small></td><td>${esc(u.s.nombre)}${u.tt?`<small>${esc(u.tt)}</small>`:""}</td><td class="pmf">${lchip(libEst(u.key,"pmf"),"pmf")}${codHtml(u.key,true)}${pmfFecha(u.key)?`<small>${fmtD(pmfFecha(u.key))}</small>`:""}</td><td>${lchip(libEst(u.key,"ser"),"ser")}${s?`<small>${fmtD(s.fecha)}</small>`:""}</td><td>${lgen(g)}</td><td class="lobs">${o?`${esc(trunc(o.obs,90))}<small>${fmtD(o.fecha)}${o.pn?" · "+esc(o.pn):""}</small>`:`<span class="muted">—</span>`}</td><td class="r">${ll&&!LM.failed?`<button class="ibtn" data-libloc="${esc(u.key)}" aria-label="${esc("Ver "+u.lab+" en el mapa")}" data-tip="Ver en el mapa">${ICO_PIN}</button>`:""}</td></tr>`;}
-  if(!rows.length)h+=`<tr><td colspan="8" class="muted">No hay elementos con esos filtros.</td></tr>`;
-  h+=`</tbody></table></div></section>`;
+    tTab+=`<tr class="${u.t}">${S.canWrite?`<td class="ck"><button class="ckb" data-libck="${esc(u.key)}" role="checkbox" aria-checked="${F.sel.has(u.key)}" aria-label="${esc("Seleccionar "+u.lab)}"></button></td>`:""}<td class="el" style="--c:${LIB_GEN[g].c}"><button class="linkbtn" data-libopen="${esc(u.key)}">${T?"":"Vano "}${esc(u.lab)}</button><small>${T?esc([vertice(u.e.id),u.e.tipo].filter(Boolean).join(" · ")):(u.v.len!=null?fmtM(u.v.len):"sin longitud")}</small></td><td>${esc(u.s.nombre)}${u.tt?`<small>${esc(u.tt)}</small>`:""}</td><td class="pmf">${lchip(libEst(u.key,"pmf"),"pmf")}${codHtml(u.key,true)}${pmfFecha(u.key)?`<small>${fmtD(pmfFecha(u.key))}</small>`:""}</td><td>${lchip(libEst(u.key,"ser"),"ser")}${s?`<small>${fmtD(s.fecha)}</small>`:""}</td><td>${lgen(g)}${g==="apta"?"":`<small>falta ${esc(libFalta(u.key).join(" y "))}</small>`}</td><td class="lobs">${o?`${esc(trunc(o.obs,90))}<small>${fmtD(o.fecha)}${o.pn?" · "+esc(o.pn):""}</small>`:`<span class="muted">—</span>`}</td><td class="r">${ll&&!LM.failed?`<button class="ibtn" data-libloc="${esc(u.key)}" aria-label="${esc("Ver "+u.lab+" en el mapa")}" data-tip="Ver en el mapa">${ICO_PIN}</button>`:""}</td></tr>`;}
+  if(!rows.length)tTab+=`<tr><td colspan="${S.canWrite?8:7}" class="muted">No hay elementos con esos filtros. <button class="linkbtn" style="font-family:var(--f-body)" data-libclear="1">Quitar filtros</button></td></tr>`;
+  tTab+=`</tbody></table></div>`;
   /* mapa */
   const cnt={apta:0,proc:0,res:0,pend:0};const sinXY=[];for(const u of all)if(u.t==="torre"){if(libLL(u.e.id))cnt[libGen(u.key)]++;else sinXY.push(u.lab);}
-  h+=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Mapa de liberaciones</h2><div class="row" style="gap:6px"><div class="seg" role="group" aria-label="Fondo del mapa">${[["sat","Satélite"],["osm","Mapa"]].map(([k,t])=>`<button data-libbase="${k}" aria-pressed="${F.base===k}">${t}</button>`).join("")}</div><button class="btn small ghost" data-libfit="1">Ver toda la línea</button><button class="btn small ghost" data-libkml="1">Descargar KML (Google Earth)</button></div></div>
+  const tMap=`<div class="spread"><span class="lbl">Torres y vanos sobre la imagen satelital o el mapa</span><div class="row" style="gap:6px"><div class="seg" role="group" aria-label="Fondo del mapa">${[["sat","Satélite"],["osm","Mapa"]].map(([k,t])=>`<button data-libbase="${k}" aria-pressed="${F.base===k}">${t}</button>`).join("")}</div><button class="btn small ghost" data-libfit="1">Ver toda la línea</button></div></div>
   <div class="legend"><span class="lbl">Torres</span>${Object.entries(LIB_GEN).map(([g,x])=>`<span><i class="lsym" style="--g:${x.h}"></i>${x.t} <b class="num">${cnt[g]}</b></span>`).join("")}<span class="muted"><i class="lsym sq" style="--g:#c8d0d6"></i>anclaje</span><span class="muted"><i class="lsym" style="--g:#c8d0d6"></i>suspensión</span><span class="muted"><i class="lsln"></i>vano, con el color de su estado</span><span class="muted"><i class="lsln cx"></i>conexión sin control en la app</span></div>
   ${LM.failed?`<div class="note">No se pudo cargar el mapa (sin conexión o bloqueado por la red). Descarga el KML y ábrelo en Google Earth.</div>`:`<div class="libmap-slot" id="lib-map-slot"></div>`}
-  <p class="small muted" style="margin:0">Torres y vanos ubicados con las coordenadas del listado de estructuras (actualización de terreno, UTM 18S). La línea entre torres es el vano, coloreado según su liberación. En el fondo satelital se ven las rutas y caminos con su número o nombre, y las localidades. Los filtros de la planilla atenúan lo que no cumple. Toca una torre o un vano para ver su estado y abrir su ficha; el N° de las torres aparece al acercar el mapa.${sinXY.length?` Sin coordenadas en el listado: ${esc(sinXY.join(", "))}; el cruce del canal se dibuja como conexión.`:""}</p></section></div>`;
-  return h;}
+  <p class="small muted" style="margin:0">Torres y vanos ubicados con las coordenadas del listado de estructuras (actualización de terreno, UTM 18S). La línea entre torres es el vano, coloreado según su liberación. En el fondo satelital se ven las rutas y caminos con su número o nombre, y las localidades. Los filtros de la planilla atenúan lo que no cumple. Toca una torre o un vano para ver su estado y abrir su ficha; el N° de las torres aparece al acercar el mapa.${sinXY.length?` Sin coordenadas en el listado: ${esc(sinXY.join(", "))}; el cruce del canal se dibuja como conexión.`:""}</p>`;
+  /* vistas: la planilla para trabajar, los PMF por código, el mapa y el resumen por sector */
+  h+=`<div class="seg vw noprint" role="group" aria-label="Vista">${[["planilla","Planilla · "+rows.length],["pmf","PMF por código · "+st.cod.n],["mapa","Mapa"],["resumen","Resumen por sector"]].map(([k,t])=>`<button data-libvista="${k}" aria-pressed="${F.vista===k}">${t}</button>`).join("")}</div>`;
+  if(F.vista==="resumen")h+=`<section class="panel stack"><h2>Resumen por sector</h2>${tSec}${tFr}${libRecientes()}</section>`;
+  else if(F.vista==="pmf")h+=libPmfView(tSerie);
+  else if(F.vista==="mapa")h+=`<section class="panel stack" style="gap:12px"><h2>Mapa de liberaciones</h2>${tFil}${tChips}${tMap}</section>`;
+  else h+=`<section class="panel stack" style="gap:12px"><h2>Planilla de liberaciones</h2>${tFil}${tChips}${tBar}${tTab}${tBulk}</section>`;
+  return h+`</div>`;}
+/* qué le falta a un elemento para quedar apto: «PMF (restringido)», «servidumbre (en trámite)» */
+function libFalta(k){const p=libEst(k,"pmf"),s=libEst(k,"ser"),o=[];if(!libOk(p))o.push("PMF ("+estTxt("pmf",p).toLowerCase()+")");if(!libOk(s))o.push("servidumbre ("+estTxt("ser",s).toLowerCase()+")");return o;}
+/* Franja de la línea: cada torre (barra alta) y cada vano (barra corta) en el orden de la línea, con su estado de liberación.
+   Lo que no cumple los filtros se atenúa. Al tocar un elemento se abre su ficha */
+function libStrip(all){const on=S.drw&&S.drw.lib?S.drw.key:"";let h=`<div class="lstrips">`;
+  for(const s of secs()){const us=all.filter(u=>u.s.id===s.id);if(!us.length)continue;const ts=us.filter(u=>u.t==="torre"),ap=ts.filter(u=>libGen(u.key)==="apta").length;let prim=true;
+    h+=`<div class="lsrow"><div class="nm"><span class="chip" style="color:inherit;font-size:inherit;font-weight:inherit"><span class="dot" style="--c:${secColor(s.id)}"></span>${esc(s.nombre)}</span><small class="num">${ap} de ${ts.length} torres aptas</small></div><div class="lstrip">`;
+    for(const u of us){const T=u.t==="torre",g=libGen(u.key),id=T?String(u.e.id):"",rot=T&&(prim||(/^\d+$/.test(id)&&+id%10===0))?id:"";if(T)prim=false;
+      const tip=`${T?"Estructura":"Vano"} ${u.lab} · ${LIB_GEN[g].t}\nPMF: ${estTxt("pmf",libEst(u.key,"pmf")).toLowerCase()} · Servidumbre: ${estTxt("ser",libEst(u.key,"ser")).toLowerCase()}`;
+      h+=`<button class="lc ${T?"t":"v"} g-${g}${libMatch(u)?"":" dim"}${u.key===on?" on":""}" tabindex="-1" style="--c:${LIB_GEN[g].c}" data-libopen="${esc(u.key)}"${rot?` data-n="${esc(rot)}"`:""} data-tip="${esc(tip)}" aria-label="${esc(tip.replace("\n",". "))}"></button>`;}
+    h+=`</div></div>`;}
+  return h+`</div><div class="legend noprint"><span class="lbl">Franja de la línea</span>${Object.entries(LIB_GEN).map(([g,x])=>`<span><i class="lc t g-${g}" style="--c:${x.c}"></i>${x.t}</span>`).join("")}<span class="muted"><i class="lc t" style="--c:var(--lib-pend)"></i>torre</span><span class="muted"><i class="lc v" style="--c:var(--lib-pend)"></i>vano</span><span class="muted">N° cada 10 estructuras</span></div>`;}
+/* Últimos cambios de liberación en toda la línea (estados, observaciones y PMF por código) */
+function libRecientes(){const L=allHist((k,d)=>d.kind==="lib",true).slice(0,12);if(!L.length)return "";
+  return `<div class="stack" style="gap:6px"><span class="lbl">Últimos cambios registrados</span><div class="feed">${L.map(x=>{const esPmf=x.k.indexOf("lib__pmf__")===0,u=esPmf?null:libUnit(x.k),V=LIB_VARS.find(v=>v.id===x.a);
+    const que=x.a==="obs"?"Observación":esPmf?estTxt("pmf",x.est):V?`${V.t}: ${estTxt(V.id,x.est).toLowerCase()}`:"Registro";
+    const quien=esPmf?`<button class="linkbtn" data-libpmff="${esc(x.uni)}">PMF ${esc(x.uni)}</button>`:u?`<button class="linkbtn" data-libopen="${esc(x.k)}">${u.t==="vano"?"Vano ":""}${esc(u.lab)}</button>`:`<b>${esc(x.uni||"")}</b>`;
+    return `<div class="it lh" style="--c:${x.a!=="obs"&&LIB_EST[x.est]?LIB_EST[x.est].c:"var(--line-2)"}"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w"><div>${quien} · <b>${esc(que)}</b>${x.ref?` <span class="muted">· ${esc(x.ref)}</span>`:""}</div>${x.obs?`<div class="o" style="color:var(--ink)">${esc(trunc(x.obs,220))}</div>`:""}<div class="o">${esc(x.pn||"")}${x.ts?" · registrado el "+fmtTs(x.ts):""}</div></div><span></span></div>`;}).join("")}</div></div>`;}
+/* PMF por código: cada permiso con su estado, lo que cubre y su actualización, sin pasar por el filtro de la planilla */
+function libPmfView(tSerie){const F=S.lib,cidx=libCodeIdx(),cods=[...cidx.keys()].sort(pmfSort),q=F.pq.trim().toUpperCase();
+  const cls=e=>libOk(e)?"ok":e==="res"?"res":e==="tram"?"tram":"pend",cnt={ok:0,res:0,pend:0,tram:0};for(const c of cods)cnt[cls(pmfEst(c))]++;
+  if(F.pe&&!cnt[F.pe])F.pe="";
+  const rows=cods.filter(c=>(!q||c.includes(q))&&(!F.pe||cls(pmfEst(c))===F.pe));
+  const chip=(k,t,n,c)=>`<button class="lfc${c?"":" nc"}" data-libpe="${k}" aria-pressed="${F.pe===k}"${c?` style="--c:${c}"`:""}>${t} <b class="num">${n}</b></button>`;
+  let h=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>PMF por código</h2><span class="small muted">Cada PMF es un permiso con estado propio: al actualizarlo cambia el PMF de todas las torres y vanos que cubre.</span></div>
+  ${tSerie}
+  <div class="filters"><div class="field" style="max-width:260px"><label for="lib-pq">Buscar código</label><input id="lib-pq" type="search" value="${esc(F.pq)}" placeholder="Ej.: BN011" autocomplete="off"></div>
+  <div class="lfchips" role="group" aria-label="Filtrar por estado del PMF" style="flex:3;align-self:end">${chip("","Todos",cods.length)}${chip("ok","Aprobados",cnt.ok,"var(--lib-ok)")}${chip("res","Restringidos",cnt.res,"var(--lib-res)")}${chip("pend","Por confirmar",cnt.pend,"var(--lib-pend)")}${chip("tram","En trámite",cnt.tram,"var(--lib-tram)")}</div></div>
+  <div class="tbl-wrap" id="lib-pmf-tbl" data-keep-scroll="1" style="max-height:640px"><table class="ltab"><thead><tr><th>Código</th><th>Estado</th><th>Desde</th><th>Resolución o referencia</th><th>Cubre</th><th>Observación</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>`;
+  for(const c of rows){const x=pmfAct(c),e=pmfEst(c),us=pmfUnitsOf(c),nt=us.filter(u=>u.t==="torre").length,nv=us.length-nt,open=S.pmfEd&&S.pmfEd.code===c&&S.pmfEd.src==="tab",hl=pmfHist(c);
+    h+=`<tr><td class="el" style="--c:${(LIB_EST[e]||LIB_EST.pend).c}"><b class="mono">${esc(c)}</b></td><td>${lchip(e,"pmf")}</td><td class="num">${x?fmtD(x.fecha):"—"}${x&&x.pn?`<small>${esc(x.pn)}</small>`:""}</td><td class="lobs" style="min-width:140px">${x&&x.ref?esc(x.ref):`<span class="muted">—</span>`}</td><td class="lobs" style="min-width:200px">${[nt?nTxt(nt,"torre","torres"):"",nv?nTxt(nv,"vano","vanos"):""].filter(Boolean).join(" · ")}<small>${esc(unitsTxt(us,6))}</small></td><td class="lobs">${x&&x.obs?esc(trunc(x.obs,120)):`<span class="muted">—</span>`}</td><td class="acc"><button class="btn small ghost" data-libpmff="${esc(c)}" data-tip="Ver en la planilla las torres y vanos que cubre">Ver elementos</button>${S.canWrite?` <button class="btn small" data-pmfed="${esc(c)}" data-pmfsrc="tab">${open?"Cerrar":"Actualizar"}</button>`:""}</td></tr>`;
+    if(open)h+=`<tr class="ed"><td colspan="7">${pmfForm(c)}${hl.length>1?`<details><summary class="small">Bitácora de ${esc(c)} (${hl.length} registros)</summary><div class="feed">${hl.map(pmfHistItem).join("")}</div></details>`:""}</td></tr>`;}
+  if(!rows.length)h+=`<tr><td colspan="7" class="muted">No hay PMF con esos filtros.</td></tr>`;
+  return h+`</tbody></table></div></section>`;}
 /* Ficha de liberación (panel lateral) */
 function openLib(k){if(!libUnit(k))return;tipEl().style.display="none";if(LM.map)LM.map.closePopup();if(S.pmfEd&&S.pmfEd.src==="drw")S.pmfEd=null;S.drw={lib:true,key:k,ed:null,f:null,nota:""};render();setTimeout(()=>{const x=$("#drawer .xbtn");if(x)x.focus();},30);}
 function vDrawerLib(){
   const D=S.drw;const u=libUnit(D.key);if(!u)return "";const T=u.t==="torre";const g=libGen(u.key);const xy=T?asbGet(u.e.id):null;const ll=T?libLL(u.e.id):libMid(u.v);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc("Liberación "+u.lab)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor(u.s.id)}"></span>${esc(u.s.nombre)}${u.tt?" · "+esc(u.tt):""}</span><h2>${T?"Estructura":"Vano"} <span class="mono">${esc(u.lab)}</span></h2>${lgen(g)}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
+  /* los dos permisos lado a lado y, en una frase, lo que falta para que quede apto */
+  {const pe=libEst(u.key,"pmf"),se=libEst(u.key,"ser"),sx=libAct(u.key,"ser"),pf=pmfFecha(u.key),fa=libFalta(u.key);
+    h+=`<div class="lsem"><div><span class="lbl">PMF</span>${lchip(pe,"pmf")}<span class="small muted">${pf?"desde el "+fmtD(pf):"sin registro"}</span></div><div><span class="lbl">Servidumbre</span>${lchip(se,"ser")}<span class="small muted">${sx?"desde el "+fmtD(sx.fecha):"sin registro"}</span></div></div>
+    <div class="lfalta" style="--c:${LIB_GEN[g].c}">${fa.length?`<b>Para quedar ${T?"apta":"apto"} falta:</b> ${esc(fa.join(" y "))}.`:`<b>${T?"Apta":"Apto"} para construcción.</b> PMF y servidumbre resueltos.`}</div>`;}
   const m=T?[["Tipo",u.e.tipo||"—"],["Torre",u.e.torre||"—"],["Vértice",vertice(u.e.id)||"—"],["Contratista",u.e.contr||"—"],["Coordenadas UTM 18S",xy&&xy.E!=null?`E ${xy.E.toLocaleString("es-CL")} · N ${xy.N.toLocaleString("es-CL")}`:"Sin coordenadas en el listado"]]
     :[["Longitud",u.v.len!=null?fmtM(u.v.len):"Sin longitud"],["Estructuras",u.v.a+" → "+u.v.b],["Tramo de tendido",u.tt||"—"]];
   h+=`<div class="meta">${m.map(([a,b])=>`<div><span>${a}</span>${esc(b)}</div>`).join("")}${ll?`<div><span>Ubicación</span><a class="linkbtn" style="font-family:var(--f-body)" href="${gmaps(ll)}" target="_blank" rel="noopener">Abrir en Google Maps</a></div>`:""}</div>`;
@@ -2496,7 +2672,7 @@ function vDrawerLib(){
   h+=`<div class="agrp"><h3><span>Bitácora</span><span class="small muted num">${hl.length} ${hl.length===1?"registro":"registros"}</span></h3>`;
   if(S.canWrite)h+=`<div class="libnota"><label class="small" for="lib-nota">Nueva observación</label><textarea id="lib-nota" rows="2" placeholder="Gestión realizada, acuerdos, contactos, próximos pasos…">${esc(D.nota||"")}</textarea><button class="btn small" id="lib-nota-save" ${S.saving?"disabled":""}>Agregar a la bitácora</button></div>`;
   h+=hl.length?`<div class="feed">${hl.map(x=>{const V=LIB_VARS.find(v=>v.id===x.a);const tit=x.a==="pmfc"?`PMF ${x.code}: ${estTxt("pmf",x.est).toLowerCase()}`:V?`${V.t}: ${estTxt(V.id,x.est).toLowerCase()}`:"Observación";
-    return `<div class="it"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w"><div><b>${esc(tit)}</b>${x.a==="pmf"&&x.cod?` <span class="muted">· ${esc(x.cod)}</span>`:""}${x.ref?` <span class="muted">· ref. ${esc(x.ref)}</span>`:""}</div>${x.obs?`<div class="o" style="color:var(--ink)">${esc(x.obs)}</div>`:""}<div class="o">${esc(x.pn||"")}${x.ts?" · registrado el "+fmtTs(x.ts):""}</div></div><span></span></div>`;}).join("")}</div>`:`<span class="small muted">Aún no hay registros.</span>`;
+    return `<div class="it lh" style="--c:${x.a!=="obs"&&LIB_EST[x.est]?LIB_EST[x.est].c:"var(--line-2)"}"><span class="d">${esc(fmtD(x.fecha))}</span><div class="w"><div><b>${esc(tit)}</b>${x.a==="pmf"&&x.cod?` <span class="muted">· ${esc(x.cod)}</span>`:""}${x.ref?` <span class="muted">· ref. ${esc(x.ref)}</span>`:""}</div>${x.obs?`<div class="o" style="color:var(--ink)">${esc(x.obs)}</div>`:""}<div class="o">${esc(x.pn||"")}${x.ts?" · registrado el "+fmtTs(x.ts):""}</div></div><span></span></div>`;}).join("")}</div>`:`<span class="small muted">Aún no hay registros.</span>`;
   h+=`</div>`;
   const us=libUnits();const pv=us[u.i-1],nx=us[u.i+1];
   h+=`<div class="row" style="justify-content:space-between">${pv?`<button class="btn small ghost" data-libopen="${esc(pv.key)}">← ${pv.t==="vano"?"Vano ":""}${esc(pv.lab)}</button>`:"<span></span>"}${nx?`<button class="btn small ghost" data-libopen="${esc(nx.key)}">${nx.t==="vano"?"Vano ":""}${esc(nx.lab)} →</button>`:""}</div>`;
@@ -2647,9 +2823,9 @@ function parseLibControl(txt,corte){
     const d=S.av.get(u.key);if(nota&&!Object.values((d&&d.hist)||{}).some(h=>h&&h.a==="obs"&&h.obs===nota)){op.nota=nota;z.nNota++;}
     if(Object.keys(op.set).length||op.nota)z.ops.push(op);else z.sinCambio++;}
   return z;}
-async function libPcLeer(){const fi=$("#lib-pc-file"),f=fi&&fi.files[0],ci=$("#lib-pc-fecha");
-  if(!f){toast("Selecciona el archivo CSV de la planilla.",true);return;}
-  const corte=(ci&&ci.value)||today();if(!fechaOk(corte)){toast("Revisa la fecha de la planilla: no puede ser futura.",true);return;}
+async function libPcLeer(){const f=S.up["lib-pc-file"],ci=$("#lib-pc-fecha");
+  if(!f){toast("Elige el archivo CSV de la planilla.",true);return;}
+  const corte=(ci&&ci.value)||S.dat.fPc||today();if(!fechaOk(corte)){toast("Revisa la fecha de la planilla: no puede ser futura.",true);return;}
   try{const z=parseLibControl(await decodeBuf(await f.arrayBuffer()),corte);S.libPc=Object.assign(z,{archivo:f.name,corte});render();}
   catch(e){toast((e&&e.message)||"No se pudo leer la planilla.",true);}}
 async function libPcAplicar(){const z=S.libPc;if(!z||S.saving||!S.canAdmin||(S.imp&&S.imp.running))return;
@@ -2666,10 +2842,13 @@ async function libPcAplicar(){const z=S.libPc;if(!z||S.saving||!S.canAdmin||(S.i
   S.saving=false;S.libPc=null;
   S.imp=err?{running:false,ok:false,msg:`Se guardaron ${hechos} de ${ops.length} estructuras. ${err.code==="denied"?"No tienes permiso de administrador.":(err.message||"Error al guardar.")} Vuelve a cargar la planilla: solo se agrega lo que falta.`}
     :{running:false,ok:true,msg:`Planilla de control cargada: ${hechos} estructuras actualizadas (${z.nPmf} de PMF, ${z.nSer} de servidumbre y ${z.nNota} observaciones en la bitácora).`};
+  if(!err)delete S.up["lib-pc-file"];
+  if(hechos)logCarga("lib",z.archivo,S.imp.msg);
   render();}
 function libPcHtml(){const z=S.libPc,lista=(t,a)=>a.length?`<div class="warnline"><b>${t} (${a.length}):</b> ${esc(a.join("; "))}</div>`:"";
-  if(!z)return `<details class="libpc"><summary class="small"><b>Cargar planilla de control</b> · Medio Ambiente (PMF) y Servidumbre por estructura, con comentarios y fechas a la bitácora</summary><div class="filters" style="margin-top:8px"><div class="field"><label for="lib-pc-file">Archivo CSV</label><input id="lib-pc-file" type="file" accept=".csv,text/csv"></div><div class="field" style="max-width:220px"><label for="lib-pc-fecha">Fecha de la planilla</label><input id="lib-pc-fecha" type="date" max="${today()}" value="${today()}"></div><button class="btn" id="lib-pc-read">Revisar planilla</button></div><span class="small muted">Se usa en las filas sin «Última actualización». Antes de guardar verás lo que va a cambiar.</span></details>`;
-  return `<div class="note stack" style="gap:6px"><b>Revisa la carga de ${esc(z.archivo)}</b>
+  const zona=`<div class="dzone">${dropHtml("lib-pc-file","Planilla de control (CSV)",".csv,text/csv,text/plain")}<div class="field"><label for="lib-pc-fecha">Fecha de la planilla</label><input id="lib-pc-fecha" type="date" max="${today()}" value="${esc(S.dat.fPc||today())}"></div></div>`;
+  if(!z)return zona+`<span class="small muted">La fecha se usa en las filas sin «Última actualización». Antes de guardar verás lo que va a cambiar.</span><div class="row"><button class="btn" id="lib-pc-read" ${S.up["lib-pc-file"]?"":"disabled"}>Revisar planilla</button></div>`;
+  return zona+`<div class="dprev"><b>Revisión de ${esc(z.archivo)} · planilla del ${fmtD(z.corte)}</b>
   <span>${z.n} estructuras leídas · ${z.ops.length} con cambios · ${z.sinCambio} sin cambios. Se registrarán <b>${z.nPmf}</b> estados de PMF (Medio Ambiente), <b>${z.nSer}</b> de servidumbre y <b>${z.nNota}</b> observaciones. Los vanos y los códigos PMF no cambian.</span>
   ${z.atras?`<span class="warnline">${z.atras} ${z.atras===1?"registro queda":"registros quedan"} solo en la bitácora, porque ya hay un estado con fecha posterior.</span>`:""}
   ${lista("No están en la app, no se cargan",z.noApp)}${lista("Estado no reconocido, no se cambia",z.raros)}${lista("La planilla se contradice; se usan las columnas de estado",z.dif)}
@@ -2691,7 +2870,9 @@ function libMapMount(){
     if(!LM.waiting){LM.waiting=true;loadLeaflet().then(()=>{LM.waiting=false;if(S.tab==="liberaciones")render();}).catch(()=>{LM.waiting=false;LM.failed=true;if(S.tab==="liberaciones")render();});}
     return;}
   if(!LM.map)libMapInit();else LM.map.invalidateSize({pan:false});
-  libMapUpdate();}
+  libMapUpdate();
+  /* «ver en el mapa» pedido desde otra vista: se ubica cuando el mapa ya está en pantalla */
+  if(LM.pend){const k=LM.pend;LM.pend=null;setTimeout(()=>libLocate(k),80);}}
 function libMapInit(){
   const L=window.L;const m=L.map(LM.el,{zoomSnap:0.5,minZoom:7,maxZoom:19});LM.map=m;
   const esri="https://server.arcgisonline.com/ArcGIS/rest/services/";
@@ -2740,8 +2921,12 @@ function libMapUpdate(){if(!LM.map)return;
 function libSetBase(b){if(!LM.map)return;for(const [k,l] of Object.entries(LM.base))if(k!==b&&LM.map.hasLayer(l))LM.map.removeLayer(l);const l=LM.base[b]||LM.base.sat;if(!LM.map.hasLayer(l))l.addTo(LM.map);LM.cur=b;LM.el.classList.toggle("osm",b==="osm");}
 function libFit(){if(!LM.map||!LM.mk.size)return;LM.map.fitBounds(window.L.latLngBounds([...LM.mk.values()].map(o=>o.mk.getLatLng())),{padding:[28,28]});}
 function libZoomCls(){if(!LM.map)return;const z=LM.map.getZoom();LM.el.classList.toggle("z10",z>=10);LM.el.classList.toggle("z12",z>=12);LM.el.classList.toggle("z14",z>=14);}
-function libLocate(k){const u=libUnit(k);if(!u)return;const slot=document.getElementById("lib-map-slot");if(slot)slot.scrollIntoView({behavior:"smooth",block:"center"});
-  if(!LM.map){toast("El mapa aún se está cargando.");return;}const L=window.L;if(LM.hl){LM.hl.remove();LM.hl=null;}
+function libLocate(k){const u=libUnit(k);if(!u)return;
+  if(LM.failed){toast("No se pudo cargar el mapa. Descarga el KML y ábrelo en Google Earth.",true);return;}
+  /* el mapa es una vista aparte: se cambia a ella y se ubica el elemento cuando el mapa esté listo */
+  if(S.lib.vista!=="mapa"||!LM.map){LM.pend=k;if(S.lib.vista!=="mapa"){S.lib.vista="mapa";render();}return;}
+  const slot=document.getElementById("lib-map-slot");if(slot)slot.scrollIntoView({behavior:"smooth",block:"center"});
+  const L=window.L;if(LM.hl){LM.hl.remove();LM.hl=null;}
   if(u.t==="torre"){const o=LM.mk.get(k);if(!o){toast("La estructura "+u.lab+" no tiene coordenadas en el listado.",true);return;}LM.map.setView(o.mk.getLatLng(),16);setTimeout(()=>o.mk.openPopup(),400);return;}
   const a=libLL(u.v.a),b=libLL(u.v.b);if(!a||!b){toast("El vano "+u.lab+" no tiene coordenadas en el listado.",true);return;}
   LM.hl=L.polyline([a,b],{color:"#ffd21f",weight:5,opacity:.95,interactive:false}).addTo(LM.map);LM.map.fitBounds(LM.hl.getBounds(),{padding:[80,80],maxZoom:17});
@@ -3172,17 +3357,18 @@ document.addEventListener("focusin",ev=>{const el=ev.target;if(el&&el.getAttribu
 document.addEventListener("focusout",ev=>{const el=ev.target;if(el&&el.getAttribute&&el.getAttribute("data-scurve"))pgXhOff();});
 /* --- carga y retiro (solo administradores) --- */
 async function pgCargar(){
-  const fi=$("#pg-file"),f=fi&&fi.files[0],c=S.pg.contr;
+  const f=S.up["pg-file"],c=S.pg.contr;
   if(!c){toast("Elige el contratista al que corresponde el programa.",true);return;}
-  if(!f){toast("Selecciona el archivo XML del programa.",true);return;}
+  if(!f){toast("Elige el archivo XML del programa.",true);return;}
   if(S.imp&&S.imp.running)return;
   S.imp={running:true,title:"Cargando programa…",done:0,total:0,msg:"Leyendo "+f.name};render();
   try{const R=parseMSP(await decodeBuf(await f.arrayBuffer()));const id=progKey(c),prev=S.prog.get(id),root=R.T.find(t=>t.l===0)||null;
     const rev={archivo:f.name,estado:R.proj.estado,fin:(root&&root.F)||R.proj.fin,finLB:root?root.bF:"",decl:root?root.p:null,fecha:today(),por:S.userName};
     const data={v:1,contr:c,archivo:f.name,titulo:R.proj.titulo||R.proj.nombre||f.name,estado:R.proj.estado,inicio:R.proj.inicio,fin:R.proj.fin,cargado:{fecha:today(),ts:Date.now(),por:S.userName},T:R.T,revs:[rev].concat((prev&&prev.revs)||[]).slice(0,12)};
     const M=pgModel(data);rev.r27=M.tot.r;rev.p28=M.tot.p;
-    await setConfig(id,data);S.pg.sel=id;S.pg.pref="";
-    S.imp={running:false,ok:true,msg:`Programa de ${progName(c)} cargado: ${R.T.length} tareas; ${M.meas.length} se comparan con terreno y ${M.sinEq} quedan sin equivalencia en la app.`};}
+    await setConfig(id,data);S.pg.sel=id;S.pg.pref="";delete S.up["pg-file"];
+    S.imp={running:false,ok:true,msg:`Programa de ${progName(c)} cargado: ${R.T.length} tareas; ${M.meas.length} se comparan con terreno y ${M.sinEq} quedan sin equivalencia en la app.`};
+    logCarga("prog",f.name,`${progName(c)} · fecha de estado ${pgD(R.proj.estado)} · ${R.T.length} tareas`);}
   catch(e){S.imp={running:false,ok:false,msg:e&&e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"No se pudo leer el programa.")};}
   render();}
 async function pgQuitar(id){const P=S.prog.get(id);if(!P||!S.canAdmin)return;
@@ -3212,9 +3398,8 @@ function pgAlertsHtml(al,k,conProg){if(!al.length)return `<p class="muted" style
 function vProgramas(){
   const ps=progs(),G=S.pg;if(G.sel&&!S.prog.has(G.sel))G.sel="";if(!G.sel&&ps.length)G.sel=progKey(ps[0].contr);
   let h=`<div class="stack">${mmSection()}<section class="panel stack"><div class="spread"><h2>Programas de los contratistas</h2><span class="small muted">Lo programado en MS Project frente al avance real registrado en terreno</span></div>`;
-  if(S.canAdmin){const cs=progContrs();
-    h+=`<div class="filters"><div class="field"><label for="pg-contr">Contratista</label><select id="pg-contr"><option value="">Elige…</option>${cs.map(c=>`<option value="${esc(c.id)}" ${G.contr===c.id?"selected":""}>${esc(c.t)}${S.prog.has(progKey(c.id))?" · reemplaza el cargado":""}</option>`).join("")}</select></div>
-    <div class="field"><label for="pg-file">Programa (XML de MS Project)</label><input id="pg-file" type="file" accept=".xml,text/xml,application/xml"></div><button class="btn" id="pg-load" ${S.imp&&S.imp.running?"disabled":""}>Cargar programa</button></div>
+  if(S.canAdmin){
+    h+=pgLoaderHtml()+`
     <p class="small muted" style="margin:0">En MS Project: Archivo → Guardar como → Formato XML. Un programa por contratista: una revisión nueva reemplaza a la anterior y queda en el registro de revisiones. El alcance se cruza con las estructuras que la app asigna a ese contratista.</p>`;}
   if(!ps.length)return h+`<p class="muted" style="margin:0">Aún no hay programas cargados.${S.canAdmin?"":" Un administrador debe cargarlos."}</p></section></div>`;
   h+=`<div class="tbl-wrap"><table class="tec rp"><thead><tr><th>Contratista · programa</th><th class="r">Fecha de estado</th><th class="r">Programado</th><th class="r">Avance real</th><th>Real vs programado</th><th class="r">Desviación</th><th class="r">Índice</th><th class="r">Terreno (app)</th><th class="r">Término vigente</th><th class="r">Alertas alta / media</th></tr></thead><tbody>
@@ -3394,15 +3579,16 @@ function mmVct(){if(S.vct==null){let v="e2";try{if(localStorage.getItem(MM_VCT_L
 function mmSetVct(v){S.vct=v==="ct"?"ct":"e2";try{localStorage.setItem(MM_VCT_LS,S.vct);}catch(e){}}
 /* revisión anterior del maestro (para la variación entre revisiones) */
 const mmPrev=M=>(M.revs||[]).find(r=>r.estado&&r.estado<M.estado)||null;
-async function mmCargar(){const fi=$("#mm-file"),f=fi&&fi.files[0];
-  if(!f){toast("Selecciona el archivo XML del programa maestro.",true);return;}
+async function mmCargar(){const f=S.up["mm-file"];
+  if(!f){toast("Elige el archivo XML del programa maestro.",true);return;}
   if(S.imp&&S.imp.running)return;
   S.imp={running:true,title:"Cargando programa maestro…",done:0,total:0,msg:"Leyendo "+f.name+" (puede tardar unos segundos)"};render();
   try{const R=parseMSP(await decodeBuf(await f.arrayBuffer()));const M=mmBuild(R,f.name),prev=mm();
     M.revs=[{archivo:f.name,estado:M.estado,r:M.e2.r,p:M.e2.p,fecha:today(),por:S.userName}].concat(((prev&&prev.revs)||[]).filter(x=>!(x.archivo===f.name&&x.estado===M.estado))).slice(0,24);
     const Wp=mmPesos(M),cs=(S.cfg&&S.cfg.sectores)||[];
     const sectores=SECTORES_BASE.map(b=>{const x=cs.find(s=>s.id===b.id)||{id:b.id,nombre:b.nombre},w=Wp.sec[b.id];return w?Object.assign({},x,{peso:w.peso,ep:w.ep},w.ts?{ts:w.ts}:{}):x;});
-    await updateConfig("proyecto",{maestro:M,sectores,pesoSE:Wp.se});
+    await updateConfig("proyecto",{maestro:M,sectores,pesoSE:Wp.se});delete S.up["mm-file"];
+    logCarga("maestro",f.name,`Fecha de estado ${pgD(M.estado)} · Etapa 2 real ${fmtP2(M.e2.r)}, programado ${fmtP2(M.e2.p)}`);
     S.imp={running:false,ok:true,msg:`Programa maestro cargado, fecha de estado ${pgD(M.estado)}: construcción Etapa 2 con ${fmtP2(M.e2.r)} de avance real y ${fmtP2(M.e2.p)} programado. Desde ahora los globales de la app usan sus pesos: lo registrado en la web y, en lo que la web no mide, el avance del maestro.${M.e1?` La Etapa 1 pesa ${fmtP2(M.e1.w/(M.e1.w+M.e2.w)*100)} de la construcción (para la vista con la Etapa 1 al 100 %).`:""}`};}
   catch(e){S.imp={running:false,ok:false,msg:e&&e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"No se pudo leer el programa maestro.")};}
   render();}
@@ -3449,7 +3635,7 @@ function mmFilaPvR(){const M=mm();if(!M)return "";const A=mmReal(),Pp=mmProg(),T
 /* pestaña Programas: carga del maestro y sus partidas con lo registrado en la web */
 function mmSection(){const M=mm();
   let h=`<section class="panel stack"><div class="spread"><div class="stack" style="gap:2px"><h2>Programa maestro integrado</h2><span class="small muted">${M?`${esc(M.archivo)} · fecha de estado ${mmFecha()} · cargado el ${pgD(M.cargado&&M.cargado.fecha)}${M.cargado&&M.cargado.por?" por "+esc(M.cargado.por):""}`:"Aún no está cargado. Al cargarlo, los porcentajes globales de la app se calculan con sus pesos."}</span></div></div>`;
-  if(S.canAdmin)h+=`<div class="filters"><div class="field"><label for="mm-file">${M?"Nueva revisión del maestro (XML de MS Project)":"Programa maestro (XML de MS Project)"}</label><input id="mm-file" type="file" accept=".xml,text/xml,application/xml"></div><button class="btn" id="mm-load" ${S.imp&&S.imp.running?"disabled":""}>${M?"Cargar revisión":"Cargar programa maestro"}</button></div>
+  if(S.canAdmin)h+=mmLoaderHtml()+`
     <p class="small muted" style="margin:0">En MS Project: Archivo → Guardar como → Formato XML. Se lee «CT - Construcción Etapa 2» con el peso (Texto30), el avance real (Texto27) y el programado (Texto28) de cada tarea. Desde ese momento los globales de la app usan esos pesos: cada tarea vale lo registrado en la web y, si la web no la mide, el avance del maestro. Si el maestro se actualiza con lo registrado en la web, los porcentajes de los dos coinciden.</p>`;
   if(!M)return h+`</section>`;
   const A=mmReal(),Pp=mmProg(),T=S.TER,prev=mmPrev(M);
@@ -4013,6 +4199,84 @@ async function repEnviar(prueba){const n=n8nCfg();if(!n||!n.url||S.rep.env)retur
   catch(e){const m=(e&&e.message)||"";toast("No se pudo enviar a n8n. "+(/^n8n/.test(m)?m+".":"El webhook no respondió: revisa la URL, que el flujo esté activo y que el nodo Webhook permita el origen de esta página (CORS)."),true);}
   S.rep.env=false;render();}
 
+/* ---------- Carga y descarga (solo administradores) ---------- */
+/* Todo lo que entra y sale de la app en un solo lugar. Cada carga sigue los mismos pasos: elegir el archivo (arrastrándolo o
+   con un toque), revisar lo que va a cambiar y recién entonces cargar. Los archivos elegidos quedan en S.up, así no se pierden
+   si la página se redibuja mientras tanto. Cada carga se anota en el historial (logCarga) */
+const UP_EXT={"b-file":[/\.json$/i,"un archivo .json"],"pg-file":[/\.xml$/i,"un archivo .xml exportado de MS Project"],"mm-file":[/\.xml$/i,"un archivo .xml exportado de MS Project"]};
+const UP_CSV=[/\.(csv|txt)$/i,"un archivo .csv (CSV delimitado por punto y coma)"];
+const CSV_ACC=".csv,text/csv,text/plain",XML_ACC=".xml,text/xml,application/xml";
+const fmtKB=n=>n>=1048576?(n/1048576).toFixed(1).replace(".",",")+" MB":Math.max(1,Math.round(n/1024))+" KB";
+function dropHtml(id,label,accept,hint){const f=S.up[id];
+  return `<div class="drop${f?" has":""}"><span class="drop-l">${esc(label)}</span>${f?`<span class="drop-f"><b>${esc(f.name)}</b> · ${fmtKB(f.size)}</span>`:`<span class="drop-h">${esc(hint||"Arrastra el archivo aquí o toca para elegirlo")}</span>`}<input id="${id}" type="file" accept="${accept}" data-up="${id}" aria-label="${esc(label)}">${f?`<button class="drop-x" data-upx="${id}" aria-label="${esc("Quitar "+f.name)}" data-tip="Quitar el archivo">×</button>`:""}</div>`;}
+/* al cambiar un archivo, la revisión hecha con el anterior deja de valer */
+function upReset(id){const P=S.prev;if(P&&((P.tipo==="lin"&&(id==="i-gen"||id==="i-cru"))||(P.tipo==="se"&&(id==="se-f"||id==="se-e"))||(P.tipo==="resp"&&id==="b-file")))S.prev=null;if(id==="lib-pc-file")S.libPc=null;}
+function mmLoaderHtml(){const M=mm();return `<div class="filters"><div class="field">${dropHtml("mm-file",M?"Nueva revisión del maestro (XML de MS Project)":"Programa maestro (XML de MS Project)",XML_ACC)}</div><button class="btn" id="mm-load" ${(S.imp&&S.imp.running)||!S.up["mm-file"]?"disabled":""}>${M?"Cargar revisión":"Cargar programa maestro"}</button></div>`;}
+function pgLoaderHtml(){const G=S.pg,cs=progContrs();
+  return `<div class="filters"><div class="field"><label for="pg-contr">Contratista</label><select id="pg-contr"><option value="">Elige…</option>${cs.map(c=>`<option value="${esc(c.id)}" ${G.contr===c.id?"selected":""}>${esc(c.t)}${S.prog.has(progKey(c.id))?" · reemplaza el cargado":""}</option>`).join("")}</select></div>
+  <div class="field" style="flex:2">${dropHtml("pg-file","Programa del contratista (XML de MS Project)",XML_ACC)}</div><button class="btn" id="pg-load" ${(S.imp&&S.imp.running)||!S.up["pg-file"]?"disabled":""}>Cargar programa</button></div>`;}
+function vDatos(){
+  if(!S.canAdmin)return `<div class="panel empty">Solo los administradores pueden cargar y descargar información.</div>`;
+  const busy=S.imp&&S.imp.running,P=S.prev,D=S.dat,hoy=today();
+  const card=(titulo,tag,desc,last,body)=>`<article class="dcard"><header><h3>${titulo}</h3><span class="dtag">${tag}</span></header><p>${desc}</p>${last||""}${body}</article>`;
+  const fechaF=(id,lab,v)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" type="date" max="${hoy}" value="${esc(v||hoy)}"></div>`;
+  const ultimo=(x,extra)=>x?`<div class="dlast ok">Última carga: <b>${fmtTs(x.ts)}</b>${x.por?" · "+esc(x.por):""}${x.archivo?" · "+esc(x.archivo):""}${extra?" · "+extra:""}</div>`:"";
+  /* --- restaurar respaldo --- */
+  const R=P&&P.tipo==="resp"?P:null;
+  const cResp=card("Restaurar un respaldo","JSON",cfgOk()?"Vuelve a dejar la app como estaba al descargar el respaldo: configuración, estructuras, programas y registros. Úsalo solo para recuperar datos o migrar.":"Carga el archivo de respaldo (.json) para dejar la app con su configuración, sus estructuras y todos los registros.",ultimo(ultCarga("resp")),
+    `<div class="dzone">${dropHtml("b-file","Archivo de respaldo (.json)",".json,application/json")}</div>
+    ${R?`<div class="dprev"><b>Revisión de ${esc(R.archivo)}</b>
+      <div class="dn"><span><b class="num">${R.n}</b> registros de avance</span><span><b class="num">${R.est}</b> estructuras</span><span><b class="num">${R.progs}</b> programas</span>${R.exportado?`<span>descargado el <b class="num" style="font-size:1rem">${fmtTs(R.exportado)}</b></span>`:""}</div>
+      ${cfgOk()?`<span class="warnline">Reemplaza la configuración actual y sobrescribe ${R.n-R.nuevos} registros que ya existen con la versión del archivo${R.nuevos?`; agrega ${R.nuevos} que hoy no están`:""}. ${R.solo?`Los ${R.solo} registros que hoy están en la app y no vienen en el archivo se conservan. `:""}Lo registrado después de ese respaldo en los elementos que trae el archivo se pierde: descarga antes un respaldo del estado actual.</span>`:""}
+      <div class="row" style="gap:6px"><button class="btn ${cfgOk()?"danger":"primary"}" id="b-imp" ${busy?"disabled":""}>Restaurar este respaldo</button><button class="btn small ghost" data-prevx="1">Cancelar</button></div></div>`
+     :`<div class="row"><button class="btn" id="b-prev" ${busy||!S.up["b-file"]?"disabled":""}>Revisar respaldo</button></div>`}`);
+  if(!cfgOk())return `<div class="stack"><section class="panel stack"><div class="spread"><h2>Primera carga</h2><span class="small muted">La app aún no tiene datos</span></div><div class="dcards">${cResp}</div></section></div>`;
+  /* --- estado general --- */
+  const rT=respUlt(),rViejo=!rT||Date.now()-rT>7*864e5,imp=S.cfg.importado,seI=(S.se&&S.se.importado)||null,M=mm(),ps=progs(),uReg=lastUpdate();
+  const fig=(t,v,sub,cls)=>`<div${cls?` class="${cls}"`:""}><span>${t}</span><b class="num">${v}</b><span>${sub}</span></div>`;
+  let h=`<div class="stack"><section class="panel stack"><div class="spread"><div class="stack" style="gap:2px"><h2>Carga y descarga de información</h2><span class="small muted">Todo lo que entra y sale de la app. Cada carga se revisa antes de guardarse y queda anotada en el historial.</span></div><span class="role" style="color:var(--accent)">Solo administradores</span></div>
+  <div class="tmfig">${fig("Último respaldo descargado",rT?haceTxt(rT):"Nunca",rT?"el "+fmtTs(rT)+", desde este equipo":"desde este equipo",rViejo?"crit":"")}${fig("Matrices de la línea",imp?fmtD(imp.fecha):"—",imp?`fecha de corte · ${imp.cambios} con cambios`:"sin cargas")}${fig("Matrices de la S/E",seI?fmtD(seI.fecha):"—",seI?`fecha de corte · ${seI.cambios} con cambios`:"sin cargas")}${fig("Programas cargados",String(ps.length+(M?1:0)),M?`maestro al ${mmFecha()} · ${nTxt(ps.length,"contratista","contratistas")}`:nTxt(ps.length,"contratista","contratistas")+" · sin programa maestro")}${fig("Último registro en terreno",uReg?fmtD(uReg):"—",S.av.size+" elementos con registros")}</div></section>`;
+  /* --- cargar --- */
+  const cLin=card("Avance de la línea","CSV · punto y coma","Matriz general y matriz del cruce. Actualiza la lista de estructuras y el avance de obras preliminares, fundaciones y montaje. No toca lo registrado en terreno con fecha igual o posterior al corte.",
+    imp?`<div class="dlast ok">Última carga: corte del <b>${fmtD(imp.fecha)}</b> · ${imp.estructuras} estructuras, ${imp.patas} patas del cruce · ${imp.cambios} con cambios</div>`:`<div class="dlast">Aún no se ha cargado.</div>`,
+    `<div class="dzone">${dropHtml("i-gen","Matriz general (CSV)",CSV_ACC)}${dropHtml("i-cru","Matriz del cruce (CSV, opcional)",CSV_ACC)}${fechaF("i-fecha","Fecha de corte",D.fLin)}</div>
+    ${P&&P.tipo==="lin"?prevHtml(P,"i-run"):`<div class="row"><button class="btn" id="i-prev" ${busy||!S.up["i-gen"]?"disabled":""}>Revisar cambios</button><span class="small muted">En Excel: Guardar como → CSV (delimitado por punto y coma).</span></div>`}`);
+  const cSE=card("Avance de la subestación","CSV · punto y coma",`Matrices de obras civiles y de estructuras de la S/E Tineo (${SE_CONTRATISTA}). Actualiza el avance de fundaciones, estructuras, canaletas y drenajes.`,
+    seI?`<div class="dlast ok">Última carga: corte del <b>${fmtD(seI.fecha)}</b> · ${seI.filas} elementos leídos · ${seI.cambios} con cambios</div>`:`<div class="dlast">Aún no se ha cargado.</div>`,
+    `<div class="dzone">${dropHtml("se-f","Matriz de fundaciones (con canaletas y drenajes)",CSV_ACC)}${dropHtml("se-e","Matriz de estructuras",CSV_ACC)}${fechaF("se-fecha","Fecha de corte",D.fSE)}</div>
+    ${P&&P.tipo==="se"?prevHtml(P,"se-imp"):`<div class="row"><button class="btn" id="se-prev" ${busy||!(S.up["se-f"]||S.up["se-e"])?"disabled":""}>Revisar cambios</button></div>`}`);
+  const cLib=card("Liberaciones · planilla de control","CSV · punto y coma","Medio Ambiente (PMF) y Servidumbre por estructura, con sus comentarios y fechas. Solo agrega lo que cambió, así la bitácora guarda todo el proceso. Los vanos y los códigos PMF no cambian.",
+    ultimo(ultCarga("lib"))||`<div class="dlast">Sin cargas anotadas en el historial.</div>`,libPcHtml());
+  const cProg=card("Programas de MS Project","XML","Programa maestro (define los pesos del avance global) y programa de cada contratista, para comparar lo programado con lo real.",
+    `<div class="dlast${M?" ok":""}">${M?`Maestro: <b>${esc(M.archivo||"")}</b> · fecha de estado ${mmFecha()}`:"Programa maestro sin cargar."}${ps.map(p=>`<br>${esc(progName(p.contr))}: fecha de estado ${pgD(p.estado)} · cargado el ${pgD(p.cargado&&p.cargado.fecha)}`).join("")}</div>`,
+    `${mmLoaderHtml()}${pgLoaderHtml()}<div class="row"><span class="small muted">En MS Project: Archivo → Guardar como → Formato XML.</span><button class="linkbtn small" style="font-family:var(--f-body)" data-tab="programas">Ver los programas cargados</button></div>`);
+  h+=`<section class="panel stack"><div class="spread"><h2>Cargar</h2><span class="small muted">1 · elige o arrastra el archivo &nbsp; 2 · revisa lo que cambia &nbsp; 3 · carga</span></div><div class="dcards">${cLin}${cSE}${cLib}${cProg}${cResp}</div></section>`;
+  /* --- descargar --- */
+  const Rp=S.rep;if(!Rp.desde||!Rp.hasta)Object.assign(Rp,repPeriodo(Rp.modo||"7d"));
+  const dDesde=D.desde||addDays(hoy,-6),dHasta=D.hasta||hoy;
+  const fila=(titulo,tag,desc,act)=>`<div class="drow"><div class="stack" style="gap:2px"><h3>${titulo}<span class="dtag">${tag}</span></h3><p>${desc}</p></div><div class="dact">${act}</div></div>`;
+  h+=`<section class="panel stack"><div class="spread"><h2>Descargar</h2><span class="small muted">Los CSV se abren en Excel (separados por punto y coma)</span></div><div class="dlist">
+  ${fila("Respaldo completo","JSON",`Configuración, estructuras, programas y todo el historial. Es lo único que permite recuperar la app. ${rT?`Último desde este equipo: <b>${haceTxt(rT)}</b>.`:"<b>Aún no has descargado ninguno desde este equipo.</b>"}${rViejo?` <span class="warnline">Conviene descargarlo cada semana y antes de cada carga.</span>`:""}`,`<button class="btn${rViejo?" primary":""}" id="b-exp">Descargar respaldo</button>`)}
+  ${fila("Estado de avance","CSV","Una fila por estructura y por vano con el avance de hoy, el resumen por sector, la subestación y los registros en terreno.",`<button class="btn" data-csv="1">Descargar</button>`)}
+  ${fila("Registros en terreno por período","CSV","Cada registro de avance con su fecha, elemento, actividad, porcentaje, quién lo registró y la observación.",`<div class="field"><label for="d-desde">Desde</label><input id="d-desde" type="date" max="${hoy}" value="${esc(dDesde)}"></div><div class="field"><label for="d-hasta">Hasta</label><input id="d-hasta" type="date" max="${hoy}" value="${esc(dHasta)}"></div><label class="row small" style="gap:6px;padding-bottom:10px"><input type="checkbox" id="d-imp" ${D.conImp?"checked":""}> Incluir cargas desde Excel</label><button class="btn" id="d-reg">Descargar</button>`)}
+  ${fila("Liberaciones","CSV · KML","Planilla de torres y vanos con PMF y servidumbre, la bitácora completa y los PMF por código. El KML abre la línea coloreada en Google Earth.",`<button class="btn" data-libcsv="1">Planilla y bitácora</button><button class="btn ghost" data-libkml="1">KML</button>`)}
+  ${fila("Reporte semanal","CSV",`Avance, producción, liberaciones y alertas del período del reporte: del ${fmtD(Rp.desde)} al ${fmtD(Rp.hasta)}. El período y el PDF para directorio están en la pestaña Reporte semanal.`,`<button class="btn" data-rpcsv="1">Descargar</button><button class="btn ghost" data-tab="reporte">Abrir el reporte</button>`)}
+  </div></section>`;
+  /* --- historial --- */
+  const L=(S.cargas&&S.cargas.L)||[];
+  h+=`<section class="panel stack"><div class="spread"><h2>Historial de cargas</h2><span class="small muted">Las últimas ${L.length?Math.min(L.length,40):40} cargas hechas desde esta pestaña</span></div>
+  ${L.length?`<div class="tbl-wrap" style="max-height:420px"><table class="tec"><thead><tr><th>Fecha y hora</th><th>Qué se cargó</th><th>Archivo</th><th>Resultado</th><th>Quién</th></tr></thead><tbody>${L.map(x=>`<tr><td class="num">${fmtTs(x.ts)}</td><td>${esc(CARGA_T[x.tipo]||x.tipo||"")}</td><td style="white-space:normal;overflow-wrap:anywhere;min-width:160px">${esc(x.archivo||"")}</td><td style="white-space:normal;min-width:260px">${esc(x.det||"")}</td><td>${esc(x.por||"")}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted" style="margin:0">Aún no hay cargas anotadas. Desde ahora, cada carga queda aquí con su archivo, su resultado y quién la hizo.</p>`}</section>`;
+  return h+`</div>`;}
+/* Registros en terreno de un período (uno por fila), para revisar o auditar lo ingresado */
+function descargarRegistros(){const D=S.dat,desde=D.desde||addDays(today(),-6),hasta=D.hasta||today();
+  if(desde>hasta){toast("La fecha «Desde» es posterior a «Hasta».",true);return;}
+  const q=v=>{const s=String(v==null?"":v);return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;},f=n=>String(Math.round(n*10)/10).replace(".",",");
+  const hs=allHist().filter(x=>x.fecha&&x.fecha>=desde&&x.fecha<=hasta&&(D.conImp||!x.imp)).sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||"")||(a.ts||0)-(b.ts||0));
+  if(!hs.length){toast("No hay registros entre el "+fmtD(desde)+" y el "+fmtD(hasta)+".",true);return;}
+  const L=["REGISTROS DE AVANCE del "+fmtD(desde)+" al "+fmtD(hasta),"Fecha;Sector;Elemento;Actividad;Avance %;Registrado por;Observación;Origen;Guardado el"];
+  for(const x of hs){const a=actById(x.a);L.push([fmtD(x.fecha),secName(x.sec),x.lab,a?a.nombre:x.a,f(num(x.pct,0)),x.pn||"",x.obs||"",x.imp?"Carga desde Excel":"Terreno",x.ts?fmtTs(x.ts):""].map(q).join(";"));}
+  descargar("registros-"+desde+"-a-"+hasta+".csv","﻿"+L.join("\r\n"),"text/csv;charset=utf-8");toast(hs.length+" registros descargados.");}
+
 /* ---------- Configuración (solo administradores) ---------- */
 function makeDraft(){const c=S.cfg||{};
   return {nombre:c.nombre||"",codigo:c.codigo||"",tension:c.tension||"",pesoSE:pesoSE(),sectores:secs().map(s=>Object.assign({},s,{ep:Object.assign(Object.fromEntries(etapas().map(e=>[e.id,num(e.peso,0)])),s.ep||{}),ts:Object.assign((t=>({torre:num(t.torre,30),vano:num(t.vano,70),opgw:num(t.opgw,0)}))(etapaById("ten")||{}),s.ts||{})})),etapas:etapas().map(e=>Object.assign({},e)),
@@ -4020,24 +4284,20 @@ function makeDraft(){const c=S.cfg||{};
 function sumTxt(v){return `<span class="num ${Math.abs(v-100)>.01?"warnline":"muted"} small">Suma: ${String(Math.round(v*10)/10).replace(".",",")}%${Math.abs(v-100)>.01?" (debería ser 100%)":""}</span>`;}
 function vConfig(){
   if(!S.canAdmin)return `<div class="panel empty">Solo los administradores pueden editar la configuración.</div>`;
-  const busy=S.imp&&S.imp.running;
-  let h=`<div class="stack">`;
-  h+=`<section class="panel stack"><h2>Respaldo completo</h2><p class="muted">Incluye configuración, estructuras y todo el historial de avances. Descárgalo periódicamente. Para migrar desde la app anterior, importa aquí el archivo JSON que descargaste de ella.</p>
-  <div class="form-grid"><div class="field"><label for="b-file">Archivo de respaldo (.json)</label><input id="b-file" type="file" accept=".json,application/json"></div></div>
-  <div class="row"><button class="btn" id="b-imp" ${busy?"disabled":""}>Importar respaldo</button>${cfgOk()?`<button class="btn ghost" id="b-exp">Descargar respaldo</button>`:""}</div></section>`;
-  if(!cfgOk())return h+`</div>`;
-  if(!S.draft)S.draft=makeDraft();const d=S.draft;const imp=S.cfg.importado;
-  h+=`<section class="panel stack"><h2>Cargar matrices Excel</h2><p class="muted">Guarda cada hoja como <b>CSV (delimitado por punto y coma)</b> y súbela aquí. Solo se guarda lo que cambió, con la fecha de corte indicada.</p>
-  ${imp?`<div class="note">Última carga: <b>${esc(fmtD(imp.fecha))}</b> · ${imp.estructuras} estructuras, ${imp.patas} patas del cruce · ${imp.cambios} con cambios.</div>`:""}
-  <div class="form-grid"><div class="field"><label for="i-gen">Matriz general (CSV)</label><input id="i-gen" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="i-cru">Matriz cruce (CSV)</label><input id="i-cru" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="i-fecha">Fecha de corte</label><input id="i-fecha" type="date" max="${today()}" value="${today()}"></div></div>
-  <div class="row"><button class="btn" id="i-run" ${busy?"disabled":""}>Importar archivos</button></div></section>`;
-  h+=`<section class="panel stack"><h2>Proyecto</h2><div class="form-grid"><div class="field"><label for="c-nombre">Nombre</label><input id="c-nombre" type="text" data-cf="nombre" value="${esc(d.nombre)}"></div><div class="field"><label for="c-codigo">Código</label><input id="c-codigo" type="text" data-cf="codigo" value="${esc(d.codigo)}"></div><div class="field"><label for="c-tension">Descripción corta</label><input id="c-tension" type="text" data-cf="tension" value="${esc(d.tension)}"></div></div></section>`;
+  /* la carga de matrices, programas y respaldos pasó a la pestaña «Carga y descarga»; aquí quedan los pesos y parámetros */
+  if(!cfgOk())return vDatos();
+  /* el borrador se rehace si la configuración cambió por otra vía (p. ej., al cargar el programa maestro) y no hay cambios sin guardar */
+  if(!S.draft||(!S.dirty&&S.draftDe!==S.cfg)){S.draft=makeDraft();S.draftDe=S.cfg;}const d=S.draft;
+  const J=[["cfg-proy","Proyecto"],["cfg-global","Pesos globales"],["cfg-etapas","Etapas y tendido por sector"],["cfg-acts","Actividades"],["cfg-vanos","Vanos"],["cfg-se","Subestación"],["cfg-n8n","n8n"],["cfg-usuarios","Usuarios"]];
+  let h=`<div class="stack"><section class="panel stack" style="gap:10px"><div class="spread"><h2>Configuración</h2><span class="small muted">Pesos y parámetros del cálculo. Para cargar matrices, programas o respaldos, ve a <button class="linkbtn" style="font-family:var(--f-body)" data-tab="datos">Carga y descarga</button>.</span></div>
+  <div class="jump" role="group" aria-label="Ir a una sección">${J.map(([id,t])=>`<button data-jump="${id}">${t}</button>`).join("")}</div></section>`;
+  h+=`<section class="panel stack" id="cfg-proy"><h2>Proyecto</h2><div class="form-grid"><div class="field"><label for="c-nombre">Nombre</label><input id="c-nombre" type="text" data-cf="nombre" value="${esc(d.nombre)}"></div><div class="field"><label for="c-codigo">Código</label><input id="c-codigo" type="text" data-cf="codigo" value="${esc(d.codigo)}"></div><div class="field"><label for="c-tension">Descripción corta</label><input id="c-tension" type="text" data-cf="tension" value="${esc(d.tension)}"></div></div></section>`;
   const ss=d.sectores.reduce((x,s)=>x+num(s.peso,0),0)+num(d.pesoSE,0);
-  h+=`<section class="panel stack"><div class="spread"><h2>Peso en el avance global del proyecto</h2>${sumTxt(ss)}</div><p class="muted small">Ponderador de cada parte en el % global del Resumen. Idealmente según el valorizado del contrato. Si no suman 100, la app los normaliza igual.</p><div class="form-grid">${d.sectores.map((s,i)=>`<div class="field"><label for="c-sp-${s.id}">${esc(s.nombre)} (%)</label><input id="c-sp-${s.id}" type="number" step="0.1" min="0" data-sp="${i}" value="${num(s.peso,0)}"></div>`).join("")}<div class="field"><label for="c-sp-se">Subestación Tineo (%)</label><input id="c-sp-se" type="number" step="0.1" min="0" data-pse="1" value="${num(d.pesoSE,0)}"></div></div></section>`;
+  h+=`<section class="panel stack" id="cfg-global"><div class="spread"><h2>Peso en el avance global del proyecto</h2>${sumTxt(ss)}</div><p class="muted small">Ponderador de cada parte en el % global del Resumen. Idealmente según el valorizado del contrato. Si no suman 100, la app los normaliza igual.</p><div class="form-grid">${d.sectores.map((s,i)=>`<div class="field"><label for="c-sp-${s.id}">${esc(s.nombre)} (%)</label><input id="c-sp-${s.id}" type="number" step="0.1" min="0" data-sp="${i}" value="${num(s.peso,0)}"></div>`).join("")}<div class="field"><label for="c-sp-se">Subestación Tineo (%)</label><input id="c-sp-se" type="number" step="0.1" min="0" data-pse="1" value="${num(d.pesoSE,0)}"></div></div></section>`;
   /* pesos de etapa y reparto del tendido por sector: cada sector con el programa de su contratista (Texto30) */
   const TSK=[["torre","Conductor en la torre"],["vano","Conductor en el vano"],["opgw","OPGW, torre y vano"]];
   const cell=(id,lab,dk,v)=>`<td style="width:130px"><input id="${id}" type="number" step="0.1" min="0" ${dk} value="${v}" aria-label="${esc(lab)}"></td>`;
-  h+=`<section class="panel stack"><h2>Peso de cada etapa, por sector</h2><p class="muted small">Reparto de la torre según el programa de cada contratista (Texto30): Continente con el programa maestro STN4324-DK-PM-C-0001 (Elecnor), Cruce con el de CSTC e Isla con el de Globaltec. Las obras preliminares incluyen la malla de puesta a tierra, salvo en el cruce, donde la malla se mide por pata dentro de la fundación. Cada columna debe sumar 100.</p>
+  h+=`<section class="panel stack" id="cfg-etapas"><h2>Peso de cada etapa, por sector</h2><p class="muted small">Reparto de la torre según el programa de cada contratista (Texto30): Continente con el programa maestro STN4324-DK-PM-C-0001 (Elecnor), Cruce con el de CSTC e Isla con el de Globaltec. Las obras preliminares incluyen la malla de puesta a tierra, salvo en el cruce, donde la malla se mide por pata dentro de la fundación. Cada columna debe sumar 100.</p>
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${d.sectores.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}</tr></thead><tbody>
   ${d.etapas.map(e=>`<tr><td>${esc(e.nombre)} (%)</td>${d.sectores.map((s,i)=>cell(`c-eps-${s.id}-${e.id}`,e.nombre+" · "+s.nombre,`data-eps="${i}|${e.id}"`,num((s.ep||{})[e.id],0))).join("")}</tr>`).join("")}
   <tr><td></td>${d.sectores.map(s=>`<td class="r">${sumTxt(d.etapas.reduce((x,e)=>x+num((s.ep||{})[e.id],0),0))}</td>`).join("")}</tr></tbody></table></div>
@@ -4045,25 +4305,23 @@ function vConfig(){
   <div class="tbl-wrap"><table class="tec"><thead><tr><th>Parte</th>${d.sectores.map(s=>`<th class="r">${esc(s.nombre)}</th>`).join("")}</tr></thead><tbody>
   ${TSK.map(([k,n])=>`<tr><td>${n} (%)</td>${d.sectores.map((s,i)=>cell(`c-tss-${s.id}-${k}`,n+" · "+s.nombre,`data-tss="${i}|${k}"`,num((s.ts||{})[k],0))).join("")}</tr>`).join("")}
   <tr><td></td>${d.sectores.map(s=>`<td class="r">${sumTxt(TSK.reduce((x,[k])=>x+num((s.ts||{})[k],0),0))}</td>`).join("")}</tr></tbody></table></div></section>`;
-  h+=`<section class="panel stack"><h2>Actividades y pesos dentro de cada grupo</h2>${grupos().map(g=>{const list=d.actividades.map((a,i)=>[a,i]).filter(([a])=>a.g===g.id);const sm=list.reduce((x,[a])=>x+num(a.peso,0),0);
+  h+=`<section class="panel stack" id="cfg-acts"><h2>Actividades y pesos dentro de cada grupo</h2>${grupos().map(g=>{const list=d.actividades.map((a,i)=>[a,i]).filter(([a])=>a.g===g.id);const sm=list.reduce((x,[a])=>x+num(a.peso,0),0);
     /* el OPGW suma 100 entre torre y vano (pesos del programa maestro) */
     const op=g.id==="opt"||g.id==="opg",smO=op?d.actividades.filter(a=>a.g==="opt"||a.g==="opg").reduce((x,a)=>x+num(a.peso,0),0):sm;
     return `<div class="stack" style="gap:6px"><div class="spread"><h3>${esc(g.nombre)}</h3>${op?`<span class="small muted num">${String(Math.round(sm*10)/10).replace(".",",")}% del OPGW · ${sumTxt(smO).replace("Suma:","torre + vano:")}</span>`:sumTxt(sm)}</div><div class="tbl-wrap"><table><tbody>${list.map(([a,i])=>`<tr><td style="min-width:240px;width:100%"><input id="c-an-${i}" type="text" data-an="${i}" value="${esc(a.nombre)}" aria-label="Nombre"></td><td style="width:110px"><input id="c-ap-${i}" type="number" step="0.1" min="0" data-ap="${i}" value="${num(a.peso,0)}" aria-label="Peso %"></td></tr>`).join("")}</tbody></table></div></div>`;}).join("")}</section>`;
-  h+=`<section class="panel stack"><h2>Vanos</h2><p class="muted small">Una línea por vano: <span class="mono">Desde; Hasta</span>. Por defecto, cada estructura con la siguiente de la matriz general. En el cruce: 1CA–2C, 1CB–2C, 2C–3C, 3C–4CA y 3C–4CB. Los vanos a los marcos de línea de las S/E se agregan solos.</p><div class="form-grid">${d.sectores.map(s=>`<div class="field"><label for="c-v-${s.id}">${esc(s.nombre)}</label><textarea class="code" id="c-v-${s.id}" data-vn="${s.id}">${esc(d.vanos[s.id])}</textarea></div>`).join("")}</div></section>`;
+  h+=`<section class="panel stack" id="cfg-vanos"><h2>Vanos</h2><p class="muted small">Una línea por vano: <span class="mono">Desde; Hasta</span>. Por defecto, cada estructura con la siguiente de la matriz general. En el cruce: 1CA–2C, 1CB–2C, 2C–3C, 3C–4CA y 3C–4CB. Los vanos a los marcos de línea de las S/E se agregan solos.</p><div class="form-grid">${d.sectores.map(s=>`<div class="field"><label for="c-v-${s.id}">${esc(s.nombre)}</label><textarea class="code" id="c-v-${s.id}" data-vn="${s.id}">${esc(d.vanos[s.id])}</textarea></div>`).join("")}</div></section>`;
   {const sp=S.seDraft||sePesos();const sm=SE_CATS.reduce((x,c)=>x+num(sp[c.id],0),0);
-  h+=`<section class="panel stack"><div class="spread"><h2>Subestación Tineo · ${SE_CONTRATISTA}</h2>${sumTxt(sm)}</div><p class="muted small">Peso de cada partida en el avance global de la subestación. Los pesos de las actividades vienen de las matrices de obras civiles y estructuras.</p>
+  h+=`<section class="panel stack" id="cfg-se"><div class="spread"><h2>Subestación Tineo · ${SE_CONTRATISTA}</h2>${sumTxt(sm)}</div><p class="muted small">Peso de cada partida en el avance global de la subestación. Los pesos de las actividades vienen de las matrices de obras civiles y estructuras.</p>
   <div class="form-grid">${SE_CATS.map(c=>`<div class="field"><label for="se-p-${c.id}">${c.nombre} (%)</label><input id="se-p-${c.id}" type="number" min="0" step="0.1" data-sep="${c.id}" value="${num(sp[c.id],0)}"></div>`).join("")}</div>
-  <div class="row"><button class="btn small" id="se-save" ${S.saving?"disabled":""}>Guardar pesos S/E</button></div>
-  <h3>Cargar matrices de la subestación (CSV)</h3>
-  <div class="form-grid"><div class="field"><label for="se-f">Matriz Fundaciones (incluye canaletas y drenajes)</label><input id="se-f" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="se-e">Matriz Estructuras</label><input id="se-e" type="file" accept=".csv,text/csv,text/plain"></div><div class="field"><label for="se-fecha">Fecha de corte</label><input id="se-fecha" type="date" max="${today()}" value="${today()}"></div></div>
-  <div class="row"><button class="btn" id="se-imp" ${busy?"disabled":""}>Importar matrices S/E</button></div></section>`;}
+  <div class="row"><button class="btn small" id="se-save" ${S.saving?"disabled":""}>Guardar pesos S/E</button><span class="small muted">Las matrices de la subestación se cargan en «Carga y descarga».</span></div></section>`;}
   {const n=S.n8nDraft||Object.assign({url:"",clave:""},n8nCfg()||{});
-  h+=`<section class="panel stack"><h2>Integración con n8n</h2><p class="muted small">El botón <b>Enviar a n8n</b> del Reporte semanal manda el reporte a un webhook de n8n: cifras, producción, liberaciones, alertas y un texto listo para correo (campo <span class="mono">texto</span>). En n8n crea un flujo con un nodo <b>Webhook</b> (método POST), actívalo y pega aquí su <b>Production URL</b>. Debe ser https, salvo que n8n corra en este mismo PC (http://localhost:5678).</p>
+  h+=`<section class="panel stack" id="cfg-n8n"><h2>Integración con n8n</h2><p class="muted small">El botón <b>Enviar a n8n</b> del Reporte semanal manda el reporte a un webhook de n8n: cifras, producción, liberaciones, alertas y un texto listo para correo (campo <span class="mono">texto</span>). En n8n crea un flujo con un nodo <b>Webhook</b> (método POST), actívalo y pega aquí su <b>Production URL</b>. Debe ser https, salvo que n8n corra en este mismo PC (http://localhost:5678).</p>
   <div class="form-grid"><div class="field"><label for="n8n-url">URL del webhook</label><input id="n8n-url" type="text" inputmode="url" value="${esc(n.url)}" placeholder="https://…/webhook/reporte-avance" autocomplete="off"></div><div class="field"><label for="n8n-key">Clave (opcional)</label><input id="n8n-key" type="text" value="${esc(n.clave)}" autocomplete="off"></div></div>
   <p class="small muted" style="margin:0">La clave viaja en el encabezado <span class="mono">X-Avance-Key</span>: úsala en el Webhook con <b>Header Auth</b> para rechazar llamadas que no vengan de la app. Los usuarios con sesión pueden verla. Para desactivar la integración, deja la URL vacía y guarda.</p>
   <div class="row"><button class="btn small" id="n8n-save" ${S.saving?"disabled":""}>Guardar integración</button>${(n8nCfg()||{}).url?`<button class="btn small ghost" id="n8n-test" ${S.rep.env?"disabled":""}>Enviar prueba</button>`:""}</div></section>`;}
-  h+=`<section class="panel stack"><h2>Usuarios</h2><p class="muted small">Las cuentas se crean e invitan desde Supabase (Authentication → Users → Invite user). Todo usuario con sesión puede ver y registrar avances. Solo quienes estén en la tabla <span class="mono">admins</span> ven esta pestaña y pueden cambiar la configuración. Revisa la guía de publicación.</p></section>`;
-  h+=`<div class="row"><button class="btn primary" id="c-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar configuración"}</button><button class="btn ghost" id="c-discard">Descartar cambios</button></div>`;
+  h+=`<section class="panel stack" id="cfg-usuarios"><h2>Usuarios</h2><p class="muted small">Las cuentas se crean e invitan desde Supabase (Authentication → Users → Invite user). Todo usuario con sesión puede ver y registrar avances. Solo quienes estén en la tabla <span class="mono">admins</span> ven las pestañas de administración y pueden cambiar la configuración. Revisa la guía de publicación.</p></section>`;
+  /* barra de guardado siempre a la vista: los pesos, actividades y vanos se guardan juntos (S/E y n8n tienen su propio botón) */
+  h+=`<div class="savebar noprint"><span class="st${S.dirty?" dirty":""}" id="c-estado">${S.dirty?"Hay cambios sin guardar en proyecto, pesos, actividades o vanos":"Sin cambios pendientes"}</span><button class="btn ghost" id="c-discard">Descartar cambios</button><button class="btn primary" id="c-save" ${S.saving?"disabled":""}>${S.saving?"Guardando…":"Guardar configuración"}</button></div>`;
   return h+`</div>`;
 }
 async function guardarConfig(){
@@ -4077,7 +4335,7 @@ async function guardarConfig(){
       sectores:d.sectores.map(s=>({id:s.id,nombre:s.nombre,peso:num(s.peso,0),desc:s.desc||"",ep:Object.fromEntries(d.etapas.map(e=>[e.id,num((s.ep||{})[e.id],0)])),ts:{torre:num((s.ts||{}).torre,0),vano:num((s.ts||{}).vano,0),opgw:num((s.ts||{}).opgw,0)}})),
       etapas:d.etapas.map(e=>Object.assign({id:e.id,nombre:e.nombre,peso:num(e.peso,0)},e.id==="ten"?{torre:num(e.torre,30),vano:num(e.vano,70),opgw:num(e.opgw,0)}:{})),
       actividades:d.actividades.map(a=>Object.assign({id:a.id,nombre:String(a.nombre).trim(),g:a.g,peso:num(a.peso,0)},a.circ?{circ:a.circ,fase:a.fase}:{})),vanos:vn});
-    S.draft=null;toast("Configuración guardada.");
+    S.draft=null;S.dirty=false;toast("Configuración guardada.");
   }catch(e){toast(e.code==="denied"?"No tienes permiso de administrador.":"No se pudo guardar. Intenta de nuevo.",true);}
   S.saving=false;render();
 }
@@ -4096,11 +4354,21 @@ async function migrarN8n(){if(!S.canAdmin||!S.cfg||!S.cfg.n8n)return;const v=S.c
   try{if(!S.n8n&&v.url)await setConfig("n8n",{url:v.url,clave:v.clave||""});await updateConfig("proyecto",{n8n:null});render();}catch(e){}}
 
 /* ---------- Respaldo JSON ---------- */
-function exportarRespaldo(){descargar("respaldo-avance-tineo-ancud-"+today()+".json",JSON.stringify({version:1,exportado:new Date().toISOString(),config:{proyecto:S.cfg,unidades:S.uni,se:S.se,programas:Object.fromEntries(S.prog),notas:S.rnotas,n8n:S.n8n},avance:Object.fromEntries(S.av)}),"application/json");toast("Respaldo descargado.");}
-async function importarRespaldo(){
-  const f=$("#b-file").files[0];if(!f){toast("Selecciona el archivo de respaldo (.json).",true);return;}
+function exportarRespaldo(){descargar("respaldo-avance-tineo-ancud-"+today()+".json",JSON.stringify({version:1,exportado:new Date().toISOString(),config:{proyecto:S.cfg,unidades:S.uni,se:S.se,programas:Object.fromEntries(S.prog),notas:S.rnotas,n8n:S.n8n,cargas:S.cargas},avance:Object.fromEntries(S.av)}),"application/json");
+  try{localStorage.setItem(LS_RESP,String(Date.now()));}catch(e){}toast("Respaldo descargado.");render();}
+/* fecha del último respaldo descargado desde este navegador (solo para recordar hacerlo; no viaja al servidor) */
+const LS_RESP="avance-tineo-ancud.respaldo";
+function respUlt(){try{const t=+localStorage.getItem(LS_RESP);return t>0?t:0;}catch(e){return 0;}}
+const haceTxt=ts=>{const d=Math.floor((Date.now()-ts)/864e5);return d<=0?"hoy":d===1?"ayer":"hace "+d+" días";};
+/* Restaurar un respaldo: primero se lee y se muestra qué trae; recién al confirmar se escribe en la base */
+async function respRevisar(){const f=S.up["b-file"];if(!f){toast("Elige el archivo de respaldo (.json).",true);return;}
   let j;try{j=JSON.parse(await f.text());}catch(e){toast("El archivo no es un respaldo válido (JSON).",true);return;}
   if(!j||!j.config||!j.avance||typeof j.avance!=="object"){toast("El archivo no tiene el formato de respaldo esperado.",true);return;}
+  const ids=Object.keys(j.avance);let nuevos=0,solo=0;for(const id of ids)if(!S.av.has(id))nuevos++;for(const id of S.av.keys())if(!Object.prototype.hasOwnProperty.call(j.avance,id))solo++;
+  const ex=j.exportado?Date.parse(j.exportado):NaN;
+  S.prev={tipo:"resp",j,archivo:f.name,exportado:isFinite(ex)?ex:0,n:ids.length,nuevos,solo,est:((j.config.unidades||{}).estructuras||[]).length,progs:Object.keys(j.config.programas||{}).length};render();}
+async function importarRespaldo(){
+  const P=S.prev;if(!P||P.tipo!=="resp"||(S.imp&&S.imp.running))return;const j=P.j;
   const rows=Object.entries(j.avance).filter(([id,d])=>/^[A-Za-z0-9_.~:@+-]{1,200}$/.test(id)&&d&&typeof d==="object").map(([id,data])=>({id,data,updated_at:new Date().toISOString()}));
   S.imp={running:true,title:"Importando respaldo…",done:0,total:rows.length,msg:"Guardando configuración"};render();
   try{
@@ -4114,9 +4382,10 @@ async function importarRespaldo(){
     S.imp.msg="Guardando avances";
     for(let i=0;i<rows.length;i+=200){const ch=rows.slice(i,i+200);await withRetry(async()=>{const {error}=await sb.from("avance").upsert(ch);if(error)throw mapErr(error);});S.imp.done+=ch.length;schedule();}
     await loadAll();
-    S.imp={running:false,ok:true,msg:`Respaldo importado: ${rows.length} registros de avance, ${((j.config.unidades||{}).estructuras||[]).length} estructuras.`};
+    S.imp={running:false,ok:true,msg:`Respaldo restaurado: ${rows.length} registros de avance, ${((j.config.unidades||{}).estructuras||[]).length} estructuras.`};
+    delete S.up["b-file"];S.prev=null;logCarga("resp",P.archivo,S.imp.msg);
   }catch(e){S.imp={running:false,ok:false,msg:e.code==="denied"?"No tienes permiso de administrador para importar.":(e.message||"Error al importar.")};}
-  S.draft=null;render();
+  S.draft=null;S.dirty=false;render();
 }
 
 /* ---------- Importador de matrices ---------- */
@@ -4162,19 +4431,29 @@ async function writeOp(op,fecha,ts){
   const base=baseOf(op.x.meta.sector,op.x.meta);
   await rpcAvance(op.k,base,act,hist);mergeLocal(op.k,base,act,hist);
 }
-async function importar(genTxt,cruTxt,fecha){
+/* Plan de carga de las matrices de la línea: lee los CSV y calcula qué cambiaría, sin guardar nada. Lo usan la revisión previa
+   y la carga misma (que lo recalcula, por si hubo registros nuevos entre la revisión y la carga) */
+function impPlan(genTxt,cruTxt,fecha){
+  const G=parseGeneral(genTxt);const C=cruTxt?parseCruce(cruTxt):{patas:(S.uni&&S.uni.patas)||[],vals:new Map(),chk:{n:0,bad:[]}};
+  const torreCr={};for(const p of C.patas)if(!torreCr[p.est])torreCr[p.est]=p.torre;
+  const uni={v:2,estructuras:G.est.map(e=>e.sec==="cruce"&&torreCr[e.id]?Object.assign({},e,{torre:torreCr[e.id]}):e),patas:C.patas,ts:Date.now()};
+  const vals=new Map([...G.vals,...C.vals]);const ops=[];let prot=0;
+  for(const [k,x] of vals){const d=S.av.get(k);const ch={};
+    for(const a of managedFor(x.meta)){const v=x.acts[a]||0;const c=d&&d.act&&d.act[a]?num(d.act[a].pct,0):0;if(Math.abs(c-v)>0.01){if(protegido(d,a,fecha)){prot++;continue;}ch[a]=v;}}
+    if(Object.keys(ch).length)ops.push({k,d,x,ch});}
+  return {G,C,uni,ops,prot};}
+/* Resumen de un plan para mostrarlo antes de cargar: cuántas actividades cambian, cuántas bajan y una muestra (primero las que bajan) */
+function planResumen(ops,labOf){let n=0,baja=0;const dn=[],up=[];
+  for(const op of ops)for(const [a,v] of Object.entries(op.ch)){const x=op.d&&op.d.act&&op.d.act[a],de=x?num(x.pct,0):0;n++;const r={lab:labOf(op),act:(actById(a)||{}).nombre||a,de,a:v};
+    if(v<de){baja++;if(dn.length<8)dn.push(r);}else if(up.length<14)up.push(r);}
+  return {n,baja,muestra:dn.concat(up).slice(0,14)};}
+async function importar(genTxt,cruTxt,fecha,archivos){
   if(S.imp&&S.imp.running)return;
   S.imp={running:true,title:"Cargando matrices Excel…",done:0,total:0,msg:"Leyendo matrices"};render();
   try{
-    const G=parseGeneral(genTxt);const C=cruTxt?parseCruce(cruTxt):{patas:(S.uni&&S.uni.patas)||[],vals:new Map(),chk:{n:0,bad:[]}};
-    const torreCr={};for(const p of C.patas)if(!torreCr[p.est])torreCr[p.est]=p.torre;
-    const uni={v:2,estructuras:G.est.map(e=>e.sec==="cruce"&&torreCr[e.id]?Object.assign({},e,{torre:torreCr[e.id]}):e),patas:C.patas,ts:Date.now()};
+    const {G,C,uni,ops,prot}=impPlan(genTxt,cruTxt,fecha);const ts=Date.now();
     S.imp.msg="Guardando la lista de estructuras";render();
     await withRetry(()=>setConfig("unidades",uni));
-    const vals=new Map([...G.vals,...C.vals]);const ts=Date.now();const ops=[];let prot=0;
-    for(const [k,x] of vals){const d=S.av.get(k);const ch={};
-      for(const a of managedFor(x.meta)){const v=x.acts[a]||0;const c=d&&d.act&&d.act[a]?num(d.act[a].pct,0):0;if(Math.abs(c-v)>0.01){if(protegido(d,a,fecha)){prot++;continue;}ch[a]=v;}}
-      if(Object.keys(ch).length)ops.push({k,d,x,ch});}
     S.imp.total=ops.length;S.imp.msg="Guardando avances";render();
     let i=0;const worker=async()=>{while(i<ops.length){const op=ops[i++];await withRetry(()=>writeOp(op,fecha,ts));S.imp.done++;schedule();}};
     await Promise.all([worker(),worker(),worker()]);
@@ -4182,16 +4461,41 @@ async function importar(genTxt,cruTxt,fecha){
     const bad=G.chk.bad.concat(C.chk.bad);
     S.imp={running:false,ok:true,msg:`Carga completa con fecha ${fmtD(fecha)}: ${uni.estructuras.length} estructuras y ${uni.patas.length} patas; ${ops.length} con cambios.${prot?` Se respetaron ${prot} avance(s) registrados en terreno con fecha igual o posterior al corte.`:""}`,
       chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con los totales del Excel (${bad.slice(0,8).join(", ")}${bad.length>8?"…":""}).`:`Verificación: los totales de las ${G.chk.n+C.chk.n} filas cuadran con el Excel.`};
+    delete S.up["i-gen"];delete S.up["i-cru"];S.prev=null;logCarga("lin",archivos||"",S.imp.msg);
   }catch(e){S.imp={running:false,ok:false,msg:e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"Error")};}
   render();
 }
-async function importarArchivos(){
-  const fg=$("#i-gen").files[0],fc=$("#i-cru").files[0],fecha=$("#i-fecha").value||today();
-  if(!fg){toast("Selecciona al menos la matriz general.",true);return;}
-  if(fecha>today()){toast("La fecha de corte no puede ser futura.",true);return;}
-  const g=await decodeBuf(await fg.arrayBuffer());const c=fc?await decodeBuf(await fc.arrayBuffer()):null;
-  await importar(g,c,fecha);
+/* Revisión previa de las matrices de la línea: se leen los archivos y se muestra qué cambiaría, sin guardar */
+async function impRevisar(){
+  const fg=S.up["i-gen"],fc=S.up["i-cru"],fecha=S.dat.fLin||today();
+  if(!fg){toast("Elige al menos la matriz general.",true);return;}
+  if(!fechaOk(fecha)){toast("La fecha de corte no puede ser futura.",true);return;}
+  try{
+    const gen=await decodeBuf(await fg.arrayBuffer()),cru=fc?await decodeBuf(await fc.arrayBuffer()):null;
+    const Z=impPlan(gen,cru,fecha),R=planResumen(Z.ops,op=>{const m=op.x.meta;return secName(m.sector)+" · "+m.unidad+(m.pata?" · pata "+m.pata:"");});
+    const hoy=new Set(allEst().map(e=>String(e.id))),nue=new Set(Z.uni.estructuras.map(e=>String(e.id)));
+    const nuevas=[...nue].filter(id=>!hoy.has(id)),quitadas=[...hoy].filter(id=>!nue.has(id)),bad=Z.G.chk.bad.concat(Z.C.chk.bad),avisos=[];
+    if(R.baja)avisos.push(`${R.baja} ${R.baja===1?"actividad baja":"actividades bajan"} su avance respecto de lo que hay hoy en la app. Revísalas antes de cargar.`);
+    if(quitadas.length&&hoy.size)avisos.push(`${quitadas.length} ${quitadas.length===1?"estructura de la app no viene":"estructuras de la app no vienen"} en la matriz y ${quitadas.length===1?"dejará":"dejarán"} de mostrarse: ${quitadas.slice(0,12).join(", ")}${quitadas.length>12?"…":""}.`);
+    if(nuevas.length&&hoy.size)avisos.push(`${nuevas.length} ${nuevas.length===1?"estructura nueva":"estructuras nuevas"}: ${nuevas.slice(0,12).join(", ")}${nuevas.length>12?"…":""}.`);
+    if(Z.prot)avisos.push(`Se respetan ${Z.prot} ${Z.prot===1?"avance registrado":"avances registrados"} en terreno con fecha igual o posterior al corte.`);
+    if(!cru)avisos.push("Sin matriz del cruce: las fundaciones por pata del cruce no cambian.");
+    S.prev={tipo:"lin",gen,cru,fecha,archivos:[fg.name].concat(fc?[fc.name]:[]),n:R.n,baja:R.baja,muestra:R.muestra,avisos,
+      cifras:[[Z.uni.estructuras.length,"estructuras leídas"],[Z.uni.patas.length,"patas del cruce"],[Z.ops.length,"elementos con cambios"],[R.n,"actividades que cambian"]],
+      chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con los totales del Excel (${bad.slice(0,8).join(", ")}${bad.length>8?"…":""}).`:`Verificación: los totales de las ${Z.G.chk.n+Z.C.chk.n} filas cuadran con el Excel.`,
+      run:Z.ops.length?`Cargar ${Z.ops.length} ${Z.ops.length===1?"elemento":"elementos"} con cambios`:"Cargar (sin cambios de avance)"};
+  }catch(e){S.prev=null;toast((e&&e.message)||"No se pudo leer la matriz.",true);}
+  render();
 }
+async function impAplicar(){const P=S.prev;if(!P||P.tipo!=="lin")return;await importar(P.gen,P.cru,P.fecha,P.archivos.join(" y "));}
+/* Bloque de revisión común a las cargas de matrices: cifras, avisos, verificación y muestra de cambios, con el botón de carga */
+function prevHtml(P,runId){const f=v=>String(Math.round(v*10)/10).replace(".",",")+"%";
+  return `<div class="dprev"><b>Revisión de ${esc(P.archivos.join(" y "))} · corte ${fmtD(P.fecha)}</b>
+  <div class="dn">${P.cifras.map(([v,t])=>`<span><b class="num">${v}</b> ${t}</span>`).join("")}</div>
+  ${P.avisos.map(a=>`<span class="warnline">${esc(a)}</span>`).join("")}
+  ${P.chk?`<span class="small muted">${esc(P.chk)}</span>`:""}
+  ${P.muestra.length?`<div class="tbl-wrap" style="max-height:250px"><table><thead><tr><th>Elemento</th><th>Actividad</th><th class="r">Hoy</th><th class="r">Archivo</th></tr></thead><tbody>${P.muestra.map(m=>`<tr><td>${esc(m.lab)}</td><td style="white-space:normal">${esc(m.act)}</td><td class="r num">${f(m.de)}</td><td class="r num"><b${m.a<m.de?` class="crit"`:""}>${f(m.a)}</b></td></tr>`).join("")}</tbody></table></div>${P.n>P.muestra.length?`<span class="small muted">Se muestran ${P.muestra.length} de ${P.n} cambios${P.baja?", primero los que bajan":""}.</span>`:""}`:`<span class="small muted">El archivo coincide con lo que ya está en la app.</span>`}
+  <div class="row" style="gap:6px"><button class="btn primary" id="${runId}" ${S.imp&&S.imp.running?"disabled":""}>${esc(P.run)}</button><button class="btn small ghost" data-prevx="1">Cancelar</button></div></div>`;}
 
 /* ---------- Subestación: pesos e importación ---------- */
 async function guardarSE(){
@@ -4228,19 +4532,35 @@ function parseSEEst(txt){
   if(!out.length)throw new Error("La matriz de estructuras de la S/E no tiene el formato esperado (falta la fila 'Item / Pre-Armado').");
   return {out,chk};
 }
-async function importarArchivosSE(){
-  const ff=$("#se-f").files[0],fe=$("#se-e").files[0],fecha=$("#se-fecha").value||today();
-  if(!ff&&!fe){toast("Selecciona al menos una matriz de la subestación.",true);return;}
-  if(fecha>today()){toast("La fecha de corte no puede ser futura.",true);return;}
+/* Plan de carga de las matrices de la S/E (sin guardar): filas leídas, verificación y cambios */
+function sePlan(fTxt,eTxt,fecha){const rows=[],chks=[];
+  if(fTxt){const P=parseSEFund(fTxt);rows.push(...P.out);chks.push(P.chk);}
+  if(eTxt){const P=parseSEEst(eTxt);rows.push(...P.out);chks.push(P.chk);}
+  const ops=[];let prot=0;
+  for(const {it,a} of rows){const k=kSE(it.cat,it.id);const d=S.av.get(k);const ch={};for(const x of SE_ACTS[it.cat]){const v=a[x.id]||0;if(Math.abs(cur(k,x.id)-v)>0.01){if(protegido(d,x.id,fecha)){prot++;continue;}ch[x.id]=v;}}if(Object.keys(ch).length)ops.push({k,it,ch,d});}
+  return {rows,chks,ops,prot};}
+async function seRevisar(){
+  const ff=S.up["se-f"],fe=S.up["se-e"],fecha=S.dat.fSE||today();
+  if(!ff&&!fe){toast("Elige al menos una matriz de la subestación.",true);return;}
+  if(!fechaOk(fecha)){toast("La fecha de corte no puede ser futura.",true);return;}
+  try{
+    const fTxt=ff?await decodeBuf(await ff.arrayBuffer()):null,eTxt=fe?await decodeBuf(await fe.arrayBuffer()):null;
+    const Z=sePlan(fTxt,eTxt,fecha),R=planResumen(Z.ops,op=>(SE_CAT_NAME[op.it.cat]||"S/E")+" "+op.it.id),bad=[].concat(...Z.chks.map(c=>c.bad)),n=Z.chks.reduce((x,c)=>x+c.n,0),avisos=[];
+    if(R.baja)avisos.push(`${R.baja} ${R.baja===1?"actividad baja":"actividades bajan"} su avance respecto de lo que hay hoy en la app. Revísalas antes de cargar.`);
+    if(Z.prot)avisos.push(`Se respetan ${Z.prot} ${Z.prot===1?"avance registrado":"avances registrados"} en terreno con fecha igual o posterior al corte.`);
+    S.prev={tipo:"se",fTxt,eTxt,fecha,archivos:[ff,fe].filter(Boolean).map(x=>x.name),n:R.n,baja:R.baja,muestra:R.muestra,avisos,
+      cifras:[[Z.rows.length,"elementos leídos"],[Z.ops.length,"con cambios"],[R.n,"actividades que cambian"]],
+      chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con el "Avance parcial" del Excel (${bad.slice(0,8).join(", ")}).`:`Verificación: las ${n} filas cuadran con el "Avance parcial" del Excel.`,
+      run:Z.ops.length?`Cargar ${Z.ops.length} ${Z.ops.length===1?"elemento":"elementos"} con cambios`:"Cargar (sin cambios de avance)"};
+  }catch(e){S.prev=null;toast((e&&e.message)||"No se pudo leer la matriz.",true);}
+  render();
+}
+async function seAplicar(){const P=S.prev;if(!P||P.tipo!=="se")return;await importarSE(P.fTxt,P.eTxt,P.fecha,P.archivos.join(" y "));}
+async function importarSE(fTxt,eTxt,fecha,archivos){
   if(S.imp&&S.imp.running)return;
   S.imp={running:true,title:"Cargando matrices de la subestación…",done:0,total:0,msg:"Leyendo matrices"};render();
   try{
-    const rows=[],chks=[];
-    if(ff){const P=parseSEFund(await decodeBuf(await ff.arrayBuffer()));rows.push(...P.out);chks.push(P.chk);}
-    if(fe){const P=parseSEEst(await decodeBuf(await fe.arrayBuffer()));rows.push(...P.out);chks.push(P.chk);}
-    const ts=Date.now();const ops=[];
-    let prot=0;
-    for(const {it,a} of rows){const k=kSE(it.cat,it.id);const d=S.av.get(k);const ch={};for(const x of SE_ACTS[it.cat]){const v=a[x.id]||0;if(Math.abs(cur(k,x.id)-v)>0.01){if(protegido(d,x.id,fecha)){prot++;continue;}ch[x.id]=v;}}if(Object.keys(ch).length)ops.push({k,it,ch});}
+    const {rows,chks,ops,prot}=sePlan(fTxt,eTxt,fecha);const ts=Date.now();
     S.imp.total=ops.length;S.imp.msg="Guardando avances";render();
     let i=0;const worker=async()=>{while(i<ops.length){const op=ops[i++];const act={},hist={};
       for(const [aid,v] of Object.entries(op.ch)){hist["i"+ts+"_"+aid]={a:aid,pct:v,fecha,por:S.me,pn:S.userName,obs:"Carga desde matriz S/E",ts,imp:true};act[aid]={pct:v,fecha,por:S.me,pn:S.userName,ts,imp:true};}
@@ -4249,6 +4569,7 @@ async function importarArchivosSE(){
     await withRetry(()=>setConfig("se",Object.assign({},S.se||{},{importado:{fecha,ts,filas:rows.length,cambios:ops.length}})));
     const bad=[].concat(...chks.map(c=>c.bad)),n=chks.reduce((x,c)=>x+c.n,0);
     S.imp={running:false,ok:true,msg:`Matrices S/E cargadas con fecha ${fmtD(fecha)}: ${rows.length} elementos leídos, ${ops.length} con cambios.${prot?` Se respetaron ${prot} avance(s) registrados en terreno con fecha igual o posterior al corte.`:""}`,chk:bad.length?`Verificación: ${bad.length} fila(s) no cuadran con el "Avance parcial" del Excel (${bad.slice(0,8).join(", ")}).`:`Verificación: las ${n} filas cuadran con el "Avance parcial" del Excel.`};
+    delete S.up["se-f"];delete S.up["se-e"];S.prev=null;logCarga("se",archivos||"",S.imp.msg);
   }catch(e){S.imp={running:false,ok:false,msg:e.code==="denied"?"No tienes permiso de administrador.":((e&&e.message)||"Error")};}
   render();
 }
@@ -4284,7 +4605,14 @@ document.addEventListener("pointerout",ev=>{if(!ev.relatedTarget||!ev.relatedTar
 document.addEventListener("scroll",()=>{tipEl().style.display="none";},true);
 
 /* ---------- eventos ---------- */
-function go(tab){S.tab=tab;tipEl().style.display="none";try{history.replaceState(null,"","#"+tab);}catch(e){}render();window.scrollTo({top:0});}
+function go(tab){S.tab=tab;tipEl().style.display="none";try{history.replaceState(null,"","#"+tab);}catch(e){}render();
+  /* en pantallas angostas la barra de pestañas se desplaza: la elegida queda a la vista */
+  const nv=$("#tabs"),sel=nv&&nv.querySelector('[aria-selected="true"]');if(sel){const a=sel.offsetLeft,z=a+sel.offsetWidth;if(a<nv.scrollLeft)nv.scrollLeft=Math.max(0,a-24);else if(z>nv.scrollLeft+nv.clientWidth)nv.scrollLeft=z-nv.clientWidth+24;}
+  window.scrollTo({top:0});}
+/* «Ir a estructura» del rótulo: abre la ficha desde cualquier pestaña (acepta 45, E45, T-45, 172A, 1CA) */
+function irEstructura(){const crudo=S.gq.trim();if(!crudo||!cfgOk())return;const q=crudo.toUpperCase(),q2=q.replace(/^[ET]\s*-?\s*(?=\d)/,"");
+  for(const x of [q,q2])for(const s of secs()){const e=estr(s.id).find(y=>String(y.id).toUpperCase()===x);if(e){S.gq="";openDrawer(s.id,e.id);return;}}
+  toast("No hay una estructura con el N° «"+crudo+"».",true);}
 function keepSel(){const ok=new Set(unitsFor(S.reg,true).map(u=>u.uid));S.reg.sel=new Set([...S.reg.sel].filter(u=>ok.has(u)));}
 /* Elementos de los dibujos (torres, patas, cotas) accionables con Enter / espacio */
 document.addEventListener("keydown",ev=>{const t=ev.target;if((ev.key==="Enter"||ev.key===" ")&&t&&t.matches&&t.matches("svg [data-ose],svg [data-open],svg [data-dashet]")){ev.preventDefault();t.dispatchEvent(new MouseEvent("click",{bubbles:true}));}});
@@ -4293,6 +4621,15 @@ document.addEventListener("submit",ev=>{ev.preventDefault();if(ev.target.id==="f
 document.addEventListener("click",ev=>{
   const b=ev.target.closest("button,[data-close],[data-ose],[data-open],[data-dashet]");if(!b)return;const ds=b.dataset;const r=S.reg;
   if(ds.close){closeDrawer();return;}
+  /* carga y descarga */
+  if(ds.impx){S.imp=null;render();return;}
+  if(ds.upx){delete S.up[ds.upx];upReset(ds.upx);render();return;}
+  if(ds.prevx){S.prev=null;render();return;}
+  if(b.id==="i-prev"){impRevisar();return;}
+  if(b.id==="se-prev"){seRevisar();return;}
+  if(b.id==="b-prev"){respRevisar();return;}
+  if(b.id==="d-reg"){descargarRegistros();return;}
+  if(ds.jump){const el=document.getElementById(ds.jump);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});return;}
   if(ds.forgot){doForgot();return;}
   if(ds.logout){sb&&sb.auth.signOut();return;}
   if(ds.chpass){S.state="setpass";S.authMode="change";S.authErr="";render();return;}
@@ -4321,7 +4658,7 @@ document.addEventListener("click",ev=>{
     if(R.notaEd){const ta=$("#ex-nota");if(ta)ta.focus();}return;}
   if(b.id==="ex-nota-save"){exGuardarNota();return;}
   if(ds.rpprint){window.print();return;}
-  if(ds.rpcsv){repCSV();return;}
+  if(ds.rpcsv){const R=S.rep;if(!R.desde||!R.hasta)Object.assign(R,repPeriodo(R.modo||"7d"));repCSV();return;}
   if(ds.rpcopy){copiarTexto(repTexto(repCalc())).then(ok=>toast(ok?"Texto del reporte copiado: pégalo en un correo o mensaje.":"No se pudo copiar el texto.",!ok));return;}
   if(ds.rpsend){repEnviar(false);return;}
   if(b.id==="n8n-save"){guardarN8n();return;}
@@ -4341,7 +4678,17 @@ document.addEventListener("click",ev=>{
   if(b.id==="lib-nota-save"){libSaveNota();return;}
   if(b.id==="lib-b-apply"){libBulkApply();return;}
   if(ds.libtipo){S.lib.tipo=ds.libtipo;render();return;}
-  if(ds.libpmff){S.lib.pmf=ds.libpmff;if(S.pmfEd&&S.pmfEd.src==="bar")S.pmfEd=null;render();const t=document.getElementById("lib-tbl");if(t)t.scrollIntoView({behavior:"smooth",block:"center"});return;}
+  if(ds.libvista){S.lib.vista=ds.libvista;if(S.pmfEd&&S.pmfEd.src!=="drw")S.pmfEd=null;render();return;}
+  /* cifras de la cabecera: filtran la planilla (o el mapa); al tocar la que ya está puesta, se quita el filtro */
+  if(ds.libkpi){const F=S.lib,k=ds.libkpi;
+    if(k==="pmf")F.vista="pmf";
+    else{const z=({taptas:["torre","apta"],vaptos:["vano","apta"],fser:["todo","fser"],res:["todo","res"]})[k]||["todo",""];
+      if(F.tipo===z[0]&&F.est===z[1]){F.tipo="todo";F.est="";}else{F.tipo=z[0];F.est=z[1];}
+      if(F.vista!=="mapa")F.vista="planilla";}
+    render();return;}
+  if(ds.libfe!=null){S.lib.est=S.lib.est===ds.libfe?"":ds.libfe;render();return;}
+  if(ds.libpe!=null){S.lib.pe=S.lib.pe===ds.libpe?"":ds.libpe;render();return;}
+  if(ds.libpmff){Object.assign(S.lib,{pmf:ds.libpmff,vista:"planilla",tipo:"todo",est:"",q:""});if(S.pmfEd&&S.pmfEd.src!=="drw")S.pmfEd=null;render();const t=document.getElementById("lib-tbl");if(t)t.scrollIntoView({behavior:"smooth",block:"center"});return;}
   if(ds.libclear){Object.assign(S.lib,{tipo:"todo",sec:"total",tt:"",est:"",pmf:"",q:""});if(S.pmfEd&&S.pmfEd.src==="bar")S.pmfEd=null;render();return;}
   if(ds.libselclear){S.lib.sel=new Set();render();return;}
   if(ds.libck){const k=ds.libck;if(S.lib.sel.has(k))S.lib.sel.delete(k);else S.lib.sel.add(k);render();return;}
@@ -4355,7 +4702,7 @@ document.addEventListener("click",ev=>{
   if(ds.ose){const i=ds.ose.indexOf("|");tipEl().style.display="none";openDrawerSE(ds.ose.slice(0,i),ds.ose.slice(i+1));return;}
   if(ds.secat){S.seCat=ds.secat;render();return;}
   if(b.id==="se-save"){guardarSE();return;}
-  if(b.id==="se-imp"){importarArchivosSE();return;}
+  if(b.id==="se-imp"){seAplicar();return;}
   if(ds.vct){mmSetVct(ds.vct);render();return;}
   if(ds.dash){S.dash=ds.dash;render();return;}
   if(ds.dashet){S.dashEt=S.dashEt===ds.dashet?null:ds.dashet;render();return;}
@@ -4385,14 +4732,22 @@ document.addEventListener("click",ev=>{
   if(ds.rpct){r.pct=+ds.rpct;render();return;}
   if(ds.rreset){S.reg=newReg();render();return;}
   if(b.id==="r-save"){guardar();return;}
-  if(b.id==="i-run"){importarArchivos();return;}
+  if(b.id==="i-run"){impAplicar();return;}
   if(b.id==="b-imp"){importarRespaldo();return;}
   if(b.id==="b-exp"){exportarRespaldo();return;}
   if(b.id==="c-save"){guardarConfig();return;}
-  if(b.id==="c-discard"){S.draft=null;S.n8nDraft=null;render();return;}
+  if(b.id==="c-discard"){S.draft=null;S.n8nDraft=null;S.dirty=false;render();return;}
 });
 document.addEventListener("input",ev=>{
   const t=ev.target,ds=t.dataset;
+  if(t.type==="file")return;
+  if(t.id==="g-q"){S.gq=t.value;return;}
+  if(t.id==="lib-pq"){S.lib.pq=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
+  if(t.id==="i-fecha"){S.dat.fLin=t.value;return;}
+  if(t.id==="se-fecha"){S.dat.fSE=t.value;return;}
+  if(t.id==="lib-pc-fecha"){S.dat.fPc=t.value;return;}
+  if(t.id==="d-desde"){S.dat.desde=t.value;return;}
+  if(t.id==="d-hasta"){S.dat.hasta=t.value;return;}
   if(t.id==="pg-q"){S.pg.q=t.value;clearTimeout(mqT);mqT=setTimeout(()=>{if(ptrDown){pendingRender=true;return;}render();},250);return;}
   if(ds.trname!=null){const z=trLista()[+ds.trname];if(z){z.nombre=t.value.slice(0,60);trGuardar();}return;}
   if(t.id==="ex-nota"||t.id==="ex-firma"){if(S.rep.notaEd)S.rep.notaEd[t.id==="ex-nota"?"texto":"firma"]=t.value;return;}
@@ -4422,10 +4777,22 @@ document.addEventListener("input",ev=>{
   else if(ds.an)S.draft.actividades[+ds.an].nombre=t.value;
   else if(ds.ap)S.draft.actividades[+ds.ap].peso=num(t.value,0);
   else if(ds.vn)S.draft.vanos[ds.vn]=t.value;
+  else return;
+  /* la barra de guardado avisa de inmediato que hay cambios sin guardar (sin redibujar, para no cortar la escritura) */
+  if(!S.dirty){S.dirty=true;const st=$("#c-estado");if(st){st.textContent="Hay cambios sin guardar en proyecto, pesos, actividades o vanos";st.classList.add("dirty");}}
 });
 document.addEventListener("input",ev=>{const t=ev.target;if(t.dataset&&t.dataset.sep){if(!S.seDraft)S.seDraft=sePesos();S.seDraft[t.dataset.sep]=num(t.value,0);}});
 document.addEventListener("change",ev=>{const t=ev.target;
   const set=fn=>{fn();if(ptrDown){pendingRender=true;return;}pendingRender=false;render();};
+  /* archivo elegido o soltado en una zona de carga: se guarda en el estado (S.up) y se revisa su extensión */
+  if(t.type==="file"){dlgOpen=false;const id=t.dataset.up,f=t.files&&t.files[0];if(!id||!f)return;const x=UP_EXT[id]||UP_CSV;
+    if(!x[0].test(f.name)){toast("«"+f.name+"» no sirve aquí: se espera "+x[1]+".",true);t.value="";return;}
+    return set(()=>{S.up[id]=f;upReset(id);});}
+  if(t.id==="i-fecha")return set(()=>{S.dat.fLin=t.value;if(S.prev&&S.prev.tipo==="lin")S.prev=null;});
+  if(t.id==="se-fecha")return set(()=>{S.dat.fSE=t.value;if(S.prev&&S.prev.tipo==="se")S.prev=null;});
+  if(t.id==="lib-pc-fecha")return set(()=>{S.dat.fPc=t.value;S.libPc=null;});
+  if(t.id==="d-desde"||t.id==="d-hasta"){S.dat[t.id==="d-desde"?"desde":"hasta"]=t.value;return;}
+  if(t.id==="d-imp"){S.dat.conImp=t.checked;return;}
   if(t.id==="pg-contr"){S.pg.contr=t.value;return;}
   if(t.id==="tr-a"||t.id==="tr-b")return set(()=>{S.tr[t.id==="tr-a"?"a":"b"]=t.value;});
   if(t.id==="pg-prof")return set(()=>{S.pg.prof=+t.value||3;});
@@ -4448,7 +4815,19 @@ document.addEventListener("change",ev=>{const t=ev.target;
   if(t.id==="m-c")return set(()=>{S.map.contr=t.value;});
   if(t.id==="t-tt")return set(()=>{S.tbl.tt=t.value;});
   if(t.id==="t-est")return set(()=>{S.tbl.est=t.value;});
-  if(t.id==="q-pct"||t.id==="q-fecha"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp)set(()=>{});});
+  if(t.id==="q-pct"||t.id==="q-fecha"||t.id==="r-pct"||t.id==="r-fecha"||t.dataset.sp||t.dataset.pse||t.dataset.ep||t.dataset.ap||t.dataset.tsp||t.dataset.eps||t.dataset.tss||t.dataset.sep)set(()=>{});});
+/* archivos arrastrados: sobre una zona de carga los recibe su campo de archivo; fuera de ellas no pasa nada
+   (sin esto, el navegador abriría el archivo y se perdería lo que se estaba haciendo) */
+const conArchivos=ev=>!!(ev.dataTransfer&&ev.dataTransfer.types&&Array.prototype.indexOf.call(ev.dataTransfer.types,"Files")>=0);
+const zonaDe=ev=>ev.target&&ev.target.closest?ev.target.closest(".drop"):null;
+document.addEventListener("dragover",ev=>{if(!conArchivos(ev))return;const z=zonaDe(ev);if(z)z.classList.add("over");else{ev.preventDefault();ev.dataTransfer.dropEffect="none";}});
+document.addEventListener("dragleave",ev=>{const z=zonaDe(ev);if(z)z.classList.remove("over");});
+document.addEventListener("drop",ev=>{if(!conArchivos(ev))return;const z=zonaDe(ev);if(z)z.classList.remove("over");else ev.preventDefault();});
+/* aviso del navegador antes de cerrar o recargar con una carga en curso o con la configuración sin guardar */
+window.addEventListener("beforeunload",ev=>{if((S.imp&&S.imp.running)||S.dirty){ev.preventDefault();ev.returnValue="";}});
+window.addEventListener("online",()=>schedule());
+window.addEventListener("offline",()=>schedule());
+document.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&ev.target&&ev.target.id==="g-q"){ev.preventDefault();irEstructura();}});
 /* al imprimir el reporte se redibuja: el comentario que se está escribiendo (y su firma) sale en la hoja aunque no se haya guardado */
 window.addEventListener("hashchange",()=>{const h=(location.hash||"").slice(1);if(S.state!=="ok"||h===S.tab)return;const tb=TABS.find(t=>t.id===h);if(tb&&(!tb.admin||S.canAdmin)){S.tab=h;tipEl().style.display="none";render();window.scrollTo({top:0});}});
 window.addEventListener("beforeprint",()=>{if(S.state==="ok"&&S.tab==="reporte"){pendingRender=false;render();}});
@@ -4464,7 +4843,7 @@ async function handleSession(session,force){
   /* (solo con usuario: sin sesión hay que mostrar siempre el ingreso, aunque la página parta en "cargando") */
   if(!force&&uid===S.me&&(S.state==="ok"||S.state==="setpass"||(uid&&S.state==="loading")))return;
   S.me=uid;S.authErr="";
-  if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.prog=new Map();S.rnotas={};S.n8n=null;S.rep.notaEd=null;S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
+  if(!uid){if(S.chan){sb.removeChannel(S.chan);S.chan=null;}S.cfg=null;S.uni=null;S.av=new Map();S.prog=new Map();S.rnotas={};S.n8n=null;S.cargas=null;S.up={};S.prev=null;S.libPc=null;S.dirty=false;S.draft=null;S.rep.notaEd=null;S.canWrite=false;S.canAdmin=false;S.drw=null;S.state="login";render();return;}
   const u=session.user;S.userEmail=u.email||"";S.userName=(u.user_metadata&&(u.user_metadata.nombre||u.user_metadata.full_name||u.user_metadata.name))||S.userEmail;
   if(S.authMode==="setpass"){S.state="setpass";render();return;}
   S.state="loading";render();vigilarCarga();
