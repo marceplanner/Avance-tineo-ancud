@@ -884,7 +884,7 @@ const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"C
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
 const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
 /* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
-const APP_VER="16-11-2026";
+const APP_VER="19-11-2026";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -981,6 +981,15 @@ const seItems=cat=>SE_ITEMS.filter(i=>i.cat===cat);
 const seItem=(cat,id)=>SE_ITEMS.find(i=>i.cat===cat&&i.id===id);
 /* Contratista fijo por sector (manda sobre la columna "Contratista" de la matriz) */
 const CONTR_SECTOR={isla:"Globaltec"};
+/* Variante Pomponales (19-11-2026, pedido del usuario): las estructuras 206 a 215 del sector Isla las ejecuta Globaltec, pero son
+   de otro contrato y se miden aparte. Siguen en el sector Isla (su avance entra al de la Isla y al global) y su contratista sigue
+   siendo Globaltec (programas MS Project), pero en los filtros, tablas por contratista y frentes del reporte van como un contrato
+   propio. 213A y otros N° con letra entre 206 y 215 también cuentan. Un vano va al contrato de la estructura donde termina
+   (la misma regla de los contratistas): 205–206 a 214–215 son de Pomponales y 215–216 de Globaltec */
+const POMP={sec:"isla",a:206,b:215,nombre:"Variante Pomponales",lab:"Pomponales · Globaltec"};
+const esPomp=e=>!!e&&e.sec===POMP.sec&&(n=>n>=POMP.a&&n<=POMP.b)(parseInt(String(e.id),10));
+/* contrato de una estructura: su contratista, salvo la variante Pomponales */
+const ctoDe=e=>!e?"Sin contratista":esPomp(e)?POMP.lab:(e.contr||"Sin contratista");
 /* Listado de estructuras STN4324-ING-TIEACD-45-LT-LIST-0002 rev. 0, columna "Actualización terreno" (tabla de torres v8 18-06-2023):
    N° de estructura | vértice | vano adelante (m), en el orden del listado. El vano adelante de una estructura se asigna al vano con la
    estructura que la sigue. Los vanos a los marcos de línea de las S/E (ML Tineo–1: 59,197 m; 245–ML Nueva Ancud: 67,678 m) no son
@@ -1235,11 +1244,14 @@ function estado(st){if(st.mon>=99.95)return "ter";if(st.pre+st.fun+st.mon+st.tto
 function crFunGP(get,byE,def){
   const v=CR_LADOS.map(L=>{const u=gpLado(L.id),st=L.ids.map(id=>byE[id]).filter(Boolean);return u&&st.length?gpMix(st.reduce((x,s)=>x+s.fun,0)/st.length,gPct(get,kGP(u.id),"gp"),u):null;}).filter(x=>x!=null);
   return v.length?v.reduce((a,b)=>a+b,0)/v.length:def;}
-function calcSec(get,sec){
-  const es=estr(sec);const acc={pre:0,fun:0,mon:0,tto:0,otT:0};const cnt={sin:0,eje:0,ter:0};const byE={};const ind={per:0,acc:0,fun:0,mon:0};
-  for(const e of es){const st=stE(get,sec,e);byE[e.id]=st;acc.pre+=st.pre;acc.fun+=st.fun;acc.mon+=st.mon;acc.tto+=st.tto;acc.otT+=st.otT;cnt[estado(st)]++;
+/* fe = filtro de estructuras (p. ej., un contrato): los promedios, conteos y vanos se calculan solo con las que cumplen, y los
+   vanos con la estructura donde terminan (vanoEst). byE trae siempre todas, para que las tablas que recorren el sector no fallen */
+function calcSec(get,sec,fe){
+  const es=fe?estr(sec).filter(fe):estr(sec);const acc={pre:0,fun:0,mon:0,tto:0,otT:0};const cnt={sin:0,eje:0,ter:0};const byE={},byEf={};const ind={per:0,acc:0,fun:0,mon:0};
+  if(fe)for(const e of estr(sec))byE[e.id]=stE(get,sec,e);
+  for(const e of es){const st=byE[e.id]||stE(get,sec,e);byE[e.id]=st;byEf[e.id]=st;acc.pre+=st.pre;acc.fun+=st.fun;acc.mon+=st.mon;acc.tto+=st.tto;acc.otT+=st.otT;cnt[estado(st)]++;
     const k=kE(sec,e.id);if(get(k,"per")>=100)ind.per++;if(get(k,"acc")>=100)ind.acc++;if(st.fun>=99.95)ind.fun++;if(st.mon>=99.95)ind.mon++;}
-  const n=es.length||1;const vs=vanos(sec);const byV={};let vs2=0,vdone=0,vten=0;
+  const n=es.length||1;const vs=fe?vanos(sec).filter(v=>{const e=vanoEst(sec,v);return !!e&&fe(e);}):vanos(sec);const byV={};let vs2=0,vdone=0,vten=0;
   /* Tendido por vano medido por distancia: cada vano pesa según su longitud (actualización de terreno).
      Un vano sin longitud (cruce) pesa como el promedio de los que sí la tienen; si ninguno la tiene, todos pesan igual */
   const known=vs.filter(v=>v.len!=null);const wDef=known.length?known.reduce((x,v)=>x+v.len,0)/known.length:1;let WV=0,vo2=0;const byO={};
@@ -1250,7 +1262,7 @@ function calcSec(get,sec){
   /* OPGW del sector = torre (promedio de estructuras) y vano (por distancia), ponderados por el peso de sus actividades */
   const T=acc.tto/n,V=WV?vs2/WV:0,OT=acc.otT/n,OV=WV?vo2/WV:0;const sp=tenSplit(sec),hv=vs.length?1:0,ow=opgW(),owT=ow.t+hv*ow.v;
   const O=owT?(ow.t*OT+hv*ow.v*OV)/owT:0;
-  const stg={pre:acc.pre/n,fun:sec==="cruce"?crFunGP(get,byE,acc.fun/n):acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+sp.o*O+hv*sp.v*V)/((sp.t+sp.o+hv*sp.v)||1),tenT:T,tenV:V,tenO:O,tenOT:OT,tenOV:OV,tenR:rn?rs/rn:0};
+  const stg={pre:acc.pre/n,fun:sec==="cruce"?crFunGP(get,byEf,acc.fun/n):acc.fun/n,mon:acc.mon/n,ten:(sp.t*T+sp.o*O+hv*sp.v*V)/((sp.t+sp.o+hv*sp.v)||1),tenT:T,tenV:V,tenO:O,tenOT:OT,tenOV:OV,tenR:rn?rs/rn:0};
   let W=0,P=0;for(const et of etapas()){const w=pesoE(et.id,sec);W+=w;P+=w*(stg[et.id]||0);}
   return {stg,pct:W?P/W:0,cnt,byE,byV,byO,ind,n:es.length,nv:vs.length,vdone,vten,has:es.length>0};
 }
@@ -1259,6 +1271,16 @@ function progress(get){const out={sec:{},total:0};let W=0,P=0;for(const s of sec
   const se=seCalc(get);out.se=se;const ws=pesoSE();if(ws>0){W+=ws;P+=ws*se.total;}
   out.lineaPct=(()=>{let w=0,p=0;for(const s of secs()){const r=out.sec[s.id];if(r.has){w+=s.peso;p+=s.peso*r.pct;}}return w?p/w:0;})();
   out.total=W?P/W:0;return out;}
+/* Avance de un contrato (o de cualquier grupo de estructuras): cada sector con solo esas estructuras y sus vanos, y el global
+   filtrado ponderado por el peso de cada sector × la parte de sus estructuras que entra al filtro. Sin la S/E Tineo */
+function progressF(get,fe){const out={sec:{},total:0,filtrado:true};let W=0,P=0;
+  for(const s of secs()){const r=calcSec(get,s.id,fe);out.sec[s.id]=r;const N=estr(s.id).length;r.peso=N?s.peso*r.n/N:0;if(r.has){W+=r.peso;P+=r.peso*r.pct;}}
+  out.total=W?P/W:0;out.lineaPct=out.total;out.W=W;return out;}
+/* filtro de contrato del Resumen (Indicadores, tablas, matriz y cifra global) */
+const resFe=()=>{const c=S.dashF.contr;return c?(e=>ctoDe(e)===c):null;};
+let RES_FE=null;
+const fOk=e=>!RES_FE||RES_FE(e);
+const vOk=(sec,v)=>!RES_FE||RES_FE(vanoEst(sec,v));
 
 function unitLabel(d){if(!d)return "";if(d.kind==="se")return (SE_CAT_NAME[d.cat]||"S/E")+" "+d.unidad;if(d.kind==="gp")return "Fundación "+((gpU(d.unidad)||{}).nombre||d.unidad);if(d.kind==="vano")return "Vano "+d.unidad;return d.unidad+(d.pata?" · pata "+d.pata:"");}
 /* Los registros de liberaciones (kind "lib") no son avance físico: quedan fuera del historial general salvo que se pidan */
@@ -1715,19 +1737,38 @@ function pataPlanSvg(e){
 function gpPlanSvg(u){const I=gpInfo(u),x0=45,w=60,sq=`<rect x="${x0}" y="${x0}" width="${w}" height="${w}"/>`;
   return `<svg class="mdl" viewBox="-4 -12 158 174" style="max-width:220px;margin:0 auto" role="img" aria-label="${esc("Fundación "+u.nombre+" en planta")}"><g class="lnk" data-open="cruce|${u.id}" role="button" tabindex="0" aria-label="${esc("Fundación "+u.nombre+" "+fmtP(I.tot))}" data-tip="${esc(gpTip(u,I))}"><rect class="pad" x="${x0}" y="${x0}" width="${w}" height="${w}"/>`+clipUp(`<g class="conc">${sq}</g>`,x0,x0,w,w,clamp(I.tot,0,100))+`<rect x="${x0}" y="${x0}" width="${w}" height="${w}" style="fill:none;stroke:var(--ink-2);stroke-width:1"/><rect x="69" y="69" width="12" height="12" style="fill:none;stroke:var(--ink-2);stroke-width:.7"/><text class="big v" x="75" y="${x0+w+16}" text-anchor="middle" style="font-size:11px">${fmtP(I.tot)}</text></g></svg>`;}
 function scopeSecs(){return S.dash==="total"?secs():[secById(S.dash)];}
-function vResumen(){
-  const P=S.P;const sc=S.dash;const sel=sc==="total"?null:P.sec[sc];
+/* Con un contrato elegido, todo el Resumen (cifra global, sectores, etapas, tablas, indicadores y matriz) se calcula solo con sus
+   estructuras: se reemplaza S.P por el avance filtrado mientras se arma la vista */
+function vResumen(){const F=S.dashF,fe=resFe();if(!fe)return vResumen0();
+  const P0=S.P;S.P=progressF(cur,fe);RES_FE=fe;try{return vResumen0();}finally{S.P=P0;RES_FE=null;}}
+/* filtros del Resumen: arriba de todo lo que acotan */
+function resFiltros(){const F=S.dashF,ess=[].concat(...scopeSecs().map(s=>estr(s.id)));
+  const cs=[...new Set(ess.map(ctoDe))].sort((a,b)=>a.localeCompare(b));if(F.contr&&!cs.includes(F.contr))F.contr="";
+  return `<section class="panel noprint" style="padding:12px 16px"><div class="filters"><div class="field" style="max-width:220px"><label for="k-sec">Sector</label><select id="k-sec"><option value="total" ${S.dash==="total"?"selected":""}>Todos</option>${secs().map(s=>`<option value="${s.id}" ${S.dash===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
+  <div class="field" style="max-width:300px"><label for="k-contr">Contratista o contrato</label><select id="k-contr"><option value="">Todos</option>${cs.map(c=>`<option value="${esc(c)}" ${F.contr===c?"selected":""}>${esc(c===POMP.lab?"Variante Pomponales (Globaltec)":c==="Globaltec"&&cs.includes(POMP.lab)?"Globaltec (sin Pomponales)":c)}</option>`).join("")}</select></div>
+  ${cs.includes(POMP.lab)&&F.contr!==POMP.lab?`<button class="btn small" data-pomp="1" style="align-self:end">Ver variante Pomponales</button>`:""}
+  ${F.contr||S.dash!=="total"?`<button class="btn small ghost" data-kclear="1" style="align-self:end">Quitar filtros</button>`:""}
+  <span class="small muted" style="flex:2;align-self:end;min-width:220px">${F.contr?`Todo el Resumen se calcula solo con ${F.contr===POMP.lab?"las estructuras "+POMP.a+" a "+POMP.b+" de la variante Pomponales":"las estructuras de "+esc(F.contr)} y sus vanos.`:"Elige un contratista o contrato para ver su avance aparte."}</span></div></section>`;}
+function vResumen0(){
+  const P=S.P;const sc=S.dash;const sel=sc==="total"?null:P.sec[sc];const filt=!!P.filtrado,cto=S.dashF.contr;
   const tot=sel?sel.pct:P.total;
   let cnt={sin:0,eje:0,ter:0},N=0;for(const s of scopeSecs()){const c=P.sec[s.id].cnt;cnt.sin+=c.sin;cnt.eje+=c.eje;cnt.ter+=c.ter;N+=P.sec[s.id].n;}
   let NV=0,VD=0,VT=0;for(const s of scopeSecs()){NV+=P.sec[s.id].nv;VD+=P.sec[s.id].vdone;VT+=P.sec[s.id].vten;}
   const tp=tot.toFixed(1).split(".");
-  let h=`<div class="stack">`;
-  if(mm()&&S.TER)h+=mmHero(sc,{cnt,N,NV,VD,VT});else h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${sc==="total"?"proyecto, global ponderado":esc(secById(sc).nombre)}</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
-     <div class="sub">${sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VT} de ${NV} vanos tendidos (${VD} terminados)</div>${mtr(tot)}</div>
-   <div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">Proyecto</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}">${esc(s.nombre)}</button>`).join("")}</div></div>
-   <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP(r.pct,1)}</span>${mtr(r.pct)}<span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span><span class="d muted">Pondera ${fmtP(pesoShare(s.peso))} del global</span></button>`;}).join("")}
-   ${(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)" data-tip="S/E Tineo: mide solo las obras civiles (fundaciones, canaletas y drenajes) y las estructuras del patio registradas en la app. El avance real del programa de PINE incluye además ingeniería, suministros, permisos y obras preliminares; por eso es mayor."><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span>${mtr(R.total)}<span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span><span class="d muted">Solo obras civiles y estructuras · pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
-  if(S.canAdmin)h+=pgResumen();
+  let h=`<div class="stack">`+resFiltros();
+  const ctoTxt=cto===POMP.lab?"Variante Pomponales":cto;
+  /* con un contrato elegido la cifra es la del contrato, con los pesos de la app (el programa maestro no separa contratos) */
+  if(mm()&&S.TER&&!filt)h+=mmHero(sc,{cnt,N,NV,VD,VT});else h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${filt?esc(ctoTxt)+(sc==="total"?" · todas sus estructuras":" · "+esc(secById(sc).nombre)):sc==="total"?"proyecto, global ponderado":esc(secById(sc).nombre)}</span><div class="big num">${N?`${tp[0]},${tp[1]}<small>%</small>`:"—"}</div>
+     <div class="sub">${!filt&&sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VT} de ${NV} vanos tendidos (${VD} terminados)${filt?` · ${cto===POMP.lab?`estructuras ${POMP.a} a ${POMP.b} del sector Isla, ejecutadas por Globaltec en un contrato aparte`:"sin S/E Tineo"}`:""}</div>${mtr(tot)}</div>
+   <div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">${filt?"Todo el contrato":"Proyecto"}</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}"${filt&&!P.sec[s.id].has?" disabled":""}>${esc(s.nombre)}</button>`).join("")}</div></div>
+   <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];if(filt&&!r.has)return `<button disabled style="--c:${secColor(s.id)};opacity:.55;cursor:default"><span class="n">${esc(s.nombre)}</span><span class="v num">—</span><span class="d">sin estructuras de ${esc(ctoTxt)}</span></button>`;
+     return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}"><span class="n">${esc(s.nombre)}${filt?" · "+esc(ctoTxt):""}</span><span class="v num">${fmtP(r.pct,1)}</span>${mtr(r.pct)}<span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span><span class="d muted">${filt?`Pondera ${P.W?fmtP(r.peso/P.W*100):"—"} del avance filtrado`:`Pondera ${fmtP(pesoShare(s.peso))} del global`}</span></button>`;}).join("")}
+   ${filt?`<div style="padding:10px 14px;display:flex;flex-direction:column;gap:3px;justify-content:center"><span class="n" style="font-family:var(--f-disp);font-weight:600;font-size:.92rem;color:var(--ink-2)">Cómo se calcula</span><span class="small muted">Cada sector con solo estas estructuras y sus vanos; el global pondera cada sector por su peso y la parte de sus estructuras que entra. Sin S/E Tineo.</span></div>`:(()=>{const R=S.SE;return `<button data-tab="se" style="--c:var(--c-se)" data-tip="S/E Tineo: mide solo las obras civiles (fundaciones, canaletas y drenajes) y las estructuras del patio registradas en la app. El avance real del programa de PINE incluye además ingeniería, suministros, permisos y obras preliminares; por eso es mayor."><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP(R.total,1)}</span>${mtr(R.total)}<span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span><span class="d muted">Solo obras civiles y estructuras · pondera ${fmtP(pesoShare(pesoSE()))} del global</span></button>`;})()}</div></section>`;
+  /* la variante Pomponales a la vista, medida aparte (sigue dentro de la Isla y del global) */
+  if(!filt&&(sc==="total"||sc===POMP.sec)&&estr(POMP.sec).some(esPomp)){const r=calcSec(cur,POMP.sec,esPomp);
+    h+=`<section class="panel noprint" style="padding:12px 16px;border-left:3px solid var(--c-isla)"><div class="spread" style="align-items:center"><div class="stack" style="gap:2px;min-width:0"><span class="lbl">${POMP.nombre} · Globaltec, contrato aparte · estructuras ${POMP.a} a ${POMP.b} del sector Isla</span><span class="small muted">${r.cnt.ter} de ${r.n} estructuras terminadas · ${r.vten} de ${r.nv} vanos tendidos · ya está incluida en el avance de la Isla y del proyecto</span></div>
+    <div class="row" style="gap:14px;align-items:center"><span class="num" style="font-family:var(--f-disp);font-weight:700;font-size:1.7rem">${fmtP(r.pct,1)}</span><span style="width:140px">${mtr(r.pct)}</span><button class="btn small" data-pomp="1">Ver aparte</button></div></div></section>`;}
+  if(S.canAdmin&&!filt)h+=pgResumen();
   h+=kpiSection();
   h+=tendMetros();
   h+=`<section class="panel stack"><div class="spread"><h2>Avance por etapa</h2><span class="small muted">Toca una etapa para ver sus actividades. El modelo de torre está en <button class="linkbtn" style="font-family:var(--f-body)" data-tab="linea">Pictograma de la línea</button>.</span></div>
@@ -1737,7 +1778,7 @@ function vResumen(){
     <section class="panel stack"><h2>Por contratista</h2>${contrTable()}</section>`;
   {const F=S.dashF;const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
   h+=`<section class="panel stack" style="gap:10px"><div class="spread"><h2>Detalle por estructura</h2><span class="small muted">${esc(amb)}${F.contr?" · contratista "+esc(F.contr):""} · usa los filtros de "Indicadores de avance"</span></div>${estMatrix()}</section>`;}
-  h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en terreno</h2><button class="btn small ghost" data-csv="1">Descargar CSV</button></div>${feedHtml(allHist((k,d)=>sc==="total"||d.sector===sc).filter(x=>!x.imp).slice(0,10))}</section>`;
+  h+=`<section class="panel stack"><div class="spread"><h2>Últimos registros en terreno</h2><button class="btn small ghost" data-csv="1">Descargar CSV</button></div>${feedHtml(allHist((k,d)=>(sc==="total"||d.sector===sc)&&(!cto||contrDe(d)===cto)).filter(x=>!x.imp).slice(0,10))}</section>`;
   return h+`</div>`;
 }
 /* --- Tarjetas de indicadores (responden al ámbito y a los filtros de contratista y tramo) --- */
@@ -1746,10 +1787,10 @@ const cnt0=()=>({n:0,ter:0,eje:0,sin:0});
 function kpiData(){
   const F=S.dashF;const P=S.P;const out={tal:cnt0(),fun:cnt0(),mon:cnt0(),acc:cnt0(),pat:cnt0(),ten:cnt0(),c1:0,c2:0,cb:0,opgw:0,mL:0,m1:0,m2:0,mP:0,talSum:0};
   for(const s of scopeSecs()){const r=P.sec[s.id];
-    for(const e of estr(s.id)){if(F.contr&&e.contr!==F.contr)continue;if(F.tt&&e.tt!==F.tt)continue;
+    for(const e of estr(s.id)){if(F.contr&&ctoDe(e)!==F.contr)continue;if(F.tt&&e.tt!==F.tt)continue;
       const st=r.byE[e.id];const k=kE(s.id,e.id);const tl=cur(k,"tal");
       cls3(out.tal,tl);out.talSum+=tl;cls3(out.fun,st.fun);cls3(out.mon,st.mon);cls3(out.acc,cur(k,"acc"));cls3(out.pat,patVal(s.id,e));}
-    for(const v of vanos(s.id)){const eb=vanoEst(s.id,v)||{};if(F.contr&&eb.contr!==F.contr)continue;if(F.tt&&v.tt!==F.tt)continue;
+    for(const v of vanos(s.id)){const eb=vanoEst(s.id,v);if(F.contr&&ctoDe(eb)!==F.contr)continue;if(F.tt&&v.tt!==F.tt)continue;
       cls3(out.ten,r.byV[v.key]||0);if(v.len!=null){out.mL+=v.len;out.mP+=v.len*(r.byV[v.key]||0)/100;out.m1+=v.len*circPct(v.key,"1")/100;out.m2+=v.len*circPct(v.key,"2")/100;}if(circPct(v.key,"1")>=99.95&&circPct(v.key,"2")>=99.95)out.cb++;if(circPct(v.key,"1")>=99.95)out.c1++;if(circPct(v.key,"2")>=99.95)out.c2++;if(cur(v.key,"tv_opg")>=99.95)out.opgw++;}}
   return out;}
 /* pctOver: % propio de la tarjeta (tendido: avance medido por distancia en vez de vanos terminados / total) */
@@ -1762,15 +1803,10 @@ function kpiCard(titulo,c,unidad,layer,nota,kind,pctOver,masc){const pct=pctOver
   <span class="ktally"><span><i class="sw" style="--c:var(--good)"></i><b>${c.ter}</b> ${ter}</span><span><i class="sw" style="--c:var(--eje)"></i><b>${c.eje}</b> en ejecución</span><span><i class="sw" style="--c:var(--surface-3)"></i><b>${c.sin}</b> faltan</span></span>
   ${nota?`<span class="ks">${nota}</span>`:""}</button>`;}
 function kpiSection(){
-  const F=S.dashF;const ess=[].concat(...scopeSecs().map(s=>estr(s.id)));
-  const contrs=[...new Set(ess.map(e=>e.contr).filter(Boolean))].sort();F.tt="";
-  if(F.contr&&!contrs.includes(F.contr))F.contr="";
+  const F=S.dashF;F.tt="";
   const K=kpiData();const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
-  const filtro=F.contr?"contratista "+F.contr:"";
-  let h=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Indicadores de avance</h2><span class="small muted">${esc(amb)}${filtro?" · "+esc(filtro):""} · sin S/E Tineo</span></div>
-  <div class="filters"><div class="field"><label for="k-sec">Sector</label><select id="k-sec"><option value="total" ${S.dash==="total"?"selected":""}>Todos</option>${secs().map(s=>`<option value="${s.id}" ${S.dash===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
-  <div class="field"><label for="k-contr">Contratista</label><select id="k-contr"><option value="">Todos</option>${contrs.map(c=>`<option ${F.contr===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
-  ${F.contr||S.dash!=="total"?`<button class="btn small ghost" data-kclear="1">Quitar filtros</button>`:""}</div>
+  const filtro=F.contr?(F.contr===POMP.lab?POMP.nombre:"contratista "+F.contr):"";
+  let h=`<section class="panel stack" style="gap:12px"><div class="spread"><h2>Indicadores de avance</h2><span class="small muted">${esc(amb)}${filtro?" · "+esc(filtro):""} · sin S/E Tineo · filtros al inicio del Resumen</span></div>
   <div class="kgrid">
   ${kpiCard("Tala y roce",K.tal,"estructuras con tala y roce terminados","pre",K.tal.n?`Avance medio: <b>${fmtP(K.talSum/K.tal.n,1)}</b> (promedio de lo registrado en cada estructura).`:"","tal")}
   ${kpiCard("Caminos de acceso",K.acc,"caminos construidos","pic","","acc")}
@@ -1783,7 +1819,7 @@ function kpiSection(){
 function stkSeg(c,n){if(!n)return "";const seg=k=>c[k]?`<i class="${k}" style="width:${c[k]/n*100}%">${c[k]/n>.06?c[k]:""}</i>`:"";return seg("ter")+seg("eje")+seg("sin");}
 function drillHtml(et,list){
   const rows=[];list=list||scopeSecs();
-  for(const s of list){const r=S.P.sec[s.id];const es=estr(s.id);const pre=()=>list.length>1?s.nombre+" · ":"";
+  for(const s of list){const r=S.P.sec[s.id];const es=estr(s.id).filter(fOk);if(!es.length)continue;const pre=()=>list.length>1?s.nombre+" · ":"";
     const avgAct=(keys,aid)=>keys.length?keys.reduce((x,k)=>x+cur(k,aid),0)/keys.length:0;
     const kes=es.map(e=>kE(s.id,e.id));
     if(et==="pre"||et==="mon"){for(const a of actsG(et)){if(et==="pre"&&s.id==="cruce"&&a.id==="pat")continue;rows.push({t:pre()+a.nombre,v:avgAct(kes,a.id),c:s.id});}}
@@ -1792,7 +1828,7 @@ function drillHtml(et,list){
       else for(const g of FUNG){const eg=es.filter(e=>(r.byE[e.id].fg||e.fund)===g);if(!eg.length)continue;rows.push({t:pre()+grupoById(g).nombre+" ("+eg.length+")",v:eg.reduce((x,e)=>x+r.byE[e.id].fun,0)/eg.length,c:s.id});}}
     else if(et==="ten"){rows.push({t:pre()+"Conductor en torre (promedio)",v:r.stg.tenT,c:s.id});for(const a of actsG("tto"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
       rows.push({t:pre()+"OPGW en torre (promedio)",v:r.stg.tenOT,c:s.id});for(const a of actsG("opt"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(kes,a.id),c:s.id});
-      const vs=vanos(s.id);rows.push({t:pre()+"Conductor por vano ("+vs.length+" vanos, medido por distancia)",v:r.stg.tenV,c:s.id});for(const a of actsG("tva"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.map(v=>v.key),a.id),c:s.id});
+      const vs=vanos(s.id).filter(v=>vOk(s.id,v));rows.push({t:pre()+"Conductor por vano ("+vs.length+" vanos, medido por distancia)",v:r.stg.tenV,c:s.id});for(const a of actsG("tva"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.map(v=>v.key),a.id),c:s.id});
       rows.push({t:pre()+"OPGW en vano (medido por distancia)",v:r.stg.tenOV,c:s.id});for(const a of actsG("opg"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vs.filter(v=>!v.ml||!OPG_NO_ML.has(a.id)).map(v=>v.key),a.id),c:s.id});
       {const vm=vs.filter(v=>v.ml);if(vm.length){rows.push({t:pre()+"Remates en marco de línea",v:r.stg.tenR,c:s.id});for(const a of actsG("rem"))rows.push({t:pre()+"· "+a.nombre,v:avgAct(vm.map(v=>v.key),a.id),c:s.id});}}}
   }
@@ -1804,7 +1840,7 @@ function drillHtml(et,list){
 function tendMetros(){
   const F=S.dashF;const z=()=>({n:0,L:0,eq:0,c1:0,c2:0,og:0,nb:0,mb:0,nt:0,mt:0});const T=z();const bySec=[];const grp=new Map();const sin=[];
   for(const s of scopeSecs()){const r=S.P.sec[s.id];const x=Object.assign(z(),{s});
-    for(const v of vanos(s.id)){const eb=vanoEst(s.id,v)||{};if(F.contr&&eb.contr!==F.contr)continue;x.n++;
+    for(const v of vanos(s.id)){const eb=vanoEst(s.id,v);if(F.contr&&ctoDe(eb)!==F.contr)continue;x.n++;
       const q={v,p1:circPct(v.key,"1"),p2:circPct(v.key,"2"),po:cur(v.key,"tv_opg"),pv:r.byV[v.key]||0};q.both=q.p1>=99.95&&q.p2>=99.95;
       const gk=s.id+"|"+(v.tt||"");if(!grp.has(gk))grp.set(gk,{s,tt:v.tt||"Sin tramo",vs:[]});grp.get(gk).vs.push(q);
       if(v.len==null){sin.push(v.label);continue;}const L=v.len;x.L+=L;x.eq+=L*q.pv/100;
@@ -1833,9 +1869,10 @@ function tendMetros(){
   <p class="small muted" style="margin:0">Avance del tendido = Σ longitud del vano × avance del conductor en el vano (piloto, seis fases, flechado y separadores) ÷ longitud total; el OPGW se informa aparte. Conductor y OPGW = longitud × avance registrado de cada cable (conductor: promedio de sus tres fases). Vanos tendidos = vanos con las seis fases al 100 %; vanos terminados = todo el conductor del vano al 100 % (además flechado y separadores).${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
   return h;}
 /* Avance por etapa en cifras: % de cada etapa por sector y, con varios sectores, la línea ponderada por el peso de cada sector */
-function etapaTable(){if(mm()&&S.TER)return mmEtapaTable();
-  const list=scopeSecs().filter(s=>S.P.sec[s.id].has);const many=list.length>1;const WS=list.reduce((x,s)=>x+s.peso,0)||1;
-  const lin=et=>list.reduce((x,s)=>x+s.peso*(S.P.sec[s.id].stg[et]||0),0)/WS;
+function etapaTable(){if(mm()&&S.TER&&!S.P.filtrado)return mmEtapaTable();
+  /* con un contrato elegido, cada sector pesa su peso × la parte de sus estructuras que entra al filtro (progressF) */
+  const list=scopeSecs().filter(s=>S.P.sec[s.id].has);const many=list.length>1;const wS=s=>S.P.filtrado?S.P.sec[s.id].peso:s.peso;const WS=list.reduce((x,s)=>x+wS(s),0)||1;
+  const lin=et=>list.reduce((x,s)=>x+wS(s)*(S.P.sec[s.id].stg[et]||0),0)/WS;
   /* cada sector pondera sus etapas con el programa de su contratista: el peso va bajo el avance del sector */
   const pw=(id,s)=>{const w=pesoE(id,s.id);return `<small class="muted" style="display:block;font-weight:400">pesa ${fmtP(w,w%1!==0)}</small>`;};
   let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${list.map(s=>`<th class="r"><span class="dot" style="--c:${secColor(s.id)}"></span> ${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea</th>`:""}</tr></thead><tbody>`;
@@ -1855,9 +1892,9 @@ function estadoTable(){
   return h+`</tbody></table></div>`;
 }
 function contrTable(){
-  const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){const k=e.contr||"Sin contratista";const st=S.P.sec[s.id].byE[e.id];if(!m.has(k))m.set(k,{n:0,t:0,ter:0,f:0});const x=m.get(k);x.n++;x.t+=totE(st,s.id);if(estado(st)==="ter")x.ter++;if(st.fun>=99.95)x.f++;}
+  const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){if(!fOk(e))continue;const k=ctoDe(e);const st=S.P.sec[s.id].byE[e.id];if(!m.has(k))m.set(k,{n:0,t:0,ter:0,f:0});const x=m.get(k);x.n++;x.t+=totE(st,s.id);if(estado(st)==="ter")x.ter++;if(st.fun>=99.95)x.f++;}
   const rows=[...m].sort((a,b)=>b[1].n-a[1].n);
-  return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio</th></tr></thead><tbody>${rows.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${mv(x.t/x.n,1)}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista o contrato</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio</th></tr></thead><tbody>${rows.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${mv(x.t/x.n,1)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 /* --- Matriz de avance por estructura (responde a los filtros de "Indicadores de avance") --- */
 const MX_ROWS=[{k:"acc",t:"Camino de acceso"},{k:"pat",t:"Malla puesta a tierra"},{k:"fun",t:"Fundación"},{k:"mon",t:"Montaje"},{k:"tto",t:"Conductor en torre"},{k:"otT",t:"OPGW en torre"},{k:"vano",t:"Conductor del vano (al siguiente)"},{k:"opg",t:"OPGW del vano (al siguiente)"}];
@@ -1868,7 +1905,7 @@ function mxVal(s,e,st,next,k){const kk=kE(s.id,e.id);
   return st[k];}
 function estMatrix(){
   const F=S.dashF;const cols=[];
-  for(const s of scopeSecs()){const all=estr(s.id);all.forEach((e,i)=>{if(F.contr&&e.contr!==F.contr)return;cols.push({s,e,st:S.P.sec[s.id].byE[e.id],next:all[i+1]});});}
+  for(const s of scopeSecs()){const all=estr(s.id);all.forEach((e,i)=>{if(F.contr&&ctoDe(e)!==F.contr)return;cols.push({s,e,st:S.P.sec[s.id].byE[e.id],next:all[i+1]});});}
   if(!cols.length)return `<p class="muted">No hay estructuras con esos filtros.</p>`;
   /* encabezados agrupados: sector y tramo de tendido */
   const grp=(keyf)=>{const out=[];for(const c of cols){const k=keyf(c);const last=out[out.length-1];if(last&&last.k===k)last.n++;else out.push({k,n:1,c});}return out;};
@@ -1902,17 +1939,17 @@ const LEG_COMP=[["vtx","Vértice del trazado"],["ghost","Torre por montar"],["st
 function vLinea(){
   const M=S.map;if(M.sec!=="total"&&!secById(M.sec))M.sec="total";
   const secList=M.sec==="total"?secs():[secById(M.sec)];const pool=[].concat(...secList.map(s=>estr(s.id)));
-  const allC=[...new Set(pool.map(e=>e.contr).filter(Boolean))].sort();
+  const allC=[...new Set(pool.map(ctoDe))].sort();
   const allT=[...new Set(pool.map(e=>e.tt).filter(Boolean))].sort((a,b)=>ttNum(a)-ttNum(b));
   if(M.tt&&!allT.includes(M.tt))M.tt="";if(M.contr&&!allC.includes(M.contr))M.contr="";
   const q=M.q.trim().toLowerCase();const filt=!!(M.contr||q);const det=M.vista!=="comp";
-  const match=e=>(!M.contr||e.contr===M.contr)&&(!q||String(e.id).toLowerCase().includes(q));
+  const match=e=>(!M.contr||ctoDe(e)===M.contr)&&(!q||String(e.id).toLowerCase().includes(q));
   const nMatch=filt?pool.filter(e=>(!M.tt||e.tt===M.tt)&&match(e)).length:0;
   let h=`<div class="stack"><section class="panel stack" style="gap:12px">
   <div class="spread"><h2>Pictograma de la línea</h2><div class="seg" role="group" aria-label="Vista"><button data-vista="det" aria-pressed="${det}">Detalle</button><button data-vista="comp" aria-pressed="${!det}">Compacta</button></div></div>
   <div class="filters"><div class="field"><label for="m-sec">Sector</label><select id="m-sec"><option value="total" ${M.sec==="total"?"selected":""}>Todos</option>${secs().map(s=>`<option value="${s.id}" ${M.sec===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
    <div class="field"><label for="m-tt">Tramo de tendido</label><select id="m-tt"><option value="">Todos</option>${allT.map(t=>`<option ${M.tt===t?"selected":""}>${esc(t)}</option>`).join("")}</select></div>
-   <div class="field"><label for="m-c">Contratista</label><select id="m-c"><option value="">Todos</option>${allC.map(c=>`<option ${M.contr===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
+   <div class="field"><label for="m-c">Contratista o contrato</label><select id="m-c"><option value="">Todos</option>${allC.map(c=>`<option value="${esc(c)}" ${M.contr===c?"selected":""}>${esc(c===POMP.lab?"Variante Pomponales (Globaltec)":c==="Globaltec"&&allC.includes(POMP.lab)?"Globaltec (sin Pomponales)":c)}</option>`).join("")}</select></div>
    <div class="field"><label for="m-q">Ir a estructura</label><input id="m-q" type="search" value="${esc(M.q)}" placeholder="Ej.: 172A" autocomplete="off"></div>
    ${M.sec!=="total"||M.tt||filt?`<button class="btn small ghost" data-mclear="1">Quitar filtros</button>`:""}</div>
   ${filt?`<p class="small" style="margin:0">${nMatch?`<b class="num">${nMatch}</b> ${nMatch===1?"estructura coincide":"estructuras coinciden"}. Se muestran sus láminas y el resto queda atenuado.`:"Ninguna estructura coincide con los filtros."}</p>`:""}
@@ -2115,7 +2152,7 @@ function vDrawer(){
   const D=S.drw;const sec=D.sec;const e=estById(sec,D.id);if(!e)return "";const r=S.P.sec[sec];const st=r.byE[e.id];const k=kE(sec,e.id);
   const vs=vanosOf(sec,e.id);
   let h=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Estructura ${esc(e.id)}"><div class="dh"><div><span class="chip"><span class="dot" style="--c:${secColor(sec)}"></span>${esc(secById(sec).nombre)} · ${esc(e.tt||"")}</span><h2>Estructura <span class="mono">${esc(e.id)}</span></h2>${estHtml(estado(st))}</div><button class="xbtn" data-close="1" aria-label="Cerrar">×</button></div><div class="db">`;
-  h+=`<div class="meta"><div><span>Tipo</span>${esc(e.tipo||"—")}</div><div><span>Torre</span><b class="mono">${esc(e.torre||"—")}</b></div><div><span>Contratista</span>${esc(e.contr||"—")}</div><div><span>Vértice</span>${esc(vertice(e.id)||"—")}</div><div><span>Liberación</span><button class="linkbtn" style="font-family:var(--f-body);text-align:left" data-libopen="${esc(kLibE(sec,e.id))}">${LIB_GEN[libGen(kLibE(sec,e.id))].t}</button></div><div><span>Fundación</span>${(()=>{const g=st.fun>0?st.fg:(sec==="cruce"?st.fg:(D.fgSel||e.fund||null));return g?esc(grupoById(g).nombre):"Sin definir";})()}</div></div>`;
+  h+=`<div class="meta"><div><span>Tipo</span>${esc(e.tipo||"—")}</div><div><span>Torre</span><b class="mono">${esc(e.torre||"—")}</b></div><div><span>Contratista</span>${esc(e.contr||"—")}${esPomp(e)?`<small class="muted" style="display:block">${POMP.nombre}: contrato aparte</small>`:""}</div><div><span>Vértice</span>${esc(vertice(e.id)||"—")}</div><div><span>Liberación</span><button class="linkbtn" style="font-family:var(--f-body);text-align:left" data-libopen="${esc(kLibE(sec,e.id))}">${LIB_GEN[libGen(kLibE(sec,e.id))].t}</button></div><div><span>Fundación</span>${(()=>{const g=st.fun>0?st.fg:(sec==="cruce"?st.fg:(D.fgSel||e.fund||null));return g?esc(grupoById(g).nombre):"Sin definir";})()}</div></div>`;
   h+=figsHtml([["Total",totE(st,sec),1],["Prelim.",st.pre],["Fundación",st.fun],["Montaje",st.mon],["Tend. torre",tenTorre(st,sec)]]);
   h+=`<div class="note small">Toca una actividad para registrar su avance acumulado.</div>`;
   h+=`<div class="agrp"><h3><span>Obras preliminares</span><span class="num">${fmtP(st.pre,1)}</span></h3>${actRows(k,"pre")}</div>`;
@@ -2370,7 +2407,7 @@ function vEstructuras(){
   <div class="tbl-wrap" style="max-height:640px"><table><thead><tr><th>N°</th><th>Vértice</th><th>Tramo</th><th>Tipo</th><th>Torre</th><th>Contratista</th><th class="r">Prelim.</th><th class="r">Fundación</th><th class="r">Montaje</th><th class="r">Tend. torre</th><th class="r">Vano sig. (m)</th><th class="r">Vano sig.</th><th class="r">Total</th><th>Estado</th></tr></thead><tbody>`;
   const all=estr(sid);
   for(const e of es){const st=r.byE[e.id];const i=all.indexOf(e);const nx=all[i+1];const v=nx?vanoBetween(sid,e.id,nx.id):vanos(sid).find(z=>z.ml&&z.a===e.id)||null;
-    h+=`<tr><td><button class="linkbtn" data-open="${sid}|${esc(e.id)}">${esc(e.id)}</button></td><td class="mono small">${esc(vertice(e.id))}</td><td class="muted">${esc(e.tt||"")}</td><td>${esc(e.tipo||"")}</td><td class="mono small">${esc(e.torre||"")}</td><td class="small">${esc(e.contr||"")}</td>${heatTd(st.pre)}${heatTd(st.fun,`${Math.round(st.fun)}${st.fg?`<small>${ABBR[st.fg]}</small>`:""}`)}${heatTd(st.mon)}${heatTd(st.tto)}<td class="r num small">${v&&v.len!=null?Math.round(v.len).toLocaleString("es-CL"):"—"}</td>${v?heatTd(r.byV[v.key]||0):`<td class="r muted">—</td>`}<td class="r num"><b>${fmtP(totE(st,sid))}</b></td><td>${estHtml(estado(st))}</td></tr>`;}
+    h+=`<tr><td><button class="linkbtn" data-open="${sid}|${esc(e.id)}">${esc(e.id)}</button></td><td class="mono small">${esc(vertice(e.id))}</td><td class="muted">${esc(e.tt||"")}</td><td>${esc(e.tipo||"")}</td><td class="mono small">${esc(e.torre||"")}</td><td class="small">${esc(esPomp(e)?"Globaltec · Pomponales":e.contr||"")}</td>${heatTd(st.pre)}${heatTd(st.fun,`${Math.round(st.fun)}${st.fg?`<small>${ABBR[st.fg]}</small>`:""}`)}${heatTd(st.mon)}${heatTd(st.tto)}<td class="r num small">${v&&v.len!=null?Math.round(v.len).toLocaleString("es-CL"):"—"}</td>${v?heatTd(r.byV[v.key]||0):`<td class="r muted">—</td>`}<td class="r num"><b>${fmtP(totE(st,sid))}</b></td><td>${estHtml(estado(st))}</td></tr>`;}
   if(!es.length)h+=`<tr><td colspan="14" class="muted">No hay estructuras con esos filtros.</td></tr>`;
   return h+`</tbody></table></div></section></div>`;
 }
@@ -3718,7 +3755,7 @@ const ppHtml=d=>Math.abs(d)<0.05?`<span class="muted">0,0 pp</span>`:`<b class="
 const listaTxt=(a,max)=>a.length>max?a.slice(0,max).join(", ")+` y ${a.length-max} más`:a.join(", ");
 const nTxt=(n,a,b)=>n+" "+(n===1?a:b);
 /* contratista, elemento de liberación y elemento de obra de un documento de avance (un vano va al contratista de la estructura donde termina) */
-function contrDe(d){if(d.kind==="se")return SE_CONTRATISTA;const e=d.kind==="vano"?vanoEst(d.sector,d):d.kind==="gp"?estById("cruce",(gpU(d.unidad)||{}).susp):estById(d.sector,d.unidad);return (e&&e.contr)||"Sin contratista";}
+function contrDe(d){if(d.kind==="se")return SE_CONTRATISTA;const e=d.kind==="vano"?vanoEst(d.sector,d):d.kind==="gp"?estById("cruce",(gpU(d.unidad)||{}).susp):estById(d.sector,d.unidad);return ctoDe(e);}
 const libKeyDe=d=>d.kind==="vano"?(d.a&&d.b?kLibV(d.sector,d.a,d.b):null):d.kind==="se"||d.kind==="lib"||d.kind==="gp"?null:kLibE(d.sector,d.unidad);
 const elemDe=d=>d.kind==="vano"?"V|"+d.unidad:d.sector+"|"+d.unidad;
 const repOpen=d=>d.kind==="se"?`data-ose="${esc(d.cat)}|${esc(d.unidad)}"`:`data-open="${esc(d.sector)}|${esc(d.kind==="vano"?vanoFicha(d.sector,d):d.unidad)}"${d.pata?` data-pata="${esc(d.pata)}"`:""}`;
@@ -3739,7 +3776,7 @@ function repCalc(){const R=S.rep;
   const PR={acc:pr("Caminos de acceso","caminos construidos"),pat:pr("Mallas de puesta a tierra","mallas instaladas"),fun:pr("Fundaciones","fundaciones terminadas"),mon:pr("Montaje de estructuras","estructuras montadas")};
   for(const s of secs())for(const e of estr(s.id)){const a=P0.sec[s.id].byE[e.id],b=P1.sec[s.id].byE[e.id],k=kE(s.id,e.id);
     const v0={acc:g0(k,"acc"),pat:patVal(s.id,e,g0),fun:a.fun,mon:a.mon},v1={acc:g1(k,"acc"),pat:patVal(s.id,e,g1),fun:b.fun,mon:b.mon};
-    const r=cRow(e.contr||"Sin contratista");r.n++;r.t0+=totE(a,s.id);r.t1+=totE(b,s.id);
+    const r=cRow(ctoDe(e));r.n++;r.t0+=totE(a,s.id);r.t1+=totE(b,s.id);
     for(const i in PR){const p=PR[i];p.n++;if(v1[i]>=99.95)p.acum++;
       if(v0[i]<99.95&&v1[i]>=99.95){p.ter.push(e.id);if(i==="fun")r.fun++;if(i==="mon")r.mon++;}else if(v0[i]<=0&&v1[i]>0)p.ini.push(e.id);}}
   const VC=pr("Tendido de conductor","vanos con las seis fases tendidas"),VO=pr("Tendido de OPGW","vanos con OPGW tendido"),VT=pr("Vanos terminados","vanos con conductor y OPGW completos (todas sus actividades)");VC.ini=VO.ini=null;
@@ -3752,7 +3789,7 @@ function repCalc(){const R=S.rep;
       if(d1<-0.5||d2<-0.5||dO<-0.5)T.cor.push({v:v.label,m:Math.min(0,d1)+Math.min(0,d2)+Math.min(0,dO)});}
     const ok0=c10>=99.95&&c20>=99.95,ok1=c11>=99.95&&c21>=99.95;VC.n++;VO.n++;VT.n++;
     if(ok1)VC.acum++;if(o1>=99.95)VO.acum++;if(t1>=99.95)VT.acum++;
-    if(!ok0&&ok1){VC.ter.push(v.label);const eb=vanoEst(s.id,v);cRow((eb&&eb.contr)||"Sin contratista").ten++;}
+    if(!ok0&&ok1){VC.ter.push(v.label);const eb=vanoEst(s.id,v);cRow(ctoDe(eb)).ten++;}
     if(o0<99.95&&o1>=99.95)VO.ter.push(v.label);
     if(t0<99.95&&t1>=99.95)VT.ter.push(v.label);else if(t0<=0&&t1>0)VT.ini.push(v.label);}
   x.prod=[PR.acc,PR.pat,PR.fun,PR.mon,VC,VO,VT];x.T=T;
@@ -3812,8 +3849,8 @@ const exH=(n,t,sub)=>`<h2>${n?`<i>${String(n).padStart(2,"0")}</i>`:""}${esc(t)}
    Un vano va al contratista de la estructura donde termina, como en el resto de la app --- */
 function exFrentes(){const out=[];
   for(const s of secs()){const m=new Map();
-    for(const e of estr(s.id)){const c=e.contr||"Sin contratista";if(!m.has(c))m.set(c,{key:s.id+"|"+c,s,c,E:[],V:[]});m.get(c).E.push(e);}
-    for(const v of vanos(s.id)){const eb=vanoEst(s.id,v),f=m.get((eb&&eb.contr)||"Sin contratista");if(f)f.V.push(v);}
+    for(const e of estr(s.id)){const c=ctoDe(e);if(!m.has(c))m.set(c,{key:s.id+"|"+c,s,c,E:[],V:[]});m.get(c).E.push(e);}
+    for(const v of vanos(s.id)){const eb=vanoEst(s.id,v),f=m.get(ctoDe(eb));if(f)f.V.push(v);}
     out.push(...m.values());}
   out.push({key:"se|"+SE_CONTRATISTA,se:true,s:{id:"se",nombre:"S/E Tineo"},c:SE_CONTRATISTA,E:[],V:[]});
   return out;}
@@ -3865,7 +3902,7 @@ function exRiesgos(x){if(x.ries)return x.ries;
   for(const P of progs()){const M=pgModel(P),mz=new Map(M.meas.map(r=>[r.t.o,r]));
     for(const a of pgNow(P).al){if(a.sev==="info")continue;const r=a.o&&mz.get(a.o),y=r&&P.contr!==PG_SE&&(r.E[0]||r.V[0]);put((y&&fk(y.s+"|"+P.contr))||exFrenteDe(F,P.contr),a);}}
   /* elementos no aptos: su sector y el contratista del elemento (un vano, el de la estructura donde termina) */
-  for(const z of x.noApt){const u=z.u,e=u.t==="vano"?estById(u.s.id,u.v.b):u.e;put(fk(u.s.id+"|"+((e&&e.contr)||"Sin contratista")),{sev:"alta",tipo:"no_apto",n:(u.t==="vano"?"vano ":"")+u.lab});}
+  for(const z of x.noApt){const u=z.u,e=u.t==="vano"?estById(u.s.id,u.v.b):u.e;put(fk(u.s.id+"|"+ctoDe(e)),{sev:"alta",tipo:"no_apto",n:(u.t==="vano"?"vano ":"")+u.lab});}
   for(const z of x.retro)put(z.d.kind==="se"?F.find(f=>f.se):fk(z.d.sector+"|"+contrDe(z.d)),{sev:"media",tipo:"retroceso",n:z.lab});
   for(const c of x.sinReg)put(/^S\/E/.test(c)?F.find(f=>f.se):exFrenteDe(F,c),{sev:"media",tipo:"sin_registros",n:""});
   return x.ries=F.map(f=>{const L=by.get(f.key);if(!L.length)return null;const g=new Map();for(const a of L){if(!g.has(a.tipo))g.set(a.tipo,[]);g.get(a.tipo).push(a);}
@@ -4579,8 +4616,8 @@ function descargarCSV(){
   const hist=allHist().filter(x=>!x.imp);
   const q=v=>{const s=String(v==null?"":v);return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
   const f=n=>String(Math.round(n*10)/10).replace(".",",");
-  const L=["ESTADO POR ESTRUCTURA al "+fmtD(today()),"Sector;N° Estructura;Vértice;Zona;Tramo tendido;Tipo;Torre;Contratista;Obras preliminares %;Fundación %;Tipo fundación;Montaje %;Conductor en torre %;OPGW en torre %;Total estructura %;Estado"];
-  for(const s of secs())for(const e of estr(s.id)){const st=S.P.sec[s.id].byE[e.id];L.push([s.nombre,e.id,vertice(e.id),e.zona,e.tt,e.tipo,e.torre,e.contr,f(st.pre),f(st.fun),st.fg?grupoById(st.fg).nombre:"",f(st.mon),f(st.tto),f(st.otT||0),f(totE(st,s.id)),EST_TXT[estado(st)]].map(q).join(";"));}
+  const L=["ESTADO POR ESTRUCTURA al "+fmtD(today()),"Sector;N° Estructura;Vértice;Zona;Tramo tendido;Tipo;Torre;Contratista;Contrato;Obras preliminares %;Fundación %;Tipo fundación;Montaje %;Conductor en torre %;OPGW en torre %;Total estructura %;Estado"];
+  for(const s of secs())for(const e of estr(s.id)){const st=S.P.sec[s.id].byE[e.id];L.push([s.nombre,e.id,vertice(e.id),e.zona,e.tt,e.tipo,e.torre,e.contr,esPomp(e)?POMP.nombre:"Principal",f(st.pre),f(st.fun),st.fg?grupoById(st.fg).nombre:"",f(st.mon),f(st.tto),f(st.otT||0),f(totE(st,s.id)),EST_TXT[estado(st)]].map(q).join(";"));}
   L.push("");L.push("VANOS (longitudes según actualización de terreno, "+ASB_DOC+")");L.push("Sector;Vano;Tramo tendido;Longitud m;"+actsG("tva").map(a=>a.nombre+" %").join(";")+";Total conductor %;"+actsG("opg").map(a=>a.nombre+" %").join(";")+";Total OPGW %;"+actsG("rem").map(a=>a.nombre+" %").join(";")+";Conductor C1 tendido m;Conductor C2 tendido m;OPGW tendido m");
   for(const s of secs())for(const v of vanos(s.id)){const p=S.P.sec[s.id].byV[v.key]||0,po=S.P.sec[s.id].byO[v.key]||0;const m=x=>v.len!=null?f(v.len*x/100):"";L.push([s.nombre,v.label,v.tt,v.len!=null?f(v.len):""].concat(actsG("tva").map(a=>f(cur(v.key,a.id))),[f(p)],actsG("opg").map(a=>v.ml&&OPG_NO_ML.has(a.id)?"":f(cur(v.key,a.id))),[f(po)],actsG("rem").map(a=>v.ml?f(cur(v.key,a.id)):""),[m(circPct(v.key,"1")),m(circPct(v.key,"2")),m(cur(v.key,"tv_opg"))]).map(q).join(";"));}
   L.push("");L.push("FUNDACIÓN GINE POLE (CRUCE)");L.push("Sector;"+actsG("gp").map(a=>a.nombre+" %").join(";")+";Total %");
@@ -4588,6 +4625,7 @@ function descargarCSV(){
   L.push("");L.push("RESUMEN");L.push("Sector;"+etapas().map(e=>e.nombre+" %").join(";")+";Total sector %");
   for(const s of secs()){const r=S.P.sec[s.id];L.push([s.nombre].concat(etapas().map(e=>f(r.stg[e.id]||0)),[f(r.pct)]).map(q).join(";"));}
   L.push(["LÍNEA (Continente + Cruce + Isla)"].concat(etapas().map(()=>""),[f(S.P.lineaPct)]).map(q).join(";"));
+  {const r=calcSec(cur,POMP.sec,esPomp);if(r.has)L.push([POMP.nombre+" (Isla "+POMP.a+"–"+POMP.b+", Globaltec, contrato aparte; incluida en la Isla)"].concat(etapas().map(e=>f(r.stg[e.id]||0)),[f(r.pct)]).map(q).join(";"));}
   L.push(["SUBESTACIÓN TINEO"].concat(etapas().map(()=>""),[f(S.SE.total)]).map(q).join(";"));
   L.push(["PROYECTO (global ponderado)"].concat(etapas().map(()=>""),[f(S.P.total)]).map(q).join(";"));
   L.push("");L.push("SUBESTACIÓN TINEO · Contratista "+SE_CONTRATISTA+" · Avance global "+f(S.SE.total)+"%");L.push("Partida;N°;ID;Descripción;Grupo;Tipo;Avance %;Estado");
@@ -4708,6 +4746,7 @@ document.addEventListener("click",ev=>{
   if(ds.dashet){S.dashEt=S.dashEt===ds.dashet?null:ds.dashet;render();return;}
   if(ds.kpi){Object.assign(S.map,{sec:S.dash,contr:S.dashF.contr,tt:"",q:""});go("linea");return;}
   if(ds.kclear){S.dashF={contr:"",tt:""};S.dash="total";render();return;}
+  if(ds.pomp){S.dashF={contr:POMP.lab,tt:""};S.dash="total";S.dashEt=null;if(S.tab!=="resumen"){go("resumen");return;}render();window.scrollTo({top:0,behavior:"smooth"});return;}
   if(ds.vista){S.map.vista=ds.vista;render();return;}
   if(ds.mclear){Object.assign(S.map,{sec:"total",tt:"",contr:"",q:""});render();return;}
   if(ds.tsec){S.tbl={sec:ds.tsec,q:"",tt:"",est:""};render();return;}
