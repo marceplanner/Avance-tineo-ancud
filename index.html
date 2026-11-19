@@ -907,7 +907,7 @@ const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"C
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
 const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
 /* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
-const APP_VER="19-11-2026b";
+const APP_VER="19-11-2026c";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -1082,8 +1082,9 @@ function llToUtm(lat,lon){const e2=UTM_E2,ep2=e2/(1-e2);const p=lat*Math.PI/180,
   const E=500000+UTM_K0*Nn*(A+(1-T+C)*A**3/6+(5-18*T+T*T+72*C-58*ep2)*A**5/120);
   const N=UTM_K0*(M+Nn*Math.tan(p)*(A*A/2+(5-T+9*C+4*C*C)*A**4/24+(61-58*T+T*T+600*C-330*ep2)*A**6/720))+(lat<0?10000000:0);
   return {E,N};}
-/* La matriz de avance aún numera 211–212–213–214, y la actualización de terreno 211–213–213A–214 (sin 212). Mientras la matriz
-   tenga 212 y no 213A, ese tramo se asocia por posición: 212 → 213 y 213 → 213A (vanos de 683,66 / 112,729 / 472,575 m) */
+/* La matriz de avance aún numera 211–212–213–214, y la actualización de terreno 211–213–213A–214 (sin 212). Desde el 19-11-2026
+   la base usa 213 y 213A (y el importador renombra la matriz). Si una base antigua aún tiene 212 y no 213A, ese tramo se asocia
+   por posición: 212 → 213 y 213 → 213A (vanos de 683,66 / 112,729 / 472,575 m) */
 function asbAlias(){const c=gc();if(!c.asb){const ids=new Set(allEst().map(e=>String(e.id)));c.asb=ids.has("212")&&!ids.has("213A")?{"212":"213","213":"213A"}:{};}return c.asb;}
 const asbGet=id=>ASB.get(asbAlias()[String(id)]||String(id));
 const vertice=id=>{const x=asbGet(id);return x?x.v:"";};
@@ -2566,7 +2567,7 @@ const LIB_SEED_TXT="1|R|N;1-2|R|N;2|R|N;2-3|R|N;3|R|N;3-4|R|N;4|R|N;4-5|R|A|PMF1
 "191-192|L|A|BN061/MP015/MP024/PL014;192|L|A|MP024/PL014;192-193|L|A|BN048;193|L|A|BN048;193-194|L|A|BN048/MP016/MP024;194|L|N;194-195|L|A|MP016;195|L|N;195-196|L|N;196|L|N;"+
 "196-197|L|A|BNUP005/MP016;197|L|N;197-198|L|N;198|L|N;198-199|L|A|BN062/MP016;199|L|N;199-200|L|A|BN062/BN063/BN079/BNUP005;200|L|A|BN079;200-201|L|A|BN079;201|L|N;201-202|L|N;202|L|N;"+
 "202-203|L|N;203|L|N;203-204|L|A|MP017;204|R|A|MP017;204-206|R|A|BN064/BNUP005/MP017;206|R|A|BN064;206-207|R|N;207|R|N;207-208|R|N;208|R|N;208-209|R|A|BN049/MP017;209|R|A|MP017;"+
-"209-210|R|A|BN049/BN080/MP017;210|R|A|BN080;210-211|R|A|BN080;211|R|A|BN080;211-212|R|A|BN080;212|R|N;212-213|R|A|BN056/BN057;213|R|A|BN057;213-214|R|A|BN057;214|R|N;"+
+"209-210|R|A|BN049/BN080/MP017;210|R|A|BN080;210-211|R|A|BN080;211|R|A|BN080;211-213|R|A|BN080;213|R|N;213-213A|R|A|BN056/BN057;213A|R|A|BN057;213A-214|R|A|BN057;214|R|N;"+
 "214-215|R|A|BN065/BN081/BNUP005;215|R|A|BN065;215-216|R|A|BN065;216|L|N;216-217|R|A|BN066/BNUP005/MP018;217|R|N;217-218|R|A|BN051/BNUP005/MP018/MP019;218|R|A|MP019;218-219|R|A|MP019;"+
 "219|R|A|MP019;219-219A|R|A|MP019;219A|L|N;219A-220|L|A|MP019;220|L|A|MP019;220-221|L|A|MP019/MP020;221|L|N;221-222|L|A|BN082/MP021;222|L|A|BN082;222-223|L|A|BN082;223|L|N;223-224|L|A|MP021;"+
 "224|L|N;224-225|L|N;225|L|N;225-226|L|N;226|L|N;226-227|L|N;227|L|N;227-228|L|A|MP022;228|L|N;228-229|L|A|MP022;229|R|A|MP022;229-230|R|A|MP022/MP025;230|R|A|MP022/MP025;"+
@@ -4535,7 +4536,9 @@ function parseGeneral(txt){
   const rows=splitRows(txt);const hi=rows.findIndex(r=>/^n\W*\s*estructura/i.test((r[0]||"").trim()));
   if(hi<0||rows[hi].length<49)throw new Error("La matriz general no tiene el formato esperado (falta la fila 'N Estructura'). Revisa que el CSV use punto y coma.");
   const est=[],vals=new Map(),seen=new Set();const chk={n:0,bad:[]};
-  for(let i=hi+1;i<rows.length;i++){const r=rows[i];const id=(r[0]||"").trim();const zona=(r[2]||"").trim();const sec=ZONA[zona.toLowerCase()];
+  /* La matriz aún numera 211–212–213–214; en terreno es 211–213–213A–214 (la 212 no existe). Se renombra por posición. */
+  const ids0=new Set(rows.slice(hi+1).map(r=>(r[0]||"").trim()));const ren=ids0.has("212")&&!ids0.has("213A")?{"212":"213","213":"213A"}:{};
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];const id0=(r[0]||"").trim();const id=ren[id0]||id0;const zona=(r[2]||"").trim();const sec=ZONA[zona.toLowerCase()];
     if(!id||!sec||seen.has(id))continue;seen.add(id);
     const fund=sec==="cruce"?null:fundOf(r[55]);
     est.push({id,sec,zona,torre:(r[1]||"").trim(),tt:(r[3]||"").trim(),tipo:(r[4]||"").trim().replace("Suspension","Suspensión"),contr:CONTR_SECTOR[sec]||(r[5]||"").trim(),fund});
