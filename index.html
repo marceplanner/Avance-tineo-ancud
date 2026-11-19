@@ -244,6 +244,29 @@ table.smx{border-collapse:separate;border-spacing:2px;width:auto;font-size:.75re
 .kpic .kl span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .kpic .kl b{font-family:var(--f-mono)}
 .kpic .ks{font-size:.76rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+/* Cierre del tendido: puentes, empalmes OPGW y terminaciones */
+.cierre{border:1px solid var(--line);background:var(--surface);border-radius:2px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.cierre .cie-h{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.cierre .cie-big{font-family:var(--f-disp);font-size:2.4rem;font-weight:700;line-height:1}
+.cierre .cie-big small{font-size:1.1rem;color:var(--muted);margin-left:2px}
+.cierre .cie-sec{display:grid;grid-template-columns:repeat(3,minmax(120px,170px));gap:6px 14px}
+.cierre .cie-sec>span{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px}
+.cierre .cie-sec .mtr{grid-column:1/-1;order:3}
+.cierre .cie-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.cierre .cie-b{border-top:2px solid var(--ink);padding-top:8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cierre .ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.cierre .cp{font-family:var(--f-mono);font-weight:600;font-size:1.05rem}
+.cierre .cp.ok{color:var(--good-ink)}
+.cierre .cie-n{font-family:var(--f-disp);font-size:1.5rem;font-weight:700}
+.cierre .cie-tl{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:.76rem;color:var(--ink-2)}
+.cierre .cie-tl span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.cierre .cie-tl .sw{width:8px;height:8px}
+.cierre .cie-tl b,.cierre .cie-sub b{font-family:var(--f-mono)}
+.cierre .cie-w{font-size:.76rem;color:var(--muted)}
+.cierre .cie-sub{display:grid;grid-template-columns:minmax(0,1fr) 56px auto;align-items:center;gap:3px 8px;font-size:.76rem;color:var(--ink-2);border-top:1px solid var(--line);padding-top:6px}
+.cierre .cie-sub b{text-align:right}
+.cierre .ks{font-size:.76rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+@media (max-width:900px){.cierre .cie-g{grid-template-columns:1fr}.cierre .cie-sec{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));width:100%}}
 .sw{width:12px;height:12px;border-radius:2px;display:inline-block;background:var(--c)}
 .sw.o{background:transparent;border:1.5px solid var(--line-2)}
 
@@ -884,7 +907,7 @@ const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"C
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
 const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
 /* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
-const APP_VER="19-11-2026";
+const APP_VER="19-11-2026b";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -1802,6 +1825,80 @@ function kpiCard(titulo,c,unidad,layer,nota,kind,pctOver,masc){const pct=pctOver
   ${distBar([[c.ter,"ter",ter],[c.eje,"eje","en ejecución"],[c.sin,"sin","faltan"]])}
   <span class="ktally"><span><i class="sw" style="--c:var(--good)"></i><b>${c.ter}</b> ${ter}</span><span><i class="sw" style="--c:var(--eje)"></i><b>${c.eje}</b> en ejecución</span><span><i class="sw" style="--c:var(--surface-3)"></i><b>${c.sin}</b> faltan</span></span>
   ${nota?`<span class="ks">${nota}</span>`:""}</button>`;}
+/* ── Cierre del tendido (19-11-2026): puentes (jumpers) en las estructuras de anclaje, cajas de empalme del OPGW y
+   terminaciones del tendido. Pesos = Texto30 de las tareas de tendido del programa de cada sector (revisiones del 24/25-10-2026):
+   · Continente, STN4324-DK-PM-C-0001 (ELECNOR) 4.3.2: flechado y engrapado del conductor 0,0144 (flechado y engrapado, 0,0072 c/u),
+     accesorios del conductor 0,0144 (puentes y separadores, 0,0072 c/u), flechado y rematado OPGW 0,0072 y accesorios OPGW 0,0072
+     (amortiguadores, mufa, desviadores y balizas, 0,0018 c/u, igual que la configuración). Tendido que mide la app: 0,108.
+   · Isla, STN4324-CD-IS-C-00042 (Globaltec) 1.1.5.9 a 1.1.5.12, en tercios de 0,000578: tensado y grapado (remate de conductor) 171,
+     separadores 69, remate de OPGW 30, caja de empalme y fusión 8 y disuasores de vuelo 8. Tendido medido: 643 (sin plazas ni portales).
+     El programa no separa los puentes: tensado y grapado se reparte en tercios (flechado, engrapado y puentes), como en ELECNOR.
+   · Cruce, STN4324-J Rev.2 (CSTC) 1.5.5 y 1.5.6: accesorios y cables de puente 0,02198 (mitad puentes, mitad separadores y
+     amortiguadores OPGW), templado y chequeo 0,00314 (engrapado, flechado y flechado del OPGW) y balizas y monitor 0,00392.
+     Tendido medido: 0,06672 (sin la preparación técnica). No trae empalmes.
+   frac = parte del tendido del sector que corresponde al cierre: con ella y el peso del tendido de cada sector se juntan los sectores. */
+const CIE_W={
+  continente:{prog:"ELECNOR, STN4324-DK-PM-C-0001",frac:432/1080,pue:72,emp:18,t:{tt_eng:72,tv_fle:72,tv_esp:72,op_fle:72,op_eng:18,op_des:18,op_bal:18}},
+  cruce:{prog:"CSTC, STN4324-J Rev.2",frac:2904/6672,pue:1099,emp:0,t:{tt_eng:105,tv_fle:105,tv_esp:550,op_fle:104,op_eng:549,op_bal:392}},
+  isla:{prog:"Globaltec, STN4324-CD-IS-C-00042",frac:286/643,pue:57,emp:8,t:{tt_eng:57,tv_fle:57,tv_esp:69,op_fle:30,op_des:8}}};
+/* terminaciones: u = "e" se mide en cada estructura, "v" en cada vano por distancia */
+const CIE_T=[{id:"tt_eng",n:"Engrapado del conductor",u:"e"},{id:"tv_fle",n:"Regulación, flechado y remates",u:"v"},{id:"tv_esp",n:"Separadores",u:"v"},
+  {id:"op_fle",n:"Flechado y rematado OPGW",u:"v"},{id:"op_eng",n:"Engrampado y amortiguadores OPGW",u:"e"},{id:"op_des",n:"Desviadores de vuelo",u:"v"},{id:"op_bal",n:"Balizas",u:"v"}];
+/* estructuras con caja de empalme OPGW (se mide «Bajadas de OPGW, rollos de reserva y mufa»). Por defecto, donde terminan los tiros de
+   OPGW de los programas: 15 y 41 (las «2 cajas de empalme» de Globaltec en Continente), 63, 97, 126 y 151 (entre los tiros de ELECNOR) y
+   191, 199, 203, 216, 225 y 234 (entre los tramos de OPGW de Globaltec en la Isla). Supuesto: un administrador lo corrige en Configuración. */
+const EMP_DEF=["15","41","63","97","126","151","191","199","203","216","225","234"];
+const empLista=()=>S.cfg&&Array.isArray(S.cfg.empalmes)?S.cfg.empalmes.map(String):EMP_DEF;
+const esAnc=e=>/ancl/i.test((e&&e.tipo)||"");
+function cierreData(){
+  const F=S.dashF,P=S.P,emp=new Set(empLista()),out={pue:cnt0(),emp:cnt0(),ter:cnt0(),puS:0,emS:0,it:{},sec:[]};let W=0,V=0;const sh={pue:0,emp:0,ter:0};
+  for(const a of CIE_T)out.it[a.id]={W:0,V:0};
+  const avgE=(L,f)=>L.length?L.reduce((x,e)=>x+f(e),0)/L.length:null;
+  const dist=(L,f)=>{if(!L.length)return null;const kn=L.filter(v=>v.len!=null),wd=kn.length?kn.reduce((x,v)=>x+v.len,0)/kn.length:1;let w=0,t=0;for(const v of L){const l=v.len!=null?v.len:wd;w+=l;t+=l*f(v);}return w?t/w:null;};
+  /* en los vanos a los marcos de línea, el flechado va junto con los remates de los dos circuitos */
+  const fle=v=>v.ml?(cur(v.key,"tv_fle")+cur(v.key,"rm_c1")+cur(v.key,"rm_c2"))/3:cur(v.key,"tv_fle");
+  const vv=(v,id)=>id==="tv_fle"?fle(v):cur(v.key,id);
+  for(const s of scopeSecs()){const cw=CIE_W[s.id],R=P.sec[s.id];if(!cw||!R)continue;
+    const all=estr(s.id),es=all.filter(e=>!F.contr||ctoDe(e)===F.contr);if(!es.length)continue;
+    const vs=vanos(s.id).filter(v=>!F.contr||ctoDe(vanoEst(s.id,v))===F.contr);
+    const anc=es.filter(esAnc),em=es.filter(e=>emp.has(String(e.id)));
+    const pu=avgE(anc,e=>cur(kE(s.id,e.id),"tt_pue")),ep=avgE(em,e=>cur(kE(s.id,e.id),"op_baj"));
+    for(const e of anc){const p=cur(kE(s.id,e.id),"tt_pue");cls3(out.pue,p);out.puS+=p;}
+    for(const e of em){const p=cur(kE(s.id,e.id),"op_baj");cls3(out.emp,p);out.emS+=p;}
+    const val={};
+    for(const a of CIE_T){if(!cw.t[a.id])continue;
+      val[a.id]=a.u==="e"?avgE(es,e=>cur(kE(s.id,e.id),a.id)):dist(OPG_NO_ML.has(a.id)?vs.filter(v=>!v.ml):vs,v=>vv(v,a.id));}
+    /* vano con sus terminaciones completas: todas las del vano al 100 % */
+    for(const v of vs){const ids=CIE_T.filter(a=>a.u==="v"&&cw.t[a.id]&&!(v.ml&&OPG_NO_ML.has(a.id))).map(a=>a.id);cls3(out.ter,ids.length?Math.min(...ids.map(id=>vv(v,id))):0);}
+    let tw=0,tv=0;for(const a of CIE_T){const w=cw.t[a.id]||0,x=val[a.id];if(!w||x==null)continue;tw+=w;tv+=w*x;}
+    const T=tw?tv/tw:null,wp=pu!=null?cw.pue:0,we=ep!=null?cw.emp:0,ws=wp+we+tw;if(!ws)continue;
+    const Ps=(wp*(pu||0)+we*(ep||0)+tv)/ws;
+    /* peso del sector: su peso en el global × peso de su tendido × parte del tendido que es cierre × parte de sus estructuras en el filtro */
+    const Wsec=num(s.peso,0)*pesoE("ten",s.id)*cw.frac*(es.length/all.length);if(!(Wsec>0))continue;
+    W+=Wsec;V+=Wsec*Ps;sh.pue+=Wsec*wp/ws;sh.emp+=Wsec*we/ws;sh.ter+=Wsec*tw/ws;
+    for(const a of CIE_T){const x=val[a.id],w=cw.t[a.id];if(x==null||!w)continue;const o=out.it[a.id];o.W+=Wsec*w/ws;o.V+=Wsec*w/ws*x;}
+    out.sec.push({s,cw,P:Ps,pu,ep,T,nA:anc.length,nE:em.length,ws,wp,we,tw});}
+  out.tot=W?V/W:null;out.sh={pue:W?sh.pue/W*100:0,emp:W?sh.emp/W*100:0,ter:W?sh.ter/W*100:0};
+  out.terP=sh.ter?CIE_T.reduce((x,a)=>x+out.it[a.id].V,0)/sh.ter:null;
+  out.pueP=out.pue.n?out.puS/out.pue.n:null;out.empP=out.emp.n?out.emS/out.emp.n:null;
+  return out;}
+function cierreHtml(){const D=cierreData();if(D.tot==null)return "";
+  const tally=c=>`<span class="cie-tl"><span><i class="sw" style="--c:var(--good)"></i><b>${c.ter}</b> listos</span><span><i class="sw" style="--c:var(--eje)"></i><b>${c.eje}</b> en ejecución</span><span><i class="sw" style="--c:var(--surface-3)"></i><b>${c.sin}</b> faltan</span></span>`;
+  const blk=(t,p,c,uni,sh,extra,tip)=>`<div class="cie-b" data-tip="${esc(tip)}"><div class="ch"><span class="lbl">${esc(t)}</span><span class="cp${p!=null&&p>=99.95?" ok":""}">${p==null?"—":fmtP(p,1)}</span></div>${mtr(p||0)}
+    <span class="small"><b class="num cie-n">${c.ter}</b> <span class="muted num">/ ${c.n}</span> ${esc(uni)}</span>${distBar([[c.ter,"ter","listos"],[c.eje,"eje","en ejecución"],[c.sin,"sin","faltan"]])}${tally(c)}${extra||""}<span class="cie-w">Pesa <b class="num">${fmtP(sh,1)}</b> del cierre</span></div>`;
+  const sub=CIE_T.filter(a=>D.it[a.id].W>0).map(a=>{const o=D.it[a.id],p=o.V/o.W;return `<span>${esc(a.n)}</span>${mtr(p)}<b class="num">${fmtP(p,1)}</b>`;}).join("");
+  const many=D.sec.length>1,pp=x=>x==null?"—":fmtP(x,1);
+  const met=D.sec.map(r=>`${r.s.nombre} (${r.cw.prog}): puentes ${fmtP(r.wp/r.ws*100,1)}, empalmes ${fmtP(r.we/r.ws*100,1)}, terminaciones ${fmtP(r.tw/r.ws*100,1)}`).join("\n");
+  const L=empLista();
+  return `<div class="cierre"><div class="cie-h"><div class="stack" style="gap:2px"><span class="lbl">Cierre del tendido</span><div class="cie-big num">${fmtP(D.tot,1).replace("%","")}<small>%</small></div>
+    <span class="small muted">Puentes, empalmes del OPGW y terminaciones, con los pesos de las tareas de tendido de cada programa</span></div>
+    ${many?`<div class="cie-sec">${D.sec.map(r=>`<span data-tip="${esc(`${r.s.nombre} · ${r.cw.prog}\nPuentes ${pp(r.pu)} · empalmes ${pp(r.ep)} · terminaciones ${pp(r.T)}`)}"><span class="small">${esc(r.s.nombre)}</span>${mtr(r.P)}<b class="num">${fmtP(r.P,1)}</b></span>`).join("")}</div>`:""}</div>
+  <div class="cie-g">
+  ${blk("Cierre de puentes",D.pueP,D.pue,"estructuras de anclaje con los puentes cerrados",D.sh.pue,"",`Puentes (jumpers) de conductor: solo en las estructuras de anclaje.\nSe mide «Puentes (jumpers) y accesorios en torre» de cada anclaje.\n% = promedio de los anclajes.`)}
+  ${blk("Empalmes de OPGW",D.empP,D.emp,"cajas de empalme instaladas",D.sh.emp,`<span class="cie-w">En ${esc(L.length>14?L.slice(0,14).join(", ")+"…":L.join(", "))}${S.cfg&&Array.isArray(S.cfg.empalmes)?"":" (supuesto: tiros de OPGW de los programas)"}</span>`,`Cajas de empalme del OPGW: se mide «Bajadas de OPGW, rollos de reserva y mufa» en las estructuras con caja de empalme.\nLa lista se edita en Configuración → Cierre del tendido.\n% = promedio de las cajas.`)}
+  ${blk("Terminaciones del tendido",D.terP,D.ter,"vanos con sus terminaciones completas",D.sh.ter,`<span class="cie-sub">${sub}</span>`,`Engrapado y amortiguadores se miden en cada estructura; flechado, remates, separadores, desviadores y balizas en cada vano, por distancia.\nEl % pondera cada tarea con su peso en el programa.`)}
+  </div>
+  <span class="ks" data-tip="${esc(met)}">Cada sector usa el peso que su programa le da a cada tarea (Texto30): ${esc(D.sec.map(r=>r.s.nombre+" "+r.cw.prog.split(",")[0]).join(", "))}. Los sectores se juntan según su peso en el global, el peso de su tendido y la parte del tendido que es cierre. Isla: el programa no separa los puentes (van dentro de «Tensado y grapado»); Cruce: «accesorios y cables de puente» va mitad a puentes. Pasa el mouse para ver los repartos.</span></div>`;}
 function kpiSection(){
   const F=S.dashF;F.tt="";
   const K=kpiData();const amb=S.dash==="total"?"toda la línea":secById(S.dash).nombre;
@@ -1814,7 +1911,7 @@ function kpiSection(){
   ${kpiCard("Fundaciones",K.fun,"fundaciones hormigonadas","fun",S.dash==="cruce"||S.dash==="total"?"En el cruce se mide por pata (promedio de las 4).":"","fun")}
   ${kpiCard("Montaje de estructuras",K.mon,"estructuras montadas","mon","","mon")}
   ${kpiCard("Tendido",K.ten,"vanos con el conductor terminado","ten",`Vanos tendidos (seis fases): <b>${K.cb}</b>/${K.ten.n} · Circuito 1: <b>${K.c1}</b>/${K.ten.n} · Circuito 2: <b>${K.c2}</b>/${K.ten.n} · OPGW: <b>${K.opgw}</b>/${K.ten.n} vanos${K.mL?`<br>Conductor tendido: C1 <b>${fmtKm(K.m1)}</b> · C2 <b>${fmtKm(K.m2)}</b> de ${fmtKm(K.mL)}<br>El % de la tarjeta es el avance medido por distancia.`:""}`,"ten",K.mL?K.mP/K.mL*100:null,true)}
-  </div></section>`;
+  </div>${cierreHtml()}</section>`;
   return h;}
 function stkSeg(c,n){if(!n)return "";const seg=k=>c[k]?`<i class="${k}" style="width:${c[k]/n*100}%">${c[k]/n>.06?c[k]:""}</i>`:"";return seg("ter")+seg("eje")+seg("sin");}
 function drillHtml(et,list){
@@ -4317,7 +4414,7 @@ function descargarRegistros(){const D=S.dat,desde=D.desde||addDays(today(),-6),h
 /* ---------- Configuración (solo administradores) ---------- */
 function makeDraft(){const c=S.cfg||{};
   return {nombre:c.nombre||"",codigo:c.codigo||"",tension:c.tension||"",pesoSE:pesoSE(),sectores:secs().map(s=>Object.assign({},s,{ep:Object.assign(Object.fromEntries(etapas().map(e=>[e.id,num(e.peso,0)])),s.ep||{}),ts:Object.assign((t=>({torre:num(t.torre,30),vano:num(t.vano,70),opgw:num(t.opgw,0)}))(etapaById("ten")||{}),s.ts||{})})),etapas:etapas().map(e=>Object.assign({},e)),
-    actividades:acts().map(a=>Object.assign({},a)),vanos:Object.fromEntries(SECTORES_BASE.map(b=>[b.id,vanos(b.id).filter(v=>!v.ml).map(v=>v.a+"; "+v.b).join("\n")]))};}
+    actividades:acts().map(a=>Object.assign({},a)),empalmes:c.empalmes&&Array.isArray(c.empalmes)?c.empalmes.join(", "):"",vanos:Object.fromEntries(SECTORES_BASE.map(b=>[b.id,vanos(b.id).filter(v=>!v.ml).map(v=>v.a+"; "+v.b).join("\n")]))};}
 function sumTxt(v){return `<span class="num ${Math.abs(v-100)>.01?"warnline":"muted"} small">Suma: ${String(Math.round(v*10)/10).replace(".",",")}%${Math.abs(v-100)>.01?" (debería ser 100%)":""}</span>`;}
 function vConfig(){
   if(!S.canAdmin)return `<div class="panel empty">Solo los administradores pueden editar la configuración.</div>`;
@@ -4325,7 +4422,7 @@ function vConfig(){
   if(!cfgOk())return vDatos();
   /* el borrador se rehace si la configuración cambió por otra vía (p. ej., al cargar el programa maestro) y no hay cambios sin guardar */
   if(!S.draft||(!S.dirty&&S.draftDe!==S.cfg)){S.draft=makeDraft();S.draftDe=S.cfg;}const d=S.draft;
-  const J=[["cfg-proy","Proyecto"],["cfg-global","Pesos globales"],["cfg-etapas","Etapas y tendido por sector"],["cfg-acts","Actividades"],["cfg-vanos","Vanos"],["cfg-se","Subestación"],["cfg-n8n","n8n"],["cfg-usuarios","Usuarios"]];
+  const J=[["cfg-proy","Proyecto"],["cfg-global","Pesos globales"],["cfg-etapas","Etapas y tendido por sector"],["cfg-acts","Actividades"],["cfg-cierre","Cierre del tendido"],["cfg-vanos","Vanos"],["cfg-se","Subestación"],["cfg-n8n","n8n"],["cfg-usuarios","Usuarios"]];
   let h=`<div class="stack"><section class="panel stack" style="gap:10px"><div class="spread"><h2>Configuración</h2><span class="small muted">Pesos y parámetros del cálculo. Para cargar matrices, programas o respaldos, ve a <button class="linkbtn" style="font-family:var(--f-body)" data-tab="datos">Carga y descarga</button>.</span></div>
   <div class="jump" role="group" aria-label="Ir a una sección">${J.map(([id,t])=>`<button data-jump="${id}">${t}</button>`).join("")}</div></section>`;
   h+=`<section class="panel stack" id="cfg-proy"><h2>Proyecto</h2><div class="form-grid"><div class="field"><label for="c-nombre">Nombre</label><input id="c-nombre" type="text" data-cf="nombre" value="${esc(d.nombre)}"></div><div class="field"><label for="c-codigo">Código</label><input id="c-codigo" type="text" data-cf="codigo" value="${esc(d.codigo)}"></div><div class="field"><label for="c-tension">Descripción corta</label><input id="c-tension" type="text" data-cf="tension" value="${esc(d.tension)}"></div></div></section>`;
@@ -4346,6 +4443,8 @@ function vConfig(){
     /* el OPGW suma 100 entre torre y vano (pesos del programa maestro) */
     const op=g.id==="opt"||g.id==="opg",smO=op?d.actividades.filter(a=>a.g==="opt"||a.g==="opg").reduce((x,a)=>x+num(a.peso,0),0):sm;
     return `<div class="stack" style="gap:6px"><div class="spread"><h3>${esc(g.nombre)}</h3>${op?`<span class="small muted num">${String(Math.round(sm*10)/10).replace(".",",")}% del OPGW · ${sumTxt(smO).replace("Suma:","torre + vano:")}</span>`:sumTxt(sm)}</div><div class="tbl-wrap"><table><tbody>${list.map(([a,i])=>`<tr><td style="min-width:240px;width:100%"><input id="c-an-${i}" type="text" data-an="${i}" value="${esc(a.nombre)}" aria-label="Nombre"></td><td style="width:110px"><input id="c-ap-${i}" type="number" step="0.1" min="0" data-ap="${i}" value="${num(a.peso,0)}" aria-label="Peso %"></td></tr>`).join("")}</tbody></table></div></div>`;}).join("")}</section>`;
+  h+=`<section class="panel stack" id="cfg-cierre"><h2>Cierre del tendido · estructuras con caja de empalme OPGW</h2><p class="muted small">La tarjeta «Cierre del tendido» del Resumen mide los empalmes del OPGW con la actividad «Bajadas de OPGW, rollos de reserva y mufa» de estas estructuras. Escribe los N° separados por coma, según el plan de bobinas del OPGW. ${S.cfg&&Array.isArray(S.cfg.empalmes)?"":`<b>Hoy rige el supuesto</b>: donde terminan los tiros de OPGW de los programas (${EMP_DEF.join(", ")}). `}Los puentes se miden solos en las estructuras de anclaje.</p>
+  <div class="field"><label for="c-emp">Estructuras con caja de empalme</label><input id="c-emp" type="text" data-emp="1" value="${esc(d.empalmes)}" placeholder="${esc("Vacío = supuesto: "+EMP_DEF.join(", "))}"></div></section>`;
   h+=`<section class="panel stack" id="cfg-vanos"><h2>Vanos</h2><p class="muted small">Una línea por vano: <span class="mono">Desde; Hasta</span>. Por defecto, cada estructura con la siguiente de la matriz general. En el cruce: 1CA–2C, 1CB–2C, 2C–3C, 3C–4CA y 3C–4CB. Los vanos a los marcos de línea de las S/E se agregan solos.</p><div class="form-grid">${d.sectores.map(s=>`<div class="field"><label for="c-v-${s.id}">${esc(s.nombre)}</label><textarea class="code" id="c-v-${s.id}" data-vn="${s.id}">${esc(d.vanos[s.id])}</textarea></div>`).join("")}</div></section>`;
   {const sp=S.seDraft||sePesos();const sm=SE_CATS.reduce((x,c)=>x+num(sp[c.id],0),0);
   h+=`<section class="panel stack" id="cfg-se"><div class="spread"><h2>Subestación Tineo · ${SE_CONTRATISTA}</h2>${sumTxt(sm)}</div><p class="muted small">Peso de cada partida en el avance global de la subestación. Los pesos de las actividades vienen de las matrices de obras civiles y estructuras.</p>
@@ -4366,12 +4465,15 @@ async function guardarConfig(){
   for(const s of d.sectores){const seen=new Set();
     vn[s.id]=d.vanos[s.id].split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const [a,b]=l.split(/\t|;|–/).map(x=>(x||"").trim());if(!ids.has(a)||!ids.has(b))errs.push(`${s.nombre}: vano "${l}" con estructura desconocida.`);const k=a+">"+b;if(seen.has(k))errs.push(`${s.nombre}: vano repetido "${l}".`);seen.add(k);return {a,b};});}
   if(d.actividades.some(a=>!String(a.nombre||"").trim()))errs.push("Hay actividades sin nombre.");
+  /* estructuras con caja de empalme OPGW: N° conocidos, sin repetir */
+  const emp=[...new Set(String(d.empalmes||"").split(/[,;\s]+/).map(x=>x.trim().toUpperCase().replace(/^[ET]-?/,"")).filter(Boolean))];
+  {const bad=emp.filter(x=>!ids.has(x));if(bad.length)errs.push(`Cajas de empalme: estructura desconocida ${bad.slice(0,4).join(", ")}.`);}
   if(errs.length){toast(errs.slice(0,2).join(" "),true);return;}
   S.saving=true;render();
   try{await updateConfig("proyecto",{nombre:d.nombre.trim(),codigo:d.codigo.trim(),tension:d.tension.trim(),pesoSE:num(d.pesoSE,0),
       sectores:d.sectores.map(s=>({id:s.id,nombre:s.nombre,peso:num(s.peso,0),desc:s.desc||"",ep:Object.fromEntries(d.etapas.map(e=>[e.id,num((s.ep||{})[e.id],0)])),ts:{torre:num((s.ts||{}).torre,0),vano:num((s.ts||{}).vano,0),opgw:num((s.ts||{}).opgw,0)}})),
       etapas:d.etapas.map(e=>Object.assign({id:e.id,nombre:e.nombre,peso:num(e.peso,0)},e.id==="ten"?{torre:num(e.torre,30),vano:num(e.vano,70),opgw:num(e.opgw,0)}:{})),
-      actividades:d.actividades.map(a=>Object.assign({id:a.id,nombre:String(a.nombre).trim(),g:a.g,peso:num(a.peso,0)},a.circ?{circ:a.circ,fase:a.fase}:{})),vanos:vn});
+      actividades:d.actividades.map(a=>Object.assign({id:a.id,nombre:String(a.nombre).trim(),g:a.g,peso:num(a.peso,0)},a.circ?{circ:a.circ,fase:a.fase}:{})),empalmes:emp.length?emp:null,vanos:vn});
     S.draft=null;S.dirty=false;toast("Configuración guardada.");
   }catch(e){toast(e.code==="denied"?"No tienes permiso de administrador.":"No se pudo guardar. Intenta de nuevo.",true);}
   S.saving=false;render();
@@ -4816,6 +4918,7 @@ document.addEventListener("input",ev=>{
   else if(ds.an)S.draft.actividades[+ds.an].nombre=t.value;
   else if(ds.ap)S.draft.actividades[+ds.ap].peso=num(t.value,0);
   else if(ds.vn)S.draft.vanos[ds.vn]=t.value;
+  else if(ds.emp)S.draft.empalmes=t.value;
   else return;
   /* la barra de guardado avisa de inmediato que hay cambios sin guardar (sin redibujar, para no cortar la escritura) */
   if(!S.dirty){S.dirty=true;const st=$("#c-estado");if(st){st.textContent="Hay cambios sin guardar en proyecto, pesos, actividades o vanos";st.classList.add("dirty");}}
