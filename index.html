@@ -907,7 +907,7 @@ const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"C
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
 const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
 /* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
-const APP_VER="20-11-2026a";
+const APP_VER="19-11-2026c";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -1383,7 +1383,6 @@ function render(){
   $("#drawer").innerHTML=S.drw?vDrawer():"";
   const db=$("#drawer .db");if(db)db.scrollTop=scrollDb;
   restoreFocus(fid,selS);
-  if(S.canAdmin)setTimeout(prSync,0);
 }
 function restoreFocus(fid,selS){if(!fid)return;const el=document.getElementById(fid);if(el&&document.activeElement!==el){el.focus({preventScroll:true});if(selS!=null&&el.setSelectionRange){try{el.setSelectionRange(selS,selS);}catch(e){}}}}
 function importBanner(){
@@ -1783,8 +1782,7 @@ function vResumen0(){
   let h=`<div class="stack">`+resFiltros();
   const ctoTxt=cto===POMP.lab?"Variante Pomponales":cto;
   /* con un contrato elegido la cifra es la del contrato, con los pesos de la app (el programa maestro no separa contratos) */
-  const PV=mm()&&S.TER&&(filt||sc!=="total")?prVista(sc,filt?cto:""):null;
-  if(PV)h+=prHero(sc,filt?cto:"",{cnt,N,NV,VD,VT},PV);else if(mm()&&S.TER&&!filt)h+=mmHero(sc,{cnt,N,NV,VD,VT});else h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${filt?esc(ctoTxt)+(sc==="total"?" · todas sus estructuras":" · "+esc(secById(sc).nombre)):sc==="total"?"proyecto, global ponderado":esc(secById(sc).nombre)}</span><div class="big num">${N?`${tp[0]},${tp[1]}<small>%</small>`:"—"}</div>
+  if(mm()&&S.TER&&!filt)h+=mmHero(sc,{cnt,N,NV,VD,VT});else h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${filt?esc(ctoTxt)+(sc==="total"?" · todas sus estructuras":" · "+esc(secById(sc).nombre)):sc==="total"?"proyecto, global ponderado":esc(secById(sc).nombre)}</span><div class="big num">${N?`${tp[0]},${tp[1]}<small>%</small>`:"—"}</div>
      <div class="sub">${!filt&&sc==="total"?`Línea <b class="num">${fmtP(P.lineaPct,1)}</b> · S/E Tineo <b class="num">${fmtP(S.SE.total,1)}</b> · `:""}${cnt.ter} de ${N} estructuras terminadas · ${VT} de ${NV} vanos tendidos (${VD} terminados)${filt?` · ${cto===POMP.lab?`estructuras ${POMP.a} a ${POMP.b} del sector Isla, ejecutadas por Globaltec en un contrato aparte`:"sin S/E Tineo"}`:""}</div>${mtr(tot)}</div>
    <div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">${filt?"Todo el contrato":"Proyecto"}</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}"${filt&&!P.sec[s.id].has?" disabled":""}>${esc(s.nombre)}</button>`).join("")}</div></div>
    <div class="sectab">${secs().map(s=>{const r=P.sec[s.id];if(filt&&!r.has)return `<button disabled style="--c:${secColor(s.id)};opacity:.55;cursor:default"><span class="n">${esc(s.nombre)}</span><span class="v num">—</span><span class="d">sin estructuras de ${esc(ctoTxt)}</span></button>`;
@@ -1969,8 +1967,7 @@ function tendMetros(){
   <p class="small muted" style="margin:0">Avance del tendido = Σ longitud del vano × avance del conductor en el vano (piloto, seis fases, flechado y separadores) ÷ longitud total; el OPGW se informa aparte. Conductor y OPGW = longitud × avance registrado de cada cable (conductor: promedio de sus tres fases). Vanos tendidos = vanos con las seis fases al 100 %; vanos terminados = todo el conductor del vano al 100 % (además flechado y separadores).${sinAv.length?` Sin tendido: ${esc(sinAv.join(", "))}.`:""}${sin.length?` Sin longitud (no se suman): ${esc(sin.join(", "))}.`:""}</p></section>`;
   return h;}
 /* Avance por etapa en cifras: % de cada etapa por sector y, con varios sectores, la línea ponderada por el peso de cada sector */
-function etapaTable(){if(mm()&&S.TER&&(S.P.filtrado||S.dash!=="total")){const V=prVista(S.dash,S.P.filtrado?S.dashF.contr:"");if(V)return prEtapaTable(V);}
-  if(mm()&&S.TER&&!S.P.filtrado)return mmEtapaTable();
+function etapaTable(){if(mm()&&S.TER&&!S.P.filtrado)return mmEtapaTable();
   /* con un contrato elegido, cada sector pesa su peso × la parte de sus estructuras que entra al filtro (progressF) */
   const list=scopeSecs().filter(s=>S.P.sec[s.id].has);const many=list.length>1;const wS=s=>S.P.filtrado?S.P.sec[s.id].peso:s.peso;const WS=list.reduce((x,s)=>x+wS(s),0)||1;
   const lin=et=>list.reduce((x,s)=>x+wS(s)*(S.P.sec[s.id].stg[et]||0),0)/WS;
@@ -1995,7 +1992,7 @@ function estadoTable(){
 function contrTable(){
   const m=new Map();for(const s of scopeSecs())for(const e of estr(s.id)){if(!fOk(e))continue;const k=ctoDe(e);const st=S.P.sec[s.id].byE[e.id];if(!m.has(k))m.set(k,{n:0,t:0,ter:0,f:0});const x=m.get(k);x.n++;x.t+=totE(st,s.id);if(estado(st)==="ter")x.ter++;if(st.fun>=99.95)x.f++;}
   const rows=[...m].sort((a,b)=>b[1].n-a[1].n);
-  return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista o contrato</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio en terreno</th>${mm()?`<th class="r">Según su programa</th>`:""}</tr></thead><tbody>${rows.map(([k,x])=>{const pv=mm()?prVista(S.dash,k):null;return `<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${mv(x.t/x.n,1)}</td>${mm()?`<td class="r num">${pv?`${mv2(pv.v)}<small class="muted" style="display:block;font-weight:400">${esc([...new Set(pv.parts.map(p=>p.src==="prog"?"programa al "+pgD(p.estado):"maestro al "+mmFecha()))].join(" · "))}</small>`:"—"}</td>`:""}</tr>`;}).join("")}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tec"><thead><tr><th>Contratista o contrato</th><th class="r">Estructuras</th><th class="r">Fundaciones listas</th><th class="r">Terminadas</th><th class="r">Avance medio</th></tr></thead><tbody>${rows.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="r num">${x.n}</td><td class="r num">${x.f}</td><td class="r num"><b>${x.ter}</b></td><td class="r num">${mv(x.t/x.n,1)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 /* --- Matriz de avance por estructura (responde a los filtros de "Indicadores de avance") --- */
 const MX_ROWS=[{k:"acc",t:"Camino de acceso"},{k:"pat",t:"Malla puesta a tierra"},{k:"fun",t:"Fundación"},{k:"mon",t:"Montaje"},{k:"tto",t:"Conductor en torre"},{k:"otT",t:"OPGW en torre"},{k:"vano",t:"Conductor del vano (al siguiente)"},{k:"opg",t:"OPGW del vano (al siguiente)"}];
@@ -2170,7 +2167,7 @@ function vSE(){
   /* mismo encabezado que el Resumen: cifra global y una celda por partida (al tocarla, cambia el detalle por actividad) */
   const tp=R.total.toFixed(1).split(".");
   h+=`<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · Subestación Tineo · Nueva Puerto Montt</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
-     <div class="sub">Obras civiles y montaje de estructuras del patio · contratista <b>${SE_CONTRATISTA}</b></div>${mm()&&S.TER?`<div class="sub">Programa maestro al ${mmFecha()} (todo el alcance de ${SE_CONTRATISTA}): <b class="num">${fmtP2(mmReal().k("se"))}</b> real, el valor que entra al global · ${fmtP2(mmProg().k("se"))} programado · terreno con sus pesos ${fmtP2(S.TER.k("se"))}${prOf(PG_SE)?` · programa de ${SE_CONTRATISTA} al ${pgD(prOf(PG_SE).estado)}: ${fmtP2(prOf(PG_SE).r)}`:""}</div>`:""}${mtr(R.total)}</div></div>
+     <div class="sub">Obras civiles y montaje de estructuras del patio · contratista <b>${SE_CONTRATISTA}</b></div>${mm()&&S.TER?`<div class="sub">Con los pesos del programa maestro (todo el alcance de ${SE_CONTRATISTA}): <b class="num">${fmtP2(S.TER.k("se"))}</b>, el valor que entra al global · programa maestro al ${mmFecha()}: ${fmtP2(mmReal().k("se"))} real · ${fmtP2(mmProg().k("se"))} programado</div>`:""}${mtr(R.total)}</div></div>
    <div class="sectab">${SE_CATS.map(c=>{const x=R.cat[c.id];return `<button data-secat="${c.id}" aria-pressed="${S.seCat===c.id}" style="--c:var(--c-se)" data-tip="${esc(`${c.nombre}: ${fmtP(x.pct,1)}\n${x.done} listas · ${x.eje} en avance · ${x.sin} sin iniciar\nToca para ver su detalle por actividad`)}"><span class="n">${esc(c.nombre)}</span><span class="v num">${fmtP(x.pct,1)}</span>${mtr(x.pct)}<span class="d">${x.done}/${x.n} al 100 % · ${x.eje} en avance</span><span class="d muted">Pondera ${fmtP(pes[c.id])} de la S/E</span></button>`;}).join("")}</div></section>`;
   // Pictograma de fundaciones
   const fc=R.cat.fun;
@@ -3598,133 +3595,13 @@ function pgResumen(){const ps=progs();if(!ps.length&&!mm())return "";
    pesos y la misma cuenta de MS Project (Σ peso × avance ÷ Σ peso): cada tarea que la web mide (tala, caminos, fundaciones,
    montaje, cadenas, conductor, OPGW…) vale lo registrado en terreno, y las que no mide (movilización, faenas, equipos de la
    S/E…) van con el avance del maestro, las completas al 100 %. Así, más avance registrado en la web da un global mayor que el
-   del maestro, y si el maestro se actualiza con lo registrado en la web, los dos porcentajes coinciden. Desde el 20-11-2026 la cifra
-   grande del Resumen sin filtros es el avance real del maestro, y con filtros la del programa de cada contratista (prVista). Los pesos de
+   del maestro, y si el maestro se actualiza con lo registrado en la web, los dos porcentajes coinciden. Los pesos de
    Continente, Cruce, Isla y S/E Tineo, y el reparto por etapa de cada sector, también salen de aquí. De la construcción
    Etapa 1 (terminada) se guarda solo su peso, para la vista opcional de la construcción completa con la Etapa 1 al 100 % */
 const mm=()=>{const m=S.cfg&&S.cfg.maestro;return m&&m.v===1&&Array.isArray(m.L)&&m.L.length?m:null;};
 const fmtP2=p=>p==null||!isFinite(p)?"—":p.toFixed(2).replace(".",",")+"%";
 const pp2Txt=d=>Math.abs(d)<0.005?"0,00 pp":(d>0?"+":"−")+Math.abs(d).toFixed(2).replace(".",",")+" pp";
 const pp2Html=d=>d==null||!isFinite(d)?"—":Math.abs(d)<0.005?`<span class="muted">0,00 pp</span>`:`<b class="${d>0?"rp-up":"crit"}">${pp2Txt(d)}</b>`;
-/* ---------- Avance según programa (20-11-2026) ----------
-   Sin filtros, el global del Resumen es el avance real del programa maestro integrado (Texto27, a su fecha de estado).
-   Con un sector o un contratista elegido, la cifra es la del programa de cada contratista, con sus pesos (Texto30), su avance
-   real (Texto27) y su programado (Texto28), a su fecha de estado: la misma que muestra MS Project.
-   · Contratista: el total de su programa; si el programa separa sectores (Globaltec: Isla y Continente), la partida del sector.
-   · Sector sin contratista: si tiene un solo contratista, su programa; si tiene varios (Continente: Elecnor y Globaltec), cada
-     programa pondera con el peso que sus tramos tienen en el maestro.
-   · Variante Pomponales: no tiene programa propio cargado; rige su partida del maestro.
-   Los programas solo los leen los administradores: al cargarlos (o al cambiar), el navegador de un administrador publica un
-   resumen (progRes) en la configuración del proyecto, que leen todos los usuarios. Lo registrado en terreno sigue en los
-   conteos, tablas, matriz y pictogramas, y se muestra al lado como referencia */
-const PR_ET=[{id:"pre",n:"Obras preliminares",d:"faenas, tala, caminos, replanteo"},{id:"fun",n:"Fundaciones",d:"fundaciones y malla de puesta a tierra"},{id:"mon",n:"Montaje de estructuras",d:"recepción, prearmado y montaje"},{id:"ten",n:"Tendido",d:"cadenas, conductor, OPGW y remates"},{id:"otr",n:"Otras partidas del programa",d:"ingeniería, suministros, gestión, pruebas"}];
-const PR_OTR=/ingenier|suministr|procurement|\bhitos?\b|prueba|puesta en servicio|comision|permiso|ambient|contrato|administrac|devoluci|as[- ]?built|acreditac|desmoviliz|vendor|licitac|orden de compra/;
-function prEtapaDe(x){
-  if(/aislaci|tendido|conductor|opgw|cable de guardia|vestid|remate|flechad|tensad|engra[mp]?p|\bpuentes?\b|separador|amortig|perlon|piloto/.test(x))return "ten";
-  if(/fundaci|obras civiles|excav|hormig|\banclas?\b|cabezal|pilote|\bpilas?\b|zapata|malla|puesta a tierra|\bmpt\b|grout|enfierr|moldaje|relleno|emplantill|\bstubs?\b|perno/.test(x))return "fun";
-  if(/montaje|pre-?armad|torque|aplome/.test(x))return "mon";
-  if(/preliminar|\btala\b|\broce\b|camino|acceso|faena|moviliz|perturbaci|replanteo|trazado|liberaci|despeje/.test(x))return "pre";
-  return null;}
-/* etapa de una tarea: primero su propio nombre; si es de ingeniería, suministros o gestión, "otras"; si no, su ruta */
-function prEtapa(n,ctx){return prEtapaDe(n)||(PR_OTR.test(ctx)?"otr":prEtapaDe(ctx)||"otr");}
-const PR_SEC_RE={isla:/\bisla\b|chiloe/,continente:/continente/,cruce:/cruce|chacao/};
-/* resumen de un programa: total, por sector y por etapa (pesos en % del programa o del sector; avance real y programado) */
-function prBuild(P){const M=pgModel(P),T=P.T,se=P.contr===PG_SE;
-  const ctxOf=t=>{const L=[];for(let x=t;x&&x.l>0;x=M.byO.get(pgPar(x.o)))L.unshift(nrm(x.n));return L.join(" > ");};
-  const z=()=>({w:0,r:0,p:0}),add=(a,w,r,p)=>{a.w+=w;a.r+=w*(r||0);a.p+=w*(p||0);},fin=a=>a&&a.w?{w:a.w,r:a.r/a.w,p:a.p/a.w}:null;
-  const secsC=se?["se"]:[...new Set(pgContrEst(P.contr).map(x=>x.s))];
-  /* partida de cada sector: la tarea resumen de nivel más alto que lo nombra (solo si el contratista está en más de un sector) */
-  const raiz={};if(secsC.length>1)for(const s of secsC){const re=PR_SEC_RE[s];const c=re?T.filter(t=>t.s&&t.l>0&&re.test(nrm(t.n))).sort((a,b)=>a.l-b.l)[0]:null;if(c)raiz[s]=c.o;}
-  const bajo=(o,p)=>o===p||o.indexOf(p+".")===0;
-  const etA={},secA={},secEt={};
-  for(const t of M.leaves){if(t.m)continue;const w=M.wl(t);if(!(w>0))continue;const r=M.rv.get(t.o),p=M.pv.get(t.o),e=prEtapa(nrm(t.n),ctxOf(t));
-    add(etA[e]||(etA[e]=z()),w,r,p);
-    let s=secsC.length===1?secsC[0]:null;if(!s)for(const k in raiz)if(bajo(t.o,raiz[k])){s=k;break;}if(!s)s="_";
-    add(secA[s]||(secA[s]=z()),w,r,p);const q=secEt[s]||(secEt[s]={});add(q[e]||(q[e]=z()),w,r,p);}
-  const W=Object.values(etA).reduce((x,a)=>x+a.w,0);if(!W)return null;
-  const r2=v=>v==null||!isFinite(v)?null:Math.round(v*100)/100;
-  const out={v:1,contr:P.contr,archivo:P.archivo,estado:P.estado,r:r2(M.tot.r),p:r2(M.tot.p),et:{},sec:{}};
-  for(const e in etA){const f=fin(etA[e]);out.et[e]={w:r2(f.w/W*100),r:r2(f.r),p:r2(f.p)};}
-  for(const s in secA){if(s==="_")continue;const f=fin(secA[s]),Ws=secA[s].w,o=raiz[s];
-    const r=o!=null&&M.rv.get(o)!=null?M.rv.get(o):secsC.length===1?M.tot.r:f.r,p=o!=null&&M.pv.get(o)!=null?M.pv.get(o):secsC.length===1?M.tot.p:f.p;
-    const et={};for(const e in secEt[s]){const g=fin(secEt[s][e]);et[e]={w:r2(g.w/Ws*100),r:r2(g.r),p:r2(g.p)};}
-    out.sec[s]={w:r2(Ws/W*100),r:r2(r),p:r2(p),et};}
-  if(secA._)out.comun={w:r2(secA._.w/W*100),r:r2(fin(secA._).r)};
-  return out;}
-/* resumen de un contratista: calculado del programa si este navegador lo puede leer; si no, el publicado */
-let PRC=new WeakMap();
-function prOf(c){const P=S.prog&&S.prog.get(progKey(c));
-  if(P&&Array.isArray(P.T)){const g=gc(),x=PRC.get(P);if(x&&x.g===g)return x.R;let R=null;try{R=prBuild(P);}catch(e){R=null;}PRC.set(P,{g,R});if(R)return R;}
-  const R=S.cfg&&S.cfg.progRes&&S.cfg.progRes[progKey(c)];return R&&R.v===1?R:null;}
-/* publica el resumen de los programas (solo administradores; únicamente cuando cambia un programa) */
-function prSync(){if(!S.canAdmin||S.state!=="ok"||!cfgOk()||S.prSyncOn)return;
-  const out={};for(const P of progs()){const R=prOf(P.contr);if(R)out[progKey(P.contr)]=R;}
-  const firma=o=>JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k].archivo,o[k].estado,o[k].r,o[k].p,Object.keys(o[k].sec||{}).length]));
-  const sig=firma(out);if(sig===firma((S.cfg&&S.cfg.progRes)||{})||S.prSig===sig)return;
-  S.prSig=sig;S.prSyncOn=true;
-  updateConfig("proyecto",{progRes:out}).catch(()=>{S.prSig=null;}).finally(()=>{S.prSyncOn=false;});}
-/* tareas del maestro de un sector repartidas por contratista (por el nombre de su tramo: «Continente E15-E41 (GLOBALTEC)») */
-function prLineas(sec){const M=mm(),out=new Map();if(!M)return out;const cs=[...new Set(estr(sec).map(ctoDe))],sin=cs.filter(c=>c!==POMP.lab);
-  for(const l of M.L){if(l.k!==sec)continue;const g=M.G.find(x=>x.k===sec&&x.l===2&&x.t&&x.t===l.t),n=nrm(g?g.n:"");
-    const c=/pomponales/.test(n)?POMP.lab:sin.find(x=>n.indexOf(nrm(x))>=0)||(sin.length===1?sin[0]:null);if(!c)continue;
-    if(!out.has(c))out.set(c,[]);out.get(c).push(l);}
-  return out;}
-const prAggL=ls=>{let W=0,R=0,P=0;for(const l of ls){W+=l.w;R+=l.w*l.r;P+=l.w*(l.p||0);}return W?{w:W,r:R/W,p:P/W}:null;};
-/* avance de un contratista en un sector: su programa (partida del sector) o, sin programa, su parte del maestro */
-function prVal(c,sec){
-  if(c!==POMP.lab){const R=prOf(c),x=R&&R.sec&&R.sec[sec];
-    if(x&&x.r!=null)return {c,src:"prog",r:x.r,p:x.p,w:x.w,et:x.et,archivo:R.archivo,estado:R.estado};}
-  const ls=prLineas(sec).get(c)||[],a=prAggL(ls);if(!a)return null;
-  const et={};for(const e of ["pre","fun","mon","ten"]){const b=prAggL(ls.filter(l=>l.e===e));if(b)et[e]={w:b.w/a.w*100,r:b.r,p:b.p};}
-  return {c,src:"mm",r:a.r,p:a.p,et,archivo:mm().archivo,estado:mm().estado};}
-/* vista del Resumen con filtros: cifra del programa, sus partes y su reparto por etapa (null = sin datos: rige lo anterior) */
-function prVista(sc,cto){if(!mm())return null;
-  if(cto){const ids=sc==="total"?secs().map(s=>s.id):[sc],parts=[];
-    for(const s of ids){if(!estr(s).some(e=>ctoDe(e)===cto))continue;const v=prVal(cto,s);if(v)parts.push(Object.assign({s},v));}
-    if(!parts.length)return null;const R=cto!==POMP.lab?prOf(cto):null;
-    if(sc==="total"&&R&&parts.every(x=>x.src==="prog")){if(parts.length>1)for(const x of parts)x.share=x.w;return {sc,cto,v:R.r,p:R.p,parts,et:R.et,uno:true};}
-    if(parts.length===1){const x=parts[0];return {sc,cto,v:x.r,p:x.p,parts,et:x.et,uno:true};}
-    return prMezcla(sc,cto,parts.map(x=>Object.assign({},x,{peso:x.src==="prog"?x.w:(prAggL(prLineas(x.s).get(cto)||[])||{w:0}).w})));}
-  if(sc==="total")return null;
-  const L=prLineas(sc),parts=[];
-  for(const [c,ls] of L){const v=prVal(c,sc);if(!v)continue;parts.push(Object.assign({s:sc,peso:ls.reduce((x,l)=>x+l.w,0)},v));}
-  if(!parts.length)return null;
-  if(parts.length===1){const x=parts[0];return {sc,cto:"",v:x.r,p:x.p,parts,et:x.et,uno:true};}
-  return prMezcla(sc,"",parts);}
-/* varias partes: cada una con su peso (maestro en un sector; programa entre sectores de un contratista) */
-function prMezcla(sc,cto,parts){const W=parts.reduce((x,p)=>x+(p.peso||0),0)||1;
-  for(const p of parts)p.share=(p.peso||0)/W*100;
-  const v=parts.reduce((x,p)=>x+p.share*p.r,0)/100,pr=parts.reduce((x,p)=>x+p.share*(p.p||0),0)/100;
-  const et={};for(const e of PR_ET){let w=0,r=0,q=0;for(const p of parts){const x=p.et&&p.et[e.id];if(!x)continue;const k=p.share*x.w/100;w+=k;r+=k*x.r;q+=k*(x.p||0);}if(w>0)et[e.id]={w,r:r/w,p:q/w};}
-  return {sc,cto,v,p:pr,parts,et,uno:false};}
-/* fuente de una parte, en texto */
-const prFuente=x=>x.src==="prog"?`programa de ${progName(x.c)} al ${pgD(x.estado)}`:`programa maestro al ${mmFecha()} (${x.c===POMP.lab?"la variante Pomponales":esc(progName(x.c))} no tiene programa propio cargado)`;
-const prNom=c=>c===POMP.lab?"Variante Pomponales":progName(c);
-function prHero(sc,cto,X,V){const P=S.P,filt=!!P.filtrado,ctoTxt=cto?prNom(cto):"";
-  const tp=fmtP2(V.v).replace("%","").split(",");
-  const amb=cto?esc(ctoTxt)+(sc==="total"?" · todo su programa":" · "+esc(secById(sc).nombre)):esc(secById(sc).nombre);
-  const fuentes=[...new Set(V.parts.map(prFuente))].join(" · ");
-  const partes=V.parts.length>1?V.parts.map(x=>`${esc(cto?secById(x.s).nombre:prNom(x.c))} <b class="num">${fmtP2(x.r)}</b>${x.share!=null?` <span class="muted">pesa ${fmtP(x.share,1)}</span>`:""}`).join(" · "):"";
-  const pesoTxt=V.parts.length>1?(cto?"cada sector con el peso que tiene en el programa":"cada contratista con el peso que sus tramos tienen en el programa maestro"):"";
-  const card=s=>{const v2=prVista(s.id,cto),r=P.sec[s.id];
-    if(!v2||(filt&&!r.has))return `<button disabled style="--c:${secColor(s.id)};opacity:.55;cursor:default"><span class="n">${esc(s.nombre)}</span><span class="v num">—</span><span class="d">${filt?"sin estructuras de "+esc(ctoTxt):"sin programa"}</span></button>`;
-    const pz=cto&&V.parts.length>1?V.parts.find(x=>x.s===s.id):null;
-    return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(`${s.nombre}${cto?" · "+ctoTxt:""}: ${fmtP2(v2.v)} según ${[...new Set(v2.parts.map(x=>prFuente(x).replace(/<[^>]+>/g,"")))].join(" y ")}\nProgramado ${fmtP2(v2.p)}`)}"><span class="n">${esc(s.nombre)}${cto?" · "+esc(ctoTxt):""}</span><span class="v num">${fmtP2(v2.v)}</span>${mtr(v2.v)}<span class="d">Programado ${fmtP2(v2.p)} · ${pp2Txt(v2.v-(v2.p||0))}</span><span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span>${pz&&pz.share!=null?`<span class="d muted">Pesa ${fmtP(pz.share,1)} del programa</span>`:""}</button>`;};
-  const pse=!cto?prOf(PG_SE):null;
-  const seCard=pse?`<button data-tab="se" style="--c:var(--c-se)" data-tip="${esc(`S/E Tineo: ${fmtP2(pse.r)} según el programa de ${SE_CONTRATISTA} al ${pgD(pse.estado)}`)}"><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP2(pse.r)}</span>${mtr(pse.r)}<span class="d">Programado ${fmtP2(pse.p)} · ${pp2Txt(pse.r-(pse.p||0))}</span><span class="d muted">Programa al ${pgD(pse.estado)}</span></button>`:"";
-  return `<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico · ${amb} · según ${V.parts.length>1?"los programas":"el programa"}</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
-     <div class="sub">Programado <b class="num">${fmtP2(V.p)}</b> · ${pp2Html(V.v-(V.p||0))} respecto de lo programado${partes?` · ${partes}`:""}</div>
-     <div class="sub">${X.cnt.ter} de ${X.N} estructuras terminadas · ${X.VT} de ${X.NV} vanos tendidos (${X.VD} terminados)</div>
-     <div class="sub muted">Fuente: ${fuentes}${pesoTxt?` · ${pesoTxt}`:""}. El global del proyecto, sin filtros, es el del programa maestro.</div>${mtr(V.v)}</div>
-   <div class="hctl"><div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">${cto?"Todo el programa":"Proyecto"}</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}"${filt&&!P.sec[s.id].has?" disabled":""}>${esc(s.nombre)}</button>`).join("")}</div></div></div>
-   <div class="sectab">${secs().map(card).join("")}${seCard}</div></section>`;}
-/* «Avance por etapa» con filtros: pesos y avance del programa (o de los programas) */
-function prEtapaTable(V){const mix=!V.uno;
-  let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa del programa</th><th class="r">Pesa</th><th class="r">Avance real</th><th class="r">Programado</th><th class="r">Desviación</th></tr></thead><tbody>`;
-  for(const e of PR_ET){const x=V.et&&V.et[e.id];if(!x)continue;const on=S.dashEt===e.id,clic=e.id!=="otr";
-    h+=`<tr><td style="white-space:normal;min-width:200px">${clic?`<button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.n)}</button>`:esc(e.n)}<span class="small muted"> · ${esc(e.d)}</span></td><td class="r num">${fmtP(x.w,1)}</td><td class="r num">${mv2(x.r)}</td><td class="r num">${fmtP2(x.p)}</td><td class="r num">${pp2Html(x.r-(x.p||0))}</td></tr>`;}
-  h+=`<tr class="tot"><td>Avance ponderado${mix?"":" del programa"}</td><td class="r num">100 %</td><td class="r num">${mv2(V.v)}</td><td class="r num">${fmtP2(V.p)}</td><td class="r num">${pp2Html(V.v-(V.p||0))}</td></tr>`;
-  return h+`</tbody></table></div><p class="small muted" style="margin:0">Pesos (Texto30), avance real (Texto27) y programado (Texto28) de ${mix?"los programas, cada uno con su peso":"el programa"}: ${[...new Set(V.parts.map(prFuente))].join(" · ")}. El total es el del programa${mix?"":" (el mismo de MS Project)"}; por redondeo de las partidas, la suma de las etapas puede diferir en décimas. Al tocar una etapa se ven sus actividades registradas en terreno.</p>`;}
 const mv2=p=>p==null?"—":`<span class="mv">${mtr(p)}<span>${fmtP2(p)}</span></span>`;
 const MM_K={continente:"Continente",cruce:"Cruce Chacao",isla:"Isla",se:"S/E Tineo · "+SE_CONTRATISTA};
 const MM_LADO={n:"Cruce norte",s:"Cruce sur",t:"Tendido del cruce","":"Obras generales del cruce"};
@@ -3862,31 +3739,31 @@ function mmSubs(k,A){const M=mm(),G=M.G.filter(g=>g.k===k&&g.l===2&&g.t);
   return L.join(" · ");}
 function mmHero(sc,X){const T=S.TER,A=mmReal(),Pp=mmProg(),E=mmE1(),ct=sc==="total"&&mmVct()==="ct",f2=ct?1-E.f:1;
   const pick=Z=>sc==="total"?(ct?mmCT(Z.tot):Z.tot):Z.k(sc),v=pick(T),m=pick(A),pr=pick(Pp);
-  const tp=fmtP2(m).replace("%","").split(",");
-  const linea=ct?`Etapa 1, ${MM_E1_TXT}: <b class="num">${fmtP2(100)}</b>, pesa ${fmtP2(E.f*100)} · Etapa 2: <b class="num">${fmtP2(A.tot)}</b>, pesa ${fmtP2(f2*100)}`
-    :[sc==="total"?`Línea 2x500 <b class="num">${fmtP2(A.l2)}</b> · Cruce Chacao <b class="num">${fmtP2(A.k("cruce"))}</b> · S/E Tineo <b class="num">${fmtP2(A.k("se"))}</b>`:mmSubs(sc,A),
+  const tp=fmtP2(v).replace("%","").split(",");
+  const linea=ct?`Etapa 1, ${MM_E1_TXT}: <b class="num">${fmtP2(100)}</b>, pesa ${fmtP2(E.f*100)} · Etapa 2: <b class="num">${fmtP2(T.tot)}</b>, pesa ${fmtP2(f2*100)}`
+    :[sc==="total"?`Línea 2x500 <b class="num">${fmtP2(T.l2)}</b> · Cruce Chacao <b class="num">${fmtP2(T.k("cruce"))}</b> · S/E Tineo <b class="num">${fmtP2(T.k("se"))}</b>`:mmSubs(sc,T),
       `${X.cnt.ter} de ${X.N} estructuras terminadas · ${X.VT} de ${X.NV} vanos tendidos (${X.VD} terminados)`].filter(Boolean).join(" · ");
   const pond=w=>`<span class="d muted">Pondera ${fmtP(w*f2,1)} del global</span>`;
-  const card=s=>{const r=S.P.sec[s.id],x=A.k(s.id),t=T.k(s.id),pv=prVista(s.id,"");return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(`${s.nombre}: ${fmtP2(x)} real según el programa maestro al ${mmFecha()} · ${fmtP2(Pp.k(s.id))} programado\nTerreno con los pesos del maestro: ${fmtP2(t)}${pv?`\nAl elegir el sector se ve el programa del contratista: ${fmtP2(pv.v)}`:""}`)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP2(x)}</span>${mtr(x)}<span class="d">Programado ${fmtP2(Pp.k(s.id))} · terreno ${fmtP2(t)}</span>${pv?`<span class="d">Programa${pv.parts.length>1?"s":""} del contratista: <b class="num">${fmtP2(pv.v)}</b></span>`:""}<span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span>${pond(A.w(s.id))}</button>`;};
-  const R=S.SE,vs=A.k("se"),ts=T.k("se"),pse=prOf(PG_SE);
-  const se=`<button data-tab="se" style="--c:var(--c-se)" data-tip="${esc(`S/E Tineo: ${fmtP2(vs)} real según el programa maestro al ${mmFecha()} (todo el alcance de los paños de conexión de PINE).\nTerreno con los pesos del maestro: ${fmtP2(ts)}${pse?`\nPrograma de ${SE_CONTRATISTA} al ${pgD(pse.estado)}: ${fmtP2(pse.r)}`:""}`)}"><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP2(vs)}</span>${mtr(vs)}<span class="d">Terreno ${fmtP2(ts)}${pse?` · programa ${SE_CONTRATISTA} ${fmtP2(pse.r)}`:""}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span>${pond(A.w("se"))}</button>`;
+  const card=s=>{const r=S.P.sec[s.id],x=T.k(s.id);return `<button data-dash="${s.id}" aria-pressed="${sc===s.id}" style="--c:${secColor(s.id)}" data-tip="${esc(`${s.nombre}: ${fmtP2(x)} con los pesos del programa maestro\nPrograma maestro al ${mmFecha()}: ${fmtP2(A.k(s.id))} real · ${fmtP2(Pp.k(s.id))} programado`)}"><span class="n">${esc(s.nombre)}</span><span class="v num">${fmtP2(x)}</span>${mtr(x)}<span class="d">Maestro ${fmtP2(A.k(s.id))} · ${pp2Txt(x-A.k(s.id))}</span><span class="d">${r.cnt.ter}/${r.n} estructuras terminadas · ${r.vten}/${r.nv} vanos tendidos</span>${pond(A.w(s.id))}</button>`;};
+  const R=S.SE,vs=T.k("se");
+  const se=`<button data-tab="se" style="--c:var(--c-se)" data-tip="${esc(`S/E Tineo: ${fmtP2(vs)} con los pesos del programa maestro (todo el alcance de los paños de conexión de PINE).\nLa web mide fundaciones, canaletas y estructuras del patio; el resto va con el maestro (${fmtP2(A.k("se"))} real al ${mmFecha()}).`)}"><span class="n">S/E Tineo · ${SE_CONTRATISTA}</span><span class="v num">${fmtP2(vs)}</span>${mtr(vs)}<span class="d">Maestro ${fmtP2(A.k("se"))} · ${pp2Txt(vs-A.k("se"))}</span><span class="d">${R.cat.fun.done}/${R.cat.fun.n} fundaciones · ${R.cat.est.done}/${R.cat.est.n} estructuras del patio</span>${pond(A.w("se"))}</button>`;
   const vseg=sc==="total"&&E?`<div class="seg" role="group" aria-label="Construcción que entra al global"><button data-vct="e2" aria-pressed="${!ct}" data-tip="Solo la construcción Etapa 2: línea 2x500, cruce Chacao y S/E Tineo">Etapa 2</button><button data-vct="ct" aria-pressed="${ct}" data-tip="${esc(`Toda la construcción del programa maestro: la Etapa 1 (${MM_E1_TXT}), terminada, entra al 100 % con su peso (${fmtP2(E.f*100)}), y la Etapa 2 con su avance`)}">Con Etapa 1 al 100 %</button></div>`:"";
-  return `<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico de construcción · ${sc==="total"?(ct?"Etapa 1 al 100 % y Etapa 2":"Etapa 2"):esc(secById(sc).nombre)} · programa maestro al ${mmFecha()}</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
-     <div class="sub">${linea}</div>
-     <div class="sub">Programado <b class="num">${fmtP2(pr)}</b> · ${pp2Html(m-pr)} respecto de lo programado · registrado en terreno con los pesos del maestro: <b class="num">${fmtP2(v)}</b> (${pp2Txt(v-m)} respecto del maestro, al ${mmTerF()})</div>${mtr(m)}</div>
+  return `<section class="panel hero2"><div class="htop"><div class="hfig"><span class="lbl">Avance físico de construcción · ${sc==="total"?(ct?"Etapa 1 al 100 % y Etapa 2":"Etapa 2"):esc(secById(sc).nombre)} · pesos del programa maestro</span><div class="big num">${tp[0]},${tp[1]}<small>%</small></div>
+     <div class="sub">Al ${mmTerF()} · ${linea}</div>
+     <div class="sub">Programa maestro al ${mmFecha()}: <b class="num">${fmtP2(m)}</b> real · ${fmtP2(pr)} programado · la web va ${pp2Html(v-m)} respecto del maestro</div>${mtr(v)}</div>
    <div class="hctl"><div class="seg" role="group" aria-label="Ámbito"><button data-dash="total" aria-pressed="${sc==="total"}">Proyecto</button>${secs().map(s=>`<button data-dash="${s.id}" aria-pressed="${sc===s.id}">${esc(s.nombre)}</button>`).join("")}</div>${vseg}</div></div>
    <div class="sectab">${secs().map(card).join("")}${se}</div></section>`;}
 /* celda «Avance físico» del encabezado: sigue la vista elegida */
 function mmHdr(){const ct=mmVct()==="ct",T=S.TER,A=mmReal(),v=ct?mmCT(T.tot):T.tot,m=ct?mmCT(A.tot):A.tot;
-  return `<b class="num" title="${esc((ct?"Construcción con la Etapa 1 al 100 % y la Etapa 2":"Construcción Etapa 2")+": avance real del programa maestro al "+mmFecha()+" · registrado en terreno con sus pesos "+fmtP2(v))}">${fmtP2(m)}</b>`;}
+  return `<b class="num" title="${esc((ct?"Construcción con la Etapa 1 al 100 % y la Etapa 2":"Construcción Etapa 2")+", con los pesos del programa maestro · maestro "+fmtP2(m)+" al "+mmFecha())}">${fmtP2(v)}</b>`;}
 const MM_ET_TXT={pre:"movilización, faenas, tala y caminos",fun:"fundaciones y, en el cruce, malla PAT",mon:"montaje de estructuras",ten:"cadenas, conductor, cable de guardia y remates"};
 function mmEtapaTable(){const A=mmReal(),T=S.TER,list=scopeSecs().filter(s=>A.k(s.id)!=null),many=list.length>1,ks=list.map(s=>s.id);
-  const cell=(v,m,w)=>`<td class="r num">${mv2(m)}<small class="muted" style="display:block;font-weight:400">terreno ${fmtP2(v)}${w!=null?" · pesa "+fmtP(w,1):""}</small></td>`;
+  const cell=(v,m,w)=>`<td class="r num">${mv2(v)}<small class="muted" style="display:block;font-weight:400">maestro ${fmtP2(m)}${w!=null?" · pesa "+fmtP(w,1):""}</small></td>`;
   let h=`<div class="tbl-wrap"><table class="tec"><thead><tr><th>Etapa</th>${list.map(s=>`<th class="r"><span class="dot" style="--c:${secColor(s.id)}"></span> ${esc(s.nombre)}</th>`).join("")}${many?`<th class="r">Línea y cruce</th>`:""}</tr></thead><tbody>`;
   for(const e of etapas()){const on=S.dashEt===e.id;
     h+=`<tr><td style="white-space:normal;min-width:190px"><button class="linkbtn" style="font-family:var(--f-body)${on?";color:var(--accent)":""}" data-dashet="${esc(e.id)}" aria-pressed="${on}">${esc(e.nombre)}</button><span class="small muted"> · ${esc(MM_ET_TXT[e.id]||"")}</span></td>${list.map(s=>cell(T.ke(s.id,e.id),A.ke(s.id,e.id),A.we(s.id,e.id))).join("")}${many?cell(T.ke(ks,e.id),A.ke(ks,e.id),null):""}</tr>`;}
   h+=`<tr class="tot"><td>Avance ponderado</td>${list.map(s=>cell(T.k(s.id),A.k(s.id),null)).join("")}${many?cell(T.ks(ks),A.ks(ks),null):""}</tr>`;
-  return h+`</tbody></table></div><p class="small muted" style="margin:0">Avance real del programa maestro al ${mmFecha()}, con sus pesos (el de cada etapa en su sector va bajo el avance). Debajo, lo registrado en terreno con esos mismos pesos: ${MM_WEB}. Al elegir un sector o un contratista, la tabla pasa a los programas de cada contratista. Al tocar una etapa se ven sus actividades en terreno.</p>`;}
+  return h+`</tbody></table></div><p class="small muted" style="margin:0">Con los pesos del programa maestro (el de cada etapa en su sector va bajo el avance): ${MM_WEB}. Debajo, el avance real del maestro al ${mmFecha()}. Al tocar una etapa se ven sus actividades en terreno.</p>`;}
 /* fila del maestro en «Programado vs real» */
 function mmFilaPvR(){const M=mm();if(!M)return "";const A=mmReal(),Pp=mmProg(),T=S.TER,dv=pgDias(M.e2.F,M.e2.bF);
   return `<tr><td><button class="linkbtn" style="font-family:var(--f-body)" data-tab="programas"><b>Programa maestro</b></button><small>construcción Etapa 2</small></td>${pgEdadTd(M)}<td class="r num">${fmtP2(Pp.tot)}</td><td class="r num"><b>${fmtP2(A.tot)}</b></td><td>${blt(A.tot,Pp.tot)}</td><td class="r num">${pp2Html(A.tot-Pp.tot)}</td><td class="r num">${T?fmtP2(T.tot):"—"}<small>web con los pesos del maestro</small></td><td class="r num">${pgD(M.e2.F)}${dv?`<small class="${dv>0?"crit":""}">${dv>0?"+":""}${dv} días vs línea base</small>`:""}</td><td class="r num">—</td></tr>`;}
