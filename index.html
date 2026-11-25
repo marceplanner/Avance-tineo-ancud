@@ -886,6 +886,8 @@ button.lc:hover,.lc.on{outline:2px solid var(--ink);outline-offset:1px;z-index:1
 .m3d-host iframe{display:block;width:100%;height:calc(100vh - 110px);min-height:560px;border:1px solid var(--line);background:#dcebf0}
 .m3d-host:fullscreen{background:#000}.m3d-host:fullscreen iframe{height:100vh;min-height:0;border:0}
 .m3d-ver{margin-left:6px;vertical-align:middle}
+.m3d-host.m3d-bg{position:fixed;left:-12000px;top:0;width:1280px;margin:0;pointer-events:none}.m3d-host.m3d-bg iframe{height:720px;min-height:0}
+.m3d-fig{margin:0;display:flex;flex-direction:column;gap:4px;break-inside:avoid}.m3d-fig img{display:block;width:100%;height:auto;border:1px solid var(--line)}.m3d-fig figcaption{font-size:.8rem;color:var(--muted)}
 @media (max-width:760px){.m3d-host iframe{height:1250px;min-height:0}}
 @media print{.m3d-host{display:none}}
 </style>
@@ -914,7 +916,7 @@ const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"C
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
 const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"modelo3d",t:"Modelo 3D"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
 /* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
-const APP_VER="25-11-2026a";
+const APP_VER="25-11-2026b";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -1366,74 +1368,155 @@ function renderChrome(){
   if(gqPos!=null){const el=$("#g-q");if(el){el.focus({preventScroll:true});try{el.setSelectionRange(gqPos,gqPos);}catch(e){}}}
   $("#tabs").innerHTML=ok?TABS.filter(t=>!t.admin||S.canAdmin).map(t=>`<button data-tab="${t.id}" aria-selected="${S.tab===t.id}">${t.t}</button>`).join(""):"";
 }
-/* ===================== Modelo 3D (Avance 3D · fase 1) =====================
+/* ===================== Modelo 3D (Avance 3D · fases 1 a 3) =====================
    Pestaña «Modelo 3D»: el modelo 3D de la línea (carpeta modelo3d/) pintado con el avance de esta web.
    La página 3D se carga una sola vez en un iframe que vive fuera de #main (render() no lo destruye) y recibe por postMessage
    el avance calculado aquí con las mismas funciones de la web (avAt, stE, vanos, progress, mmTer): por estructura y por vano,
-   a la fecha de corte («hasta») y al día anterior al período («desde» − 1). En el 3D, lo del período va en naranjo. */
-const M3D={ver:"25-11-2026a",ready:false,sig:"",cfg:null,uni:null,focus:null,kpi:null};
+   a la fecha de corte («hasta») y al día anterior al período («desde» − 1).
+   Fase 2: enlaces a una vista (?v3d=…), animación semana a semana y vistas 3D en el reporte semanal.
+   Fase 3: programado por estructura y vano, con la misma asignación de tareas de la pestaña Programas (pgModel). */
+const M3D={ver:"25-11-2026b",ready:false,sig:"",cfg:null,uni:null,prog:null,focus:null,kpi:null,view:null,urlDone:false,bg:false,shots:null,rep:null};
 const M3D_EST_F=["pre","fun","rec","pa","er","gi","to","ves","eng","pue","ov","oe","ob","mon","tto","otT"];
 const M3D_VAN_F=["pil","c1a","c1b","c1c","c2a","c2b","c2c","fle","esp","opg","ofl","des","bal","rm1","rm2"];
+const M3D_LS=["continente","cruce","isla"];
 const m3r=v=>Math.round((+v||0)*10)/10;
 function m3dRango(){const R=S.m3d||(S.m3d={modo:"7d"});if(R.modo&&R.modo!=="cus")Object.assign(R,repPeriodo(R.modo));if(!R.desde||!R.hasta)Object.assign(R,repPeriodo("7d"),{modo:"7d"});return R;}
 /* firma del estado: si no cambia, no se recalcula ni se reenvía el avance */
 function m3dSig(){const R=m3dRango();let mx=0,n=0;for(const d of (S.av||new Map()).values()){n++;const a=d&&d.act;if(a)for(const k in a){const t=a[k]&&a[k].ts;if(t>mx)mx=t;}}return [R.desde,R.hasta,n,mx].join("|");}
-function m3dPayload(){const R=m3dRango(),f0=addDays(R.desde,-1),g1=avAt(R.hasta),g0=avAt(f0);
-  const P1=progress(g1),P0=progress(g0);let T1=null,T0=null;
-  try{if(mm()){T1=mmTer(g1,P1);T0=mmTer(g0,P0);}}catch(e){T1=T0=null;}
-  const LS=["continente","cruce","isla"];
-  const kp=(T,P,k)=>{if(T){const v=k==="linea"?T.ks(LS):k==="total"?T.tot:T.k(k);if(v!=null&&isFinite(v))return v;}
-    return k==="linea"?P.lineaPct:k==="total"?P.total:(P.sec[k]&&P.sec[k].has?P.sec[k].pct:null);};
-  const pr=k=>{const a=kp(T0,P0,k),b=kp(T1,P1,k);return a==null||b==null?null:[m3r(a),m3r(b)];};
-  const cv=condActs(),cid=(c,f)=>{const a=cv.find(x=>String(x.circ)===c&&String(x.fase).toUpperCase()===f);return a?a.id:null;};
-  const CF=[["1","A"],["1","B"],["1","C"],["2","A"],["2","B"],["2","C"]].map(([c,f])=>cid(c,f));
-  const vEst=(get,sec,e)=>{const st=stE(get,sec,e),k=kE(sec,e.id),g=a=>get(k,a);
-    return [st.pre,st.fun,g("mo_rec"),g("mo_pre"),g("mo_mon"),g("mo_gir"),g("mo_tor"),g("tt_ves"),g("tt_eng"),g("tt_pue"),g("op_ves"),g("op_eng"),g("op_baj"),st.mon,st.tto,st.otT].map(m3r);};
-  const vVan=(get,v)=>{const g=a=>a?get(v.key,a):0;return [g("tv_pil"),...CF.map(g),g("tv_fle"),g("tv_esp"),g("tv_opg"),g("op_fle"),g("op_des"),g("op_bal"),g("rm_c1"),g("rm_c2")].map(m3r);};
-  const est={},van={},cero=a=>a.every(v=>!v),igual=(a,b)=>a.every((v,i)=>v===b[i]);
+function m3dCF(){const cv=condActs(),cid=(c,f)=>{const a=cv.find(x=>String(x.circ)===c&&String(x.fase).toUpperCase()===f);return a?a.id:null;};
+  return [["1","A"],["1","B"],["1","C"],["2","A"],["2","B"],["2","C"]].map(([c,f])=>cid(c,f));}
+function m3dVEst(get,sec,e){const st=stE(get,sec,e),k=kE(sec,e.id),g=a=>get(k,a);
+  return [st.pre,st.fun,g("mo_rec"),g("mo_pre"),g("mo_mon"),g("mo_gir"),g("mo_tor"),g("tt_ves"),g("tt_eng"),g("tt_pue"),g("op_ves"),g("op_eng"),g("op_baj"),st.mon,st.tto,st.otT].map(m3r);}
+function m3dVVan(get,v,CF){const g=a=>a?get(v.key,a):0;return [g("tv_pil"),...CF.map(g),g("tv_fle"),g("tv_esp"),g("tv_opg"),g("op_fle"),g("op_des"),g("op_bal"),g("rm_c1"),g("rm_c2")].map(m3r);}
+/* % de la línea, del total o de un sector: con los pesos del programa maestro si está cargado (como el Resumen), si no con los de la web */
+function m3dKp(T,P,k){if(T){const v=k==="linea"?T.ks(M3D_LS):k==="total"?T.tot:T.k(k);if(v!=null&&isFinite(v))return v;}
+  return k==="linea"?P.lineaPct:k==="total"?P.total:(P.sec[k]&&P.sec[k].has?P.sec[k].pct:null);}
+function m3dTer(get,P){try{return mm()?mmTer(get,P):null;}catch(e){return null;}}
+/* ---------- programado por estructura y vano a una fecha (fase 3) ----------
+   Cada tarea medible de los programas cargados (pgModel, la misma asignación de la pestaña Programas) reparte su avance
+   programado lineal entre las estructuras o vanos que abarca, en orden: la primera de su rango termina primero.
+   Una actividad sin tarea en los programas toma su valor real (no suma atraso ni adelanto). */
+function m3dPlanGet(fecha,vig,real){const tm=pgMs(fecha),PL=new Map(),COV=new Set(),progs=[];
+  const put=(k,ids,v)=>{let o=PL.get(k);if(!o){o={};PL.set(k,o);}for(const id of ids)if(o[id]==null||v>o[id])o[id]=v;COV.add(k);};
+  const suf=id=>id.slice(id.indexOf("_")+1);
+  for(const P of (S.prog||new Map()).values()){if(!P||!Array.isArray(P.T)||P.contr===PG_SE)continue;let M;try{M=pgModel(P);}catch(e){continue;}
+    progs.push(progName(P.contr)+(P.estado?" (estado al "+fmtD(String(P.estado).slice(0,10))+")":""));
+    for(const r of M.meas){const [a,b]=vig?[r.t.S,r.t.F]:pgLB(r.t),x=pgMs(a),y=pgMs(b);if(!isFinite(x)||!isFinite(y))continue;
+      const seq=(i,n)=>{if(n<=1||y<=x)return tm>=y?100:tm<=x?0:(tm-x)/(y-x)*100;const xi=x+(y-x)*i/n,yi=x+(y-x)*(i+1)/n;return tm>=yi?100:tm<=xi?0:(tm-xi)/(yi-xi)*100;};
+      const legs=X=>patas(X.e.id).filter(p=>!r.pata||p.pata===r.pata);
+      for(const p of r.parts||[]){
+        if(p.t==="a"&&p.on==="v"){const ids=p.r||[];if(!ids.length)continue;const V=ids.every(id=>OPG_NO_ML.has(id))?r.V.filter(Y=>!Y.v.ml):r.V;V.forEach((Y,i)=>put(Y.v.key,ids,seq(i,V.length)));}
+        else if(p.t==="a"){const ids=p.r||[];if(!ids.length)continue;r.E.forEach((X,i)=>put(kE(X.s,X.e.id),ids,seq(i,r.E.length)));}
+        else if(p.t==="tva"){const ids=actsG("tva").map(a=>a.id);r.V.forEach((Y,i)=>put(Y.v.key,ids,seq(i,r.V.length)));}
+        else if(p.t==="lib"){r.E.forEach((X,i)=>put(kE(X.s,X.e.id),["lib"],seq(i,r.E.length)));}
+        else if(p.t==="pat"){r.E.forEach((X,i)=>{const v=seq(i,r.E.length);if(X.s==="cruce")for(const pt of legs(X))put(kP(X.s,X.e.id,pt.pata),["cr_pat"],v);else put(kE(X.s,X.e.id),["pat"],v);});}
+        else if(p.t==="fun"||p.t==="fs"){r.E.forEach((X,i)=>{const v=seq(i,r.E.length);
+          if(X.s==="cruce"){const ids=actsG("cr").filter(a=>p.t==="fun"||(p.sfx||[]).includes(suf(a.id))).map(a=>a.id);for(const pt of legs(X))put(kP(X.s,X.e.id,pt.pata),ids,v);}
+          else{const g=X.e.fund||stE(cur,X.s,X.e).fg;if(!g)return;const ids=actsG(g).filter(a=>p.t==="fun"||(p.sfx||[]).includes(suf(a.id))).map(a=>a.id);if(ids.length)put(kE(X.s,X.e.id),ids,v);}});}}}}
+  return {get:(k,a)=>{const o=PL.get(k);return o&&o[a]!=null?o[a]:real(k,a);},cov:COV,progs};}
+function m3dPayload(rng){const R=rng||m3dRango(),f0=addDays(R.desde,-1),g1=avAt(R.hasta),g0=avAt(f0);
+  const P1=progress(g1),P0=progress(g0),T1=m3dTer(g1,P1),T0=m3dTer(g0,P0);
+  const pr=k=>{const a=m3dKp(T0,P0,k),b=m3dKp(T1,P1,k);return a==null||b==null?null:[m3r(a),m3r(b)];};
+  const CF=m3dCF(),est={},van={},cero=a=>a.every(v=>!v),igual=(a,b)=>a.every((v,i)=>v===b[i]);
+  /* programado a la fecha de corte: línea base y programa vigente (solo si hay programas de contratistas cargados) */
+  let PLb=null,PLv=null;try{if(S.prog&&S.prog.size){PLb=m3dPlanGet(R.hasta,false,g1);PLv=m3dPlanGet(R.hasta,true,g1);if(!PLb.cov.size){PLb=PLv=null;}}}catch(e){console.error(e);PLb=PLv=null;}
   for(const s of secs()){
-    for(const e of estr(s.id)){const a=vEst(g1,s.id,e),b=vEst(g0,s.id,e);if(cero(a)&&cero(b))continue;const r={s:s.id,a};if(!igual(a,b))r.b=b;
-      if(s.id==="cruce"){const ps=patas(e.id);if(ps.length){r.pl={};for(const p of ps)r.pl[p.pata]=[m3r(gPct(g0,kP(s.id,e.id,p.pata),"cr")),m3r(gPct(g1,kP(s.id,e.id,p.pata),"cr"))];}}
+    for(const e of estr(s.id)){const a=m3dVEst(g1,s.id,e),b=m3dVEst(g0,s.id,e),k=kE(s.id,e.id);
+      const ps=s.id==="cruce"?patas(e.id):[],cov=!!PLb&&(PLb.cov.has(k)||ps.some(p=>PLb.cov.has(kP(s.id,e.id,p.pata))));
+      if(cero(a)&&cero(b)&&!cov)continue;const r={s:s.id,a};if(!igual(a,b))r.b=b;
+      if(cov){r.p=m3dVEst(PLb.get,s.id,e);r.q=m3dVEst(PLv.get,s.id,e);}
+      if(ps.length){r.pl={};for(const p of ps){const kp=kP(s.id,e.id,p.pata);r.pl[p.pata]=[m3r(gPct(g0,kp,"cr")),m3r(gPct(g1,kp,"cr")),cov?m3r(gPct(PLb.get,kp,"cr")):null,cov?m3r(gPct(PLv.get,kp,"cr")):null];}}
       est[e.id]=r;}
-    for(const v of vanos(s.id)){const a=vVan(g1,v),b=vVan(g0,v),r={s:s.id,len:v.len!=null?m3r(v.len):null,a};if(!igual(a,b))r.b=b;van[v.a+">"+v.b]=r;}}
-  const C=P=>{const o={n:0,ter:0,fun:0,nv:0,vten:0};for(const k of LS){const r=P.sec[k];if(!r)continue;o.n+=r.n||0;o.ter+=(r.cnt&&r.cnt.ter)||0;o.fun+=(r.ind&&r.ind.fun)||0;o.nv+=r.nv||0;o.vten+=r.vten||0;}return o;},c0=C(P0),c1=C(P1);
-  return {v:1,proyecto:(S.cfg&&S.cfg.nombre)||"",desde:R.desde,hasta:R.hasta,base:f0,gen:new Date().toISOString(),f:{est:M3D_EST_F,van:M3D_VAN_F},est,van,
+    for(const v of vanos(s.id)){const a=m3dVVan(g1,v,CF),b=m3dVVan(g0,v,CF),r={s:s.id,len:v.len!=null?m3r(v.len):null,a};if(!igual(a,b))r.b=b;
+      if(PLb&&PLb.cov.has(v.key)){r.p=m3dVVan(PLb.get,v,CF);r.q=m3dVVan(PLv.get,v,CF);}van[v.a+">"+v.b]=r;}}
+  const C=P=>{const o={n:0,ter:0,fun:0,nv:0,vten:0};for(const k of M3D_LS){const r=P.sec[k];if(!r)continue;o.n+=r.n||0;o.ter+=(r.cnt&&r.cnt.ter)||0;o.fun+=(r.ind&&r.ind.fun)||0;o.nv+=r.nv||0;o.vten+=r.vten||0;}return o;},c0=C(P0),c1=C(P1);
+  let plan=null;
+  if(PLb){const pk=G=>{const PP=progress(G.get),TT=T1?m3dTer(G.get,PP):null,q=k=>{const a=m3dKp(TT,PP,k),b=m3dKp(T1,P1,k);return a==null||b==null?null:[m3r(a),m3r(b)];};
+      return {linea:q("linea"),total:q("total"),sec:{continente:q("continente"),cruce:q("cruce"),isla:q("isla")}};};
+    plan={lb:pk(PLb),vig:pk(PLv),progs:PLb.progs};}
+  const ep={};for(const s of secs())if(s.ep)ep[s.id]=s.ep;
+  return {v:1,proyecto:(S.cfg&&S.cfg.nombre)||"",desde:R.desde,hasta:R.hasta,base:f0,gen:new Date().toISOString(),f:{est:M3D_EST_F,van:M3D_VAN_F},est,van,ep,plan,
+    link:{base:location.origin+location.pathname,per:R.modo||"cus"},
     kpi:{fuente:T1?"maestro":"web",linea:pr("linea"),total:pr("total"),sec:{continente:pr("continente"),cruce:pr("cruce"),isla:pr("isla")},
       est:{n:c1.n,ter:[c0.ter,c1.ter],fun:[c0.fun,c1.fun]},van:{n:c1.nv,ten:[c0.vten,c1.vten]}}};}
+/* ---------- serie semanal para la animación (fase 2): desde el primer registro hasta la fecha de corte ---------- */
+function m3dSerie(paso){const R=m3dRango();let d0=null;
+  for(const d of (S.av||new Map()).values()){if(!d||d.kind==="lib")continue;const ck=f=>{if(f&&/^\d{4}-\d{2}-\d{2}/.test(f)&&(!d0||f<d0))d0=f.slice(0,10);};
+    for(const h of Object.values(d.hist||{}))if(h)ck(h.fecha);for(const x of Object.values(d.act||{}))if(x)ck(x.fecha);}
+  if(!d0||d0>R.hasta)return [];let step=paso||7;const n=Math.ceil((pgMs(R.hasta)-pgMs(d0))/864e5/step);if(n>80)step=Math.ceil(n*step/80);
+  const fechas=[];for(let f=d0;f<R.hasta;f=addDays(f,step))fechas.push(f);fechas.push(R.hasta);
+  const CF=m3dCF();
+  return fechas.map(f=>{const g=avAt(f),est={},van={};
+    for(const s of secs()){for(const e of estr(s.id)){const a=m3dVEst(g,s.id,e);if(a.some(v=>v))est[e.id]=a;}for(const v of vanos(s.id)){const a=m3dVVan(g,v,CF);if(a.some(x=>x))van[v.a+">"+v.b]=a;}}
+    const P=progress(g),T=m3dTer(g,P);return {d:f,est,van,k:m3r(m3dKp(T,P,"linea"))};});}
 function m3dFrame(){return document.getElementById("m3d-frame");}
+function m3dSend(msg){const fr=m3dFrame();if(fr&&M3D.ready&&fr.contentWindow)fr.contentWindow.postMessage(msg,location.origin);}
 function m3dPost(force){const fr=m3dFrame();if(!fr||!M3D.ready||!fr.contentWindow)return;
   const sig=m3dSig();
-  if(force||sig!==M3D.sig||S.cfg!==M3D.cfg||S.uni!==M3D.uni){let p;
+  if(force||sig!==M3D.sig||S.cfg!==M3D.cfg||S.uni!==M3D.uni||S.prog!==M3D.prog){let p;
     try{p=m3dPayload();}catch(e){console.error(e);toast("No se pudo calcular el avance para el modelo 3D.",true);return;}
-    M3D.sig=sig;M3D.cfg=S.cfg;M3D.uni=S.uni;M3D.kpi=p.kpi;fr.contentWindow.postMessage({type:"av3d:data",payload:p},location.origin);m3dKpi();}
+    if(M3D.view){p.view=M3D.view;M3D.view=null;}
+    M3D.sig=sig;M3D.cfg=S.cfg;M3D.uni=S.uni;M3D.prog=S.prog;M3D.kpi=p.kpi;fr.contentWindow.postMessage({type:"av3d:data",payload:p},location.origin);m3dKpi();}
   if(M3D.focus){fr.contentWindow.postMessage({type:"av3d:focus",id:M3D.focus},location.origin);M3D.focus=null;}}
 function m3dKpiTxt(){const k=M3D.kpi;if(!k||!k.linea)return "";const d=k.linea[1]-k.linea[0];
   return ` · línea y cruce <b>${fmtP2(k.linea[1])}</b>${Math.abs(d)>=.005?` (${d>0?"+":"−"}${Math.abs(d).toFixed(2).replace(".",",")} pp en el período)`:""}`;}
 function m3dKpi(){const el=document.getElementById("m3-kpi");if(el)el.innerHTML=m3dKpiTxt();}
-/* se llama desde render(): crea el iframe la primera vez, lo muestra u oculta y le envía el avance si cambió */
-function m3dSync(){const on=S.state==="ok"&&cfgOk()&&S.tab==="modelo3d";let host=document.getElementById("m3d-host");
-  if(!on){if(host)host.hidden=true;return;}
-  if(!host){host=document.createElement("div");host.id="m3d-host";host.className="m3d-host";
-    host.innerHTML=`<iframe id="m3d-frame" title="Modelo 3D de la línea con el avance" src="modelo3d/index.html?v=${encodeURIComponent(M3D.ver)}" allow="fullscreen"></iframe>`;
+/* enlace a una vista: ?v3d=vista&m3d=modo&p3d=programa&r3d=período relativo (o d3d/h3d fechas)&c3d=cámara&e3d=estructura#modelo3d */
+function m3dUrlView(){if(M3D.urlDone)return;M3D.urlDone=true;const q=new URLSearchParams(location.search);if(!["v3d","c3d","e3d","m3d"].some(k=>q.has(k)))return;
+  const R=S.m3d||(S.m3d={}),r=q.get("r3d"),d=q.get("d3d")||"",h=q.get("h3d")||"",ok=x=>/^\d{4}-\d{2}-\d{2}$/.test(x);
+  if(r&&["7d","sem","ant"].includes(r)){R.modo=r;Object.assign(R,repPeriodo(r));}else if(ok(d)&&ok(h)){R.modo="cus";R.desde=d<h?d:h;R.hasta=d<h?h:d;}
+  const c=(q.get("c3d")||"").split(",").map(Number);
+  M3D.view={v:q.get("v3d")||"",m:q.get("m3d")||"",p:q.get("p3d")||"",e:q.get("e3d"),c:c.length===6&&c.every(isFinite)?c:null};
+  /* se limpia la dirección para que al recargar no se vuelva a aplicar */
+  const q2=new URLSearchParams();for(const [k,v] of q)if(!/^[vmpcedrh]3d$/.test(k))q2.append(k,v);history.replaceState(null,"",location.pathname+(q2.toString()?"?"+q2:"")+location.hash);}
+/* crea el iframe la primera vez; «bg» lo deja trabajando fuera de pantalla (imágenes del reporte) */
+function m3dHost(){let host=document.getElementById("m3d-host");
+  if(!host){host=document.createElement("div");host.id="m3d-host";host.className="m3d-host";host.hidden=true;
+    host.innerHTML=`<iframe id="m3d-frame" title="Modelo 3D de la línea con el avance" src="modelo3d.html?v=${encodeURIComponent(M3D.ver)}" allow="fullscreen; clipboard-write"></iframe>`;
     const main=document.getElementById("main");main.parentNode.insertBefore(host,main.nextSibling);}
-  host.hidden=false;m3dPost(false);}
+  return host;}
+/* se llama desde render(): muestra u oculta el iframe y le envía el avance si cambió */
+function m3dSync(){const on=S.state==="ok"&&cfgOk()&&S.tab==="modelo3d";let host=document.getElementById("m3d-host");
+  if(!on){if(host){host.hidden=!M3D.bg;host.classList.toggle("m3d-bg",M3D.bg);}return;}
+  m3dUrlView();host=m3dHost();host.hidden=false;host.classList.remove("m3d-bg");m3dPost(false);}
 function vModelo3D(){const R=m3dRango();
   return `<section class="panel stack noprint m3d-bar"><div class="spread"><div class="stack" style="gap:2px"><h2>Modelo 3D del avance</h2><span class="small muted">Avance al <b>${fmtD(R.hasta)}</b> · en naranjo lo ejecutado del <b>${fmtD(R.desde)}</b> al <b>${fmtD(R.hasta)}</b><span id="m3-kpi">${m3dKpiTxt()}</span></span></div>
     <div class="row" style="gap:6px"><button class="btn small ghost" data-m3full="1">Pantalla completa</button></div></div>
     <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Período</label><div class="seg" role="group" aria-label="Período">${REP_MODOS.map(([k,t])=>`<button data-m3modo="${k}" aria-pressed="${R.modo===k}">${t}</button>`).join("")}</div></div>
     <div class="field" style="flex:0 1 170px"><label for="m3-desde">Desde</label><input id="m3-desde" type="date" max="${today()}" value="${esc(R.desde)}"></div><div class="field" style="flex:0 1 170px"><label for="m3-hasta">Hasta (fecha de corte)</label><input id="m3-hasta" type="date" max="${today()}" value="${esc(R.hasta)}"></div></div>
-    <p class="small muted" style="margin:0">Mismos datos y cálculos que el Resumen. Toca una torre en el modelo para ver su avance y abrir su ficha; las vistas fijas y «Exportar imagen» están sobre el modelo.</p></section>`;}
-document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-m3modo],[data-m3png],[data-m3full],[data-m3d]");if(!b)return;
+    <p class="small muted" style="margin:0">Mismos datos y cálculos que el Resumen. En el modelo: vistas «Acumulado», «Período» y «Vs. programa»; toca una torre para ver su avance y abrir su ficha. Sobre el modelo: vistas fijas, «Copiar enlace», «Animación» y «Exportar imagen».</p></section>`;}
+/* ---------- vistas 3D en el reporte semanal (fase 2) ---------- */
+function m3dRepKey(){const R=S.rep||{};return (R.desde||"")+"_"+(R.hasta||"");}
+function m3dRepBtn(){const r=M3D.rep,k=m3dRepKey();
+  if(r&&r.key===k&&r.busy)return `<button class="btn small ghost" disabled>Generando vistas 3D…</button>`;
+  if(r&&r.key===k&&r.imgs&&r.imgs.length)return `<button class="btn small ghost" data-m3rep="0">Quitar vistas 3D</button>`;
+  return `<button class="btn small ghost" data-m3rep="1" title="Agrega al reporte una hoja con la línea completa y el frente del período en el modelo 3D">Agregar vistas 3D</button>`;}
+function m3dRepHoja(hojas,sem){const r=M3D.rep;if(!r||r.key!==m3dRepKey()||!r.imgs||!r.imgs.length)return;const R=S.rep;
+  const figs=r.imgs.map(im=>`<figure class="m3d-fig"><img src="${im.url}" alt="${esc(im.name)} en el modelo 3D"><figcaption>${esc(im.name)} · avance al ${fmtD(R.hasta)}; en naranjo lo ejecutado en ${esc(sem.per)}.</figcaption></figure>`).join("");
+  hojas.splice(1,0,`<section class="exsec">${exH("3D","Avance en el modelo 3D",`al ${fmtD(R.hasta)} · en naranjo lo ejecutado en ${sem.per}`)}${figs}<p class="small muted" style="margin:0">Mismos datos de la web. Ejecutado en acero y hormigón, lo del período en naranjo y lo pendiente como fantasma; en la vista lejana, cada punto es una estructura con el color de su etapa.</p></section>`);}
+function m3dRepShots(){const R=S.rep;if(!R||!R.desde||!R.hasta)return;const key=m3dRepKey(),id=Date.now();
+  let p;try{p=m3dPayload({desde:R.desde,hasta:R.hasta,modo:"cus"});}catch(e){console.error(e);toast("No se pudo calcular el avance para el modelo 3D.",true);return;}
+  M3D.rep={key,busy:true,id};M3D.bg=S.tab!=="modelo3d";const host=m3dHost();if(M3D.bg){host.hidden=false;host.classList.add("m3d-bg");}
+  M3D.shots={type:"av3d:shots",id,payload:p,views:["linea","periodo"],w:1600,h:900};if(M3D.ready){m3dSend(M3D.shots);M3D.shots=null;}
+  setTimeout(()=>{if(M3D.rep&&M3D.rep.id===id&&M3D.rep.busy){M3D.rep=null;M3D.bg=false;toast("El modelo 3D no respondió. Intenta de nuevo.",true);render();}},120000);
+  render();}
+document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-m3modo],[data-m3png],[data-m3full],[data-m3d],[data-m3rep]");if(!b)return;
   ev.stopPropagation();ev.preventDefault();
   if(b.dataset.m3modo){const R=S.m3d||(S.m3d={});R.modo=b.dataset.m3modo;Object.assign(R,repPeriodo(R.modo));render();return;}
-  if(b.dataset.m3png){const fr=m3dFrame();if(fr&&M3D.ready)fr.contentWindow.postMessage({type:"av3d:png"},location.origin);else toast("El modelo 3D aún está cargando.",true);return;}
+  if(b.dataset.m3png){if(M3D.ready)m3dSend({type:"av3d:png"});else toast("El modelo 3D aún está cargando.",true);return;}
   if(b.dataset.m3full){const h=document.getElementById("m3d-host");if(h&&h.requestFullscreen)h.requestFullscreen().catch(()=>{});return;}
+  if(b.dataset.m3rep!=null){if(b.dataset.m3rep==="0"){M3D.rep=null;render();}else m3dRepShots();return;}
   if(b.dataset.m3d!=null){M3D.focus=b.dataset.m3d;S.drw=null;go("modelo3d");m3dPost(false);}},true);
 document.addEventListener("change",ev=>{const t=ev.target;if(t.id!=="m3-desde"&&t.id!=="m3-hasta")return;let v=t.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;if(v>today())v=today();
   const R=S.m3d||(S.m3d={});R.modo="cus";R[t.id==="m3-desde"?"desde":"hasta"]=v;if(R.desde>R.hasta){const z=R.desde;R.desde=R.hasta;R.hasta=z;}render();});
 window.addEventListener("message",ev=>{if(ev.origin!==location.origin)return;const fr=m3dFrame();if(!fr||ev.source!==fr.contentWindow)return;const m=ev.data||{};
-  if(m.type==="av3d:ready"){M3D.ready=true;m3dPost(true);}
-  else if(m.type==="av3d:open"&&m.id!=null){const id=String(m.id);let sec=m.sec;if(!sec||!estr(sec).some(e=>e.id===id))sec=(secs().find(s=>estr(s.id).some(e=>e.id===id))||{}).id;if(sec)openDrawer(sec,id);}});
+  if(m.type==="av3d:ready"){M3D.ready=true;m3dPost(true);if(M3D.shots){m3dSend(M3D.shots);M3D.shots=null;}}
+  else if(m.type==="av3d:open"&&m.id!=null){const id=String(m.id);let sec=m.sec;if(!sec||!estr(sec).some(e=>e.id===id))sec=(secs().find(s=>estr(s.id).some(e=>e.id===id))||{}).id;if(sec)openDrawer(sec,id);}
+  else if(m.type==="av3d:serieReq"){let fr2=[];try{fr2=m3dSerie(m.paso||7);}catch(e){console.error(e);}m3dSend({type:"av3d:serie",frames:fr2});}
+  else if(m.type==="av3d:shots"){const r=M3D.rep;M3D.bg=false;if(!r||r.id!==m.id)return;
+    if(m.err||!m.imgs||!m.imgs.length){M3D.rep=null;toast("No se pudieron generar las vistas 3D"+(m.err?": "+m.err:"")+".",true);}
+    else{M3D.rep={key:r.key,imgs:m.imgs};toast("Vistas 3D agregadas al reporte.");}
+    render();}});
 function render(){
   CLIPN=0;
   if(S.state==="ok"&&cfgOk())S.P=progress(cur);
@@ -4218,7 +4301,7 @@ function exDoc(x){const R=S.rep,c=S.cfg||{},sem=exSemana(R),nota=(S.rnotas||{})[
       +`<section class="exsec">${exH(1,"Cantidades ejecutadas en "+sem.per,"por frente y contratista")}${exTablaCant(D,"sem")}</section>`
       +`<section class="exsec">${exH(2,"Cantidades totales al cierre",`acumulado al ${fmtD(R.hasta)}, sobre el alcance de cada frente`)}${exTablaCant(D,"tot")}</section>`,
     exSecPvE(x,3)+exSecRiesgos(x,4),
-    exSecSiguiente(x,5)+exSecComentario(nota)+exNotas(x,sem.per)];
+    exSecSiguiente(x,5)+exSecComentario(nota)+exNotas(x,sem.per)];m3dRepHoja(hojas,sem);
   return `<div class="exdoc">${hojas.map((b,i)=>`<article class="exhoja" aria-label="Hoja ${i+1} de ${hojas.length}">${b}<footer class="expie"><span>${esc(c.codigo||"STN4324")} · Resumen ejecutivo · ${esc(sem.corto)}</span><span>Hoja ${i+1} de ${hojas.length}</span></footer></article>`).join("")}</div>`;}
 /* comentario de la administración del contrato: uno por período, en config "rep_notas" (solo administradores) */
 async function exGuardarNota(){const R=S.rep,ed=R.notaEd;if(!ed||S.saving)return;
@@ -4239,7 +4322,7 @@ function vReporte(){
 /* barra de herramientas (no se imprime): formato, período y salidas */
 function repBarra(x,ej){const R=S.rep,n8=(n8nCfg()||{}).url;
   return `<section class="panel stack noprint"><div class="spread"><div class="stack" style="gap:2px"><h2>Reporte semanal</h2><span class="small muted">Del <b>${fmtD(R.desde)}</b> al <b>${fmtD(R.hasta)}</b> · comparado con el avance al cierre del ${fmtD(x.f0)}</span></div>
-   <div class="row" style="gap:6px"><button class="btn small${ej?"":" ghost"}" data-rpprint="1">${ej?"Imprimir o guardar PDF":"Imprimir detalle"}</button><button class="btn small ghost" data-rpcsv="1">Descargar CSV</button><button class="btn small ghost" data-rpcopy="1">Copiar texto</button>${n8?`<button class="btn small ghost" data-rpsend="1" ${R.env?"disabled":""}>${R.env?"Enviando…":"Enviar a n8n"}</button>`:""}</div></div>
+   <div class="row" style="gap:6px"><button class="btn small${ej?"":" ghost"}" data-rpprint="1">${ej?"Imprimir o guardar PDF":"Imprimir detalle"}</button><button class="btn small ghost" data-rpcsv="1">Descargar CSV</button><button class="btn small ghost" data-rpcopy="1">Copiar texto</button>${m3dRepBtn()}${n8?`<button class="btn small ghost" data-rpsend="1" ${R.env?"disabled":""}>${R.env?"Enviando…":"Enviar a n8n"}</button>`:""}</div></div>
    <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Formato</label><div class="seg" role="group" aria-label="Formato">${[["ejecutivo","Resumen ejecutivo"],["detalle","Detalle técnico"]].map(([k,t])=>`<button data-rpvista="${k}" aria-pressed="${(ej?"ejecutivo":"detalle")===k}">${t}</button>`).join("")}</div></div>
    <div class="field" style="flex:0 0 auto;min-width:0"><label>Período</label><div class="seg" role="group" aria-label="Período">${REP_MODOS.map(([k,t])=>`<button data-rpmodo="${k}" aria-pressed="${R.modo===k}">${t}</button>`).join("")}</div></div>
    <div class="field" style="flex:0 1 170px"><label for="rp-desde">Desde</label><input id="rp-desde" type="date" max="${today()}" value="${esc(R.desde)}"></div><div class="field" style="flex:0 1 170px"><label for="rp-hasta">Hasta</label><input id="rp-hasta" type="date" max="${today()}" value="${esc(R.hasta)}"></div>
