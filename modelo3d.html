@@ -108,6 +108,7 @@ summary{cursor:pointer;font-family:var(--f-disp);font-weight:600;font-size:14px;
 <button class="btn pri" id="aPlay" aria-label="Reproducir">▶</button>
 <input type="range" id="aPos" min="0" max="0" value="0" aria-label="Semana">
 <span class="aDate" id="aDate">—</span>
+<select id="aIni" aria-label="Inicio de la animación" title="Semana con que parte la animación"></select>
 <select id="aVel" aria-label="Velocidad"><option value="1400">Lenta</option><option value="800" selected>Normal</option><option value="400">Rápida</option></select>
 <button class="btn" id="aRec" title="Graba la animación completa como video">● Grabar video</button>
 <button class="btn" id="aClose" aria-label="Cerrar la animación">✕</button>
@@ -1100,11 +1101,13 @@ function fitTo(list,opt={}){if(!list.length)return;
  const a=list[0],b=list[list.length-1];let ux=b.x-a.x,uz=b.w-a.w,ul=Math.hypot(ux,uz);if(ul<1){ux=1;uz=0;ul=1;}ux/=ul;uz/=ul;
  let a0=1e12,a1=-1e12,b0=1e12,b1=-1e12;for(const s of list){const dx=s.x-cx,dz=s.w-cz,u=dx*ux+dz*uz,v=-dx*uz+dz*ux;a0=Math.min(a0,u);a1=Math.max(a1,u);b0=Math.min(b0,v);b1=Math.max(b1,v);}
  const ca=(a0+a1)/2,cb=(b0+b1)/2,tx=cx+ca*ux-cb*uz,tz=cz+ca*uz+cb*ux;
- const along=Math.max(opt.minL||260,a1-a0),across=b1-b0,asp=view.clientWidth/Math.max(1,view.clientHeight),vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*asp);
+ const along=Math.max(opt.minL||260,a1-a0),across=b1-b0,asp=FIT_ASP||view.clientWidth/Math.max(1,view.clientHeight),vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*asp);
  const r=Math.max(opt.minR||220,(along/2)/Math.tan(hf/2)*1.12+across*.35);
  const p2=opt.ph??(along>20000?.9:along>3000?1.0:1.12);
  const go=(V(tx,zs+hmax*.35,tz)),t2=Math.atan2(-uz,ux);
  if(opt.instant){target.copy(go);R=r;th=t2;ph=p2;anim=null;}else flyTo(go,r,t2,p2);}
+// imágenes del reporte: se encuadra con la proporción de la imagen (16:9), no con la del visor
+let FIT_ASP=0;
 const setOfSec=k=>ST.filter(s=>secOf(s)===k);
 function periodList(){if(!PG.d)return[];const set=new Set();for(const s of ST){const t=TS(s);if(t&&t.per&&s.tipo!=='ML')set.add(s.i);}
  for(const ch of[cA,cB])for(let k=0;k<ch.length-1;k++){const a=ch[k],b=ch[k+1],r=vanRec(a,b);if(!r)continue;if(VAN_F.some(f=>(r.a[f]||0)>(r.b[f]||0)+.05)){set.add(a.i);set.add(b.i);}}
@@ -1326,16 +1329,23 @@ document.getElementById('bLink').addEventListener('click',async()=>{const u=link
 
 /* ---------- imagen para informes: fecha, período o programado, avance, números y leyenda ---------- */
 function rrect(x,X,Y,W,H,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+W,Y,X+W,Y+H,r);x.arcTo(X+W,Y+H,X,Y+H,r);x.arcTo(X,Y+H,X,Y,r);x.arcTo(X,Y,X+W,Y,r);x.closePath();}
-function composeImage(W,H){const pr=renderer.getPixelRatio(),w0=view.clientWidth,h0=view.clientHeight,dk=isDark(),sc=W/1920;let c;
+// opt.k agranda rótulos y marcadores (imágenes que se muestran chicas); opt.compact deja solo el nombre de la vista y el avance del sector
+function composeImage(W,H,opt={}){const pr=renderer.getPixelRatio(),w0=view.clientWidth,h0=view.clientHeight,dk=isDark(),k=opt.k||1,sc=W/1920*k;let c;
  try{renderer.setPixelRatio(1);renderer.setSize(W,H,false);cam.aspect=W/H;cam.updateProjectionMatrix();place();
   const o=Math.max(0,Math.min(1,(R-1500)/2500));MKM.uniforms.uO.value=o;MKM.uniforms.uS.value=15*sc;if(mkObj)mkObj.visible=!!PG.d&&o>.01;
   renderer.render(scene,cam);c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.drawImage(renderer.domElement,0,0,W,H);
   x.scale(sc,sc);const Wd=W/sc,Hd=H/sc;
   const panel=dk?'rgba(22,30,36,.92)':'rgba(255,255,255,.93)',ink=dk?'#ecf1f4':'#14212b',ink2=dk?'#b4c0c8':'#44525d',line=dk?'#394752':'#bfc9d0';
   x.textBaseline='middle';x.font='600 17px Barlow, "Segoe UI", sans-serif';
-  for(const[s,lx,ly]of labelList(W,H,60)){const X=lx/sc+4,Y=ly/sc-12,tx=webId(s.n),tw=x.measureText(tx).width;x.fillStyle=panel;rrect(x,X,Y,tw+14,24,4);x.fill();x.fillStyle=labColor(s);x.fillRect(X,Y,4,24);
+  for(const[s,lx0,ly0]of labelList(W/k,H/k,60)){const lx=lx0*k,ly=ly0*k,X=lx/sc+4,Y=ly/sc-12,tx=webId(s.n),tw=x.measureText(tx).width;x.fillStyle=panel;rrect(x,X,Y,tw+14,24,4);x.fill();x.fillStyle=labColor(s);x.fillRect(X,Y,4,24);
    const t=TS(s);if(t&&t.per&&hlOn()){x.strokeStyle=PCOL.or;x.lineWidth=2;rrect(x,X-1,Y-1,tw+16,26,5);x.stroke();}x.fillStyle=ink;x.fillText(tx,X+9,ly/sc+1);}
   const d=PG.d||{},K=d.kpi||{},plan=isPlan(),sgn=v=>(v>=0?'+':'−')+ff(Math.abs(v));
+  if(opt.compact){const q=(K.sec||{})[mode],t1=viewName,FA='700 34px "Barlow Semi Condensed", "Arial Narrow", sans-serif',FB='700 30px "Barlow Semi Condensed", sans-serif',FC='600 24px "Barlow Semi Condensed", sans-serif';
+   const t2=q?`${ff(q[1])} %`:'',dq=q?q[1]-q[0]:0,t2b=q?(Math.abs(dq)>=.05?`  ${sgn(dq)} pp en el período`:'  sin cambio en el período'):'';
+   x.font=FA;const w1=x.measureText(t1).width;x.font=FB;const w2=x.measureText(t2).width;x.font=FC;const w2b=x.measureText(t2b).width;
+   x.fillStyle=panel;rrect(x,20,20,Math.max(w1,w2+w2b)+40,q?100:60,10);x.fill();x.strokeStyle=line;x.lineWidth=1;x.stroke();x.textBaseline='alphabetic';
+   x.fillStyle=ink;x.font=FA;x.fillText(t1,40,63);if(q){x.font=FB;x.fillText(t2,40,103);x.fillStyle=Math.abs(dq)>=.05?PCOL.or:ink2;x.font=FC;x.fillText(t2b,40+w2,103);}
+   return c;}
   let l2,l3,l3b,l3c,l4,l5;
   if(plan){const Q=d.plan[PG.plan]||d.plan.lb||{},L=Q.linea||[0,0],S=Q.sec||{};const cnt={ade:0,ok:0,lev:0,atr:0};for(const s of ST){const t=TS(s);if(t&&t.dev&&cnt[t.dev.k]!=null)cnt[t.dev.k]++;}
    l2=`Real contra programado al ${fD(d.hasta)} · programado según ${PG.plan==='vig'?'el programa vigente':'la línea base'} · ${viewName}`;l3=`Línea y cruce: real ${ff(L[1])} % · programado ${ff(L[0])} %`;l3b=`  ${sgn(L[1]-L[0])} pp`;l3c=L[1]-L[0]>=0?PCOL.ade:PCOL.atr;
@@ -1383,34 +1393,48 @@ async function envWait(){for(let i=0;i<60;i++){if(envObj&&envObj.children.length
 let SHOTS=false;
 async function shots(m){if(SHOTS)return;SHOTS=true;const keep={d:PG.d,modo:PG.modo,t:target.clone(),R,th,ph,mode,sel:state.sel},out=[];
  try{try{await document.fonts.ready;}catch(e){}
-  if(m.payload){pgLoad(m.payload);}PG.modo='acum';syncOpt();applyAll();await envWait();
-  for(const v of(m.views||['linea','periodo'])){
-   // el frente del período solo si es distinto de la línea completa (si cubre más de la mitad de la línea, sobra)
-   if(v==='periodo'){const l=periodList();if(!l.length||(l[l.length-1].i-l[0].i)>ST.length*.55)continue;}
+  if(m.payload){pgLoad(m.payload);}PG.modo='acum';syncOpt();applyAll();await envWait();FIT_ASP=(m.w||1600)/(m.h||900);
+  // frente del período: solo si es distinto de la línea completa; si cubre más de la mitad de la línea (varios frentes a la vez),
+  // en su lugar van los sectores que tuvieron avance en el período
+  const per=periodList(),disp=!per.length||(per[per.length-1].i-per[0].i)>ST.length*.55,SEC3=['continente','cruce','isla'];
+  const vs=(m.views||['linea','periodo']).filter(v=>v==='periodo'?!disp:SEC3.includes(v)?disp&&per.some(s=>secOf(s)===v):true),small=vs.length>2;
+  for(const[i,v]of vs.entries()){
    mode=v;if(frame({instant:true})===false)continue;lodC=V(target.x,0,target.z);lodKey='';buildNear();ENV.tick(performance.now());await sleep(500);
-   const c=composeImage(m.w||1600,m.h||900);out.push({v,name:viewName,url:c.toDataURL('image/jpeg',.88)});}
+   // en la hoja del reporte la primera va grande y, si hay dos o más adicionales, estas van en dos columnas: compactas y con rótulos más grandes
+   const c=small&&i>0?composeImage(1280,720,{k:1.8,compact:true}):composeImage(m.w||1600,m.h||900);out.push({v,name:viewName,url:c.toDataURL('image/jpeg',.88)});}
   parent.postMessage({type:'av3d:shots',id:m.id,imgs:out},location.origin);}
  catch(e){parent.postMessage({type:'av3d:shots',id:m.id,err:String(e&&e.message||e)},location.origin);}
- finally{if(keep.d)pgLoad(keep.d);PG.modo=keep.modo;syncOpt();applyAll();target.copy(keep.t);R=keep.R;th=keep.th;ph=keep.ph;mode=keep.mode;state.sel=keep.sel;setPressed();lodC=null;lodKey='';SHOTS=false;}}
+ finally{FIT_ASP=0;if(keep.d)pgLoad(keep.d);PG.modo=keep.modo;syncOpt();applyAll();target.copy(keep.t);R=keep.R;th=keep.th;ph=keep.ph;mode=keep.mode;state.sel=keep.sel;setPressed();lodC=null;lodKey='';SHOTS=false;}}
 
 /* ---------- animación semana a semana y video ---------- */
-const AN={open:false,frames:null,i:0,play:false,t:0,rec:null,keep:null};
+const AN={open:false,all:null,s:0,frames:null,i:0,play:false,t:0,rec:null,keep:null};
 const $a=id=>document.getElementById(id);
 function animOpen(){if(AN.open)return;if(!PG.d){toast('Aún no hay datos de avance.');return;}AN.open=true;AN.keep={d:PG.d,modo:PG.modo};$a('anim').hidden=false;$a('bAnim').setAttribute('aria-pressed','true');
  $a('aDate').textContent='Preparando…';$a('aPlay').disabled=true;$a('aRec').disabled=true;syncOpt();
  if(PG.d.demo||!EMB)setFrames(demoSerie());else parent.postMessage({type:'av3d:serieReq',paso:7},location.origin);}
-function setFrames(fr){if(!AN.open)return;if(!fr.length){toast('No hay avance registrado para animar.');animClose();return;}AN.frames=fr;const r=$a('aPos');r.max=fr.length-1;$a('aPlay').disabled=false;$a('aRec').disabled=false;showFrame(0);}
+function setFrames(fr){if(!AN.open)return;if(!fr.length){toast('No hay avance registrado para animar.');animClose();return;}
+ AN.all=fr;const s=animIni(fr),sel=$a('aIni');sel.innerHTML=fr.slice(0,Math.max(1,fr.length-1)).map((f,i)=>`<option value="${i}">Desde ${fD(f.d)}</option>`).join('');iniOn();
+ useFrom(s);if(s>0)toast(`La animación parte el ${fD(fr[s].d)}: la semana anterior suma +${ff(fr[s].k-fr[s-1].k)} pp de una vez (la carga inicial del avance en la web). Puedes elegir otro inicio.`);}
+// la semana en que se cargó en la web el avance acumulado hasta entonces es un salto que no es avance de esa semana: la animación parte después de él
+function animIni(fr){if(fr.length<4)return 0;const dk=fr.map((f,i)=>i?f.k-fr[i-1].k:0);let j=1;for(let i=2;i<fr.length;i++)if(dk[i]>dk[j])j=i;
+ const o=dk.filter((v,i)=>i&&i!==j).sort((a,b)=>a-b),med=o.length?o[o.length>>1]:0;
+ return dk[j]>=5&&dk[j]>=4*Math.max(med,.5)&&j<fr.length-1?j:0;}
+function useFrom(s){animPause();AN.s=s;AN.frames=AN.all.slice(s);$a('aIni').value=String(s);$a('aPos').max=AN.frames.length-1;
+ const ok=AN.frames.length>1;$a('aPlay').disabled=!ok;$a('aRec').disabled=!ok;showFrame(0);}
+// el primer cuadro es el punto de partida: lo ya hecho como ejecutado, sin naranjo
 function frameData(i){const F=AN.frames,f=F[i],g=i>0?F[i-1]:null,Z=n=>Array(n).fill(0),est={},van={},base=AN.keep&&AN.keep.d||{};
- for(const id in f.est)est[id]={s:'',a:f.est[id],b:g&&g.est[id]?g.est[id]:Z(EST_F.length)};
- for(const k in f.van)van[k]={s:'',a:f.van[k],b:g&&g.van[k]?g.van[k]:Z(VAN_F.length)};
- return{v:1,anim:true,demo:base.demo,desde:g?addD(g.d,1):f.d,hasta:f.d,f:{est:EST_F,van:VAN_F},est,van,link:base.link,kpi:{linea:[g?g.k:0,f.k]}};}
+ for(const id in f.est)est[id]={s:'',a:f.est[id],b:g?(g.est[id]||Z(EST_F.length)):f.est[id]};
+ for(const k in f.van)van[k]={s:'',a:f.van[k],b:g?(g.van[k]||Z(VAN_F.length)):f.van[k]};
+ return{v:1,anim:true,demo:base.demo,desde:g?addD(g.d,1):f.d,hasta:f.d,f:{est:EST_F,van:VAN_F},est,van,link:base.link,kpi:{linea:[g?g.k:f.k,f.k]}};}
 function showFrame(i){AN.i=i;$a('aPos').value=i;pgLoad(frameData(i));if(PG.modo==='plan')PG.modo='acum';syncOpt();applyAll();
  const f=AN.frames[i];$a('aDate').textContent=`Semana al ${fD(f.d)} · ${ff(f.k)} %`;}
 function animTick(){if(!AN.play)return;if(AN.i>=AN.frames.length-1){animPause();if(AN.rec)setTimeout(recStop,1500);return;}showFrame(AN.i+1);AN.t=setTimeout(animTick,+$a('aVel').value);}
 function animPlay(){if(!AN.frames)return;if(AN.i>=AN.frames.length-1)showFrame(0);AN.play=true;$a('aPlay').textContent='❚❚';$a('aPlay').setAttribute('aria-label','Pausa');AN.t=setTimeout(animTick,+$a('aVel').value);}
 function animPause(){AN.play=false;clearTimeout(AN.t);$a('aPlay').textContent='▶';$a('aPlay').setAttribute('aria-label','Reproducir');}
 function animClose(){animPause();if(AN.rec)recStop(true);$a('anim').hidden=true;$a('bAnim').setAttribute('aria-pressed','false');AN.open=false;
- const k=AN.keep;AN.frames=null;AN.keep=null;if(k&&k.d){pgLoad(k.d);PG.modo=k.modo;}syncOpt();applyAll();}
+ const k=AN.keep;AN.frames=null;AN.all=null;AN.keep=null;if(k&&k.d){pgLoad(k.d);PG.modo=k.modo;}syncOpt();applyAll();}
+$a('aIni').addEventListener('change',e=>{if(!AN.all||AN.rec)return;useFrom(+e.target.value);});
+const iniOn=()=>{$a('aIni').disabled=!!AN.rec||!AN.all||AN.all.length<3;};
 $a('bAnim').addEventListener('click',()=>AN.open?animClose():animOpen());
 $a('aClose').addEventListener('click',animClose);
 $a('aPlay').addEventListener('click',()=>AN.play?animPause():animPlay());
@@ -1421,10 +1445,10 @@ function recStart(){const mime=['video/mp4;codecs=avc1.42E01E','video/mp4','vide
  const W=1280,H=720,c=document.createElement('canvas');c.width=W;c.height=H;const st=c.captureStream(30),mr=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:8e6}),chunks=[];
  mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
  const f0=AN.frames[0].d,f1=AN.frames[AN.frames.length-1].d;
- mr.onstop=()=>{if(AN.rec&&AN.rec.cancel){AN.rec=null;return;}const b=new Blob(chunks,{type:mime.split(';')[0]}),name=`Avance3D_animacion_${f0}_${f1}.${mime.includes('mp4')?'mp4':'webm'}`;AN.rec=null;download(b,name);toast('Video descargado: '+name);
-  $a('aRec').textContent='● Grabar video';$a('aRec').classList.remove('rec');};
- AN.rec={c,x:c.getContext('2d'),mr,W,H};mr.start(500);$a('aRec').textContent='■ Detener';$a('aRec').classList.add('rec');showFrame(0);setTimeout(animPlay,600);}
-function recStop(cancel){if(!AN.rec)return;AN.rec.cancel=!!cancel;try{AN.rec.mr.stop();}catch(e){}if(cancel){AN.rec=null;$a('aRec').textContent='● Grabar video';$a('aRec').classList.remove('rec');}}
+ mr.onstop=()=>{if(AN.rec&&AN.rec.cancel){AN.rec=null;iniOn();return;}const b=new Blob(chunks,{type:mime.split(';')[0]}),name=`Avance3D_animacion_${f0}_${f1}.${mime.includes('mp4')?'mp4':'webm'}`;AN.rec=null;download(b,name);toast('Video descargado: '+name);
+  $a('aRec').textContent='● Grabar video';$a('aRec').classList.remove('rec');iniOn();};
+ AN.rec={c,x:c.getContext('2d'),mr,W,H};iniOn();mr.start(500);$a('aRec').textContent='■ Detener';$a('aRec').classList.add('rec');showFrame(0);setTimeout(animPlay,600);}
+function recStop(cancel){if(!AN.rec)return;AN.rec.cancel=!!cancel;try{AN.rec.mr.stop();}catch(e){}if(cancel){AN.rec=null;$a('aRec').textContent='● Grabar video';$a('aRec').classList.remove('rec');iniOn();}}
 $a('aRec').addEventListener('click',()=>AN.rec?(animPause(),recStop()):recStart());
 function recDraw(){const r=AN.rec;if(!r)return;const x=r.x,src=renderer.domElement,sw=src.width,sh=src.height,s=Math.max(r.W/sw,r.H/sh),dw=sw*s,dh=sh*s,ox=(r.W-dw)/2,oy=(r.H-dh)/2;
  x.drawImage(src,ox,oy,dw,dh);const dk=isDark(),panel=dk?'rgba(22,30,36,.9)':'rgba(255,255,255,.92)',ink=dk?'#ecf1f4':'#14212b',ink2=dk?'#b4c0c8':'#44525d';

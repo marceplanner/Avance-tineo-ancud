@@ -882,13 +882,20 @@ button.lc:hover,.lc.on{outline:2px solid var(--ink);outline-offset:1px;z-index:1
 .ltab tr.ed td{background:var(--surface-2);white-space:normal}
 .ltab td.acc{white-space:nowrap;text-align:right}
 /* Modelo 3D (Avance 3D) */
+/* barra en dos líneas: título y controles arriba, estado abajo; así el visor cabe completo en pantalla */
+.m3d-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 18px;padding:12px 16px}
+.m3d-tit{display:contents}.m3d-tit h2{grid-column:1;grid-row:1}.m3d-tit>span{grid-column:1/-1;grid-row:2}
+.m3d-ctl{grid-column:2;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px}
+@media (max-width:1100px){.m3d-bar{grid-template-columns:minmax(0,1fr)}.m3d-ctl{grid-column:1;grid-row:3;justify-content:flex-start}}
+.m3d-fechas{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--ink-2)}.m3d-fechas input[type=date]{width:auto;padding:6px 8px}
 .m3d-host{margin:14px 0 0}
-.m3d-host iframe{display:block;width:100%;height:calc(100vh - 110px);min-height:560px;border:1px solid var(--line);background:#dcebf0}
+.m3d-host iframe{display:block;width:100%;height:var(--m3h,calc(100vh - 110px));min-height:500px;border:1px solid var(--line);background:#dcebf0}
 .m3d-host:fullscreen{background:#000}.m3d-host:fullscreen iframe{height:100vh;min-height:0;border:0}
 .m3d-ver{margin-left:6px;vertical-align:middle}
 .m3d-host.m3d-bg{position:fixed;left:-12000px;top:0;width:1280px;margin:0;pointer-events:none}.m3d-host.m3d-bg iframe{height:720px;min-height:0}
 .m3d-fig{margin:0;display:flex;flex-direction:column;gap:4px;break-inside:avoid}.m3d-fig img{display:block;width:100%;height:auto;border:1px solid var(--line)}.m3d-fig figcaption{font-size:.8rem;color:var(--muted)}
-@media (max-width:760px){.m3d-host iframe{height:1250px;min-height:0}}
+.m3d-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.m3d-host iframe{height:1250px;min-height:0}.m3d-grid{grid-template-columns:1fr}}
 @media print{.m3d-host{display:none}}
 </style>
 </head>
@@ -916,7 +923,7 @@ const SECTORES_BASE=[{id:"continente",nombre:"Continente"},{id:"cruce",nombre:"C
 /* admin:true = solo administradores (Reporte semanal y Programas: además el servidor no entrega los programas ni los comentarios a los demás) */
 const TABS=[{id:"resumen",t:"Resumen"},{id:"reporte",t:"Reporte semanal",admin:true},{id:"programas",t:"Programas",admin:true},{id:"linea",t:"Pictograma de la línea"},{id:"modelo3d",t:"Modelo 3D"},{id:"cruce",t:"Cruce Chacao"},{id:"se",t:"S/E Tineo"},{id:"registrar",t:"Registrar avance"},{id:"liberaciones",t:"Liberaciones"},{id:"estructuras",t:"Estructuras"},{id:"herramientas",t:"Herramientas"},{id:"datos",t:"Carga y descarga",admin:true},{id:"config",t:"Configuración",admin:true}];
 /* versión de la página: se muestra en el rótulo para confirmar que GitHub Pages ya entrega el archivo nuevo */
-const APP_VER="25-11-2026b";
+const APP_VER="25-11-2026c";
 const FUNG=["amet","ahor","zv","pila"];
 const ABBR={amet:"AM",ahor:"AH",zv:"ZV",pila:"PI",cr:"CR"};
 const EST_TXT={ter:"Terminada",eje:"En ejecución",sin:"Sin iniciar"};
@@ -1375,7 +1382,7 @@ function renderChrome(){
    a la fecha de corte («hasta») y al día anterior al período («desde» − 1).
    Fase 2: enlaces a una vista (?v3d=…), animación semana a semana y vistas 3D en el reporte semanal.
    Fase 3: programado por estructura y vano, con la misma asignación de tareas de la pestaña Programas (pgModel). */
-const M3D={ver:"25-11-2026b",ready:false,sig:"",cfg:null,uni:null,prog:null,focus:null,kpi:null,view:null,urlDone:false,bg:false,shots:null,rep:null};
+const M3D={ver:"25-11-2026c",ready:false,sig:"",cfg:null,uni:null,prog:null,focus:null,kpi:null,view:null,urlDone:false,bg:false,shots:null,rep:null};
 const M3D_EST_F=["pre","fun","rec","pa","er","gi","to","ves","eng","pue","ov","oe","ob","mon","tto","otT"];
 const M3D_VAN_F=["pil","c1a","c1b","c1c","c2a","c2b","c2c","fle","esp","opg","ofl","des","bal","rm1","rm2"];
 const M3D_LS=["continente","cruce","isla"];
@@ -1460,7 +1467,7 @@ function m3dPost(force){const fr=m3dFrame();if(!fr||!M3D.ready||!fr.contentWindo
   if(M3D.focus){fr.contentWindow.postMessage({type:"av3d:focus",id:M3D.focus},location.origin);M3D.focus=null;}}
 function m3dKpiTxt(){const k=M3D.kpi;if(!k||!k.linea)return "";const d=k.linea[1]-k.linea[0];
   return ` · línea y cruce <b>${fmtP2(k.linea[1])}</b>${Math.abs(d)>=.005?` (${d>0?"+":"−"}${Math.abs(d).toFixed(2).replace(".",",")} pp en el período)`:""}`;}
-function m3dKpi(){const el=document.getElementById("m3-kpi");if(el)el.innerHTML=m3dKpiTxt();}
+function m3dKpi(){const el=document.getElementById("m3-kpi");if(el){el.innerHTML=m3dKpiTxt();m3dFit();}}
 /* enlace a una vista: ?v3d=vista&m3d=modo&p3d=programa&r3d=período relativo (o d3d/h3d fechas)&c3d=cámara&e3d=estructura#modelo3d */
 function m3dUrlView(){if(M3D.urlDone)return;M3D.urlDone=true;const q=new URLSearchParams(location.search);if(!["v3d","c3d","e3d","m3d"].some(k=>q.has(k)))return;
   const R=S.m3d||(S.m3d={}),r=q.get("r3d"),d=q.get("d3d")||"",h=q.get("h3d")||"",ok=x=>/^\d{4}-\d{2}-\d{2}$/.test(x);
@@ -1478,26 +1485,34 @@ function m3dHost(){let host=document.getElementById("m3d-host");
 /* se llama desde render(): muestra u oculta el iframe y le envía el avance si cambió */
 function m3dSync(){const on=S.state==="ok"&&cfgOk()&&S.tab==="modelo3d";let host=document.getElementById("m3d-host");
   if(!on){if(host){host.hidden=!M3D.bg;host.classList.toggle("m3d-bg",M3D.bg);}return;}
-  m3dUrlView();host=m3dHost();host.hidden=false;host.classList.remove("m3d-bg");m3dPost(false);}
+  m3dUrlView();host=m3dHost();host.hidden=false;host.classList.remove("m3d-bg");m3dPost(false);requestAnimationFrame(m3dFit);}
 function vModelo3D(){const R=m3dRango();
-  return `<section class="panel stack noprint m3d-bar"><div class="spread"><div class="stack" style="gap:2px"><h2>Modelo 3D del avance</h2><span class="small muted">Avance al <b>${fmtD(R.hasta)}</b> · en naranjo lo ejecutado del <b>${fmtD(R.desde)}</b> al <b>${fmtD(R.hasta)}</b><span id="m3-kpi">${m3dKpiTxt()}</span></span></div>
-    <div class="row" style="gap:6px"><button class="btn small ghost" data-m3full="1">Pantalla completa</button></div></div>
-    <div class="filters"><div class="field" style="flex:0 0 auto;min-width:0"><label>Período</label><div class="seg" role="group" aria-label="Período">${REP_MODOS.map(([k,t])=>`<button data-m3modo="${k}" aria-pressed="${R.modo===k}">${t}</button>`).join("")}</div></div>
-    <div class="field" style="flex:0 1 170px"><label for="m3-desde">Desde</label><input id="m3-desde" type="date" max="${today()}" value="${esc(R.desde)}"></div><div class="field" style="flex:0 1 170px"><label for="m3-hasta">Hasta (fecha de corte)</label><input id="m3-hasta" type="date" max="${today()}" value="${esc(R.hasta)}"></div></div>
-    <p class="small muted" style="margin:0">Mismos datos y cálculos que el Resumen. En el modelo: vistas «Acumulado», «Período» y «Vs. programa»; toca una torre para ver su avance y abrir su ficha. Sobre el modelo: vistas fijas, «Copiar enlace», «Animación» y «Exportar imagen».</p></section>`;}
+  return `<section class="panel noprint m3d-bar"><div class="m3d-tit"><h2>Modelo 3D del avance</h2><span class="small muted">Avance al <b>${fmtD(R.hasta)}</b> · en naranjo lo ejecutado del <b>${fmtD(R.desde)}</b> al <b>${fmtD(R.hasta)}</b><span id="m3-kpi">${m3dKpiTxt()}</span></span></div>
+    <div class="m3d-ctl"><div class="seg" role="group" aria-label="Período">${REP_MODOS.map(([k,t])=>`<button data-m3modo="${k}" aria-pressed="${R.modo===k}">${t}</button>`).join("")}</div>
+    <span class="m3d-fechas"><input id="m3-desde" type="date" max="${today()}" value="${esc(R.desde)}" aria-label="Desde" title="Desde"><span aria-hidden="true">a</span><input id="m3-hasta" type="date" max="${today()}" value="${esc(R.hasta)}" aria-label="Hasta (fecha de corte)" title="Hasta (fecha de corte)"></span>
+    <button class="btn small ghost" data-m3full="1">Pantalla completa</button></div></section>`;}
+/* alto del visor: lo que queda de pantalla bajo la barra, para verlo completo sin desplazar la página */
+function m3dFit(){const host=document.getElementById("m3d-host");if(!host||host.hidden||host.classList.contains("m3d-bg")||document.fullscreenElement)return;
+  const top=host.getBoundingClientRect().top+scrollY,h=Math.max(500,Math.round(innerHeight-top-12));host.style.setProperty("--m3h",h+"px");}
+window.addEventListener("resize",()=>{if(S.tab==="modelo3d")m3dFit();});
 /* ---------- vistas 3D en el reporte semanal (fase 2) ---------- */
 function m3dRepKey(){const R=S.rep||{};return (R.desde||"")+"_"+(R.hasta||"");}
 function m3dRepBtn(){const r=M3D.rep,k=m3dRepKey();
   if(r&&r.key===k&&r.busy)return `<button class="btn small ghost" disabled>Generando vistas 3D…</button>`;
   if(r&&r.key===k&&r.imgs&&r.imgs.length)return `<button class="btn small ghost" data-m3rep="0">Quitar vistas 3D</button>`;
-  return `<button class="btn small ghost" data-m3rep="1" title="Agrega al reporte una hoja con la línea completa y el frente del período en el modelo 3D">Agregar vistas 3D</button>`;}
-function m3dRepHoja(hojas,sem){const r=M3D.rep;if(!r||r.key!==m3dRepKey()||!r.imgs||!r.imgs.length)return;const R=S.rep;
-  const figs=r.imgs.map(im=>`<figure class="m3d-fig"><img src="${im.url}" alt="${esc(im.name)} en el modelo 3D"><figcaption>${esc(im.name)} · avance al ${fmtD(R.hasta)}; en naranjo lo ejecutado en ${esc(sem.per)}.</figcaption></figure>`).join("");
-  hojas.splice(1,0,`<section class="exsec">${exH("3D","Avance en el modelo 3D",`al ${fmtD(R.hasta)} · en naranjo lo ejecutado en ${sem.per}`)}${figs}<p class="small muted" style="margin:0">Mismos datos de la web. Ejecutado en acero y hormigón, lo del período en naranjo y lo pendiente como fantasma; en la vista lejana, cada punto es una estructura con el color de su etapa.</p></section>`);}
+  return `<button class="btn small ghost" data-m3rep="1" title="Agrega al reporte una hoja con la línea completa y el frente del período en el modelo 3D (o, si se trabajó en varios frentes a la vez, los sectores con avance)">Agregar vistas 3D</button>`;}
+function m3dRepHoja(hojas,sem){const r=M3D.rep;if(!r||r.key!==m3dRepKey()||!r.imgs||!r.imgs.length)return;const R=S.rep,K=(r.kpi&&r.kpi.sec)||{};
+  const p1=v=>(+v).toFixed(1).replace(".",","),pp=k=>{const d=k[1]-k[0];return Math.abs(d)<.05?"sin cambio":(d>0?"+":"−")+p1(Math.abs(d))+" pp";};
+  const cap=(im,big)=>{const k=K[im.v];if(big)return `${esc(im.name)} · avance al ${fmtD(R.hasta)}; en naranjo lo ejecutado en ${esc(sem.per)}.`;
+      return `${esc(im.name)}${k&&k[1]!=null?` · ${p1(k[1])} % (${pp(k)})`:""}`;};
+  const fig=(im,big)=>`<figure class="m3d-fig"><img src="${im.url}" alt="${esc(im.name)} en el modelo 3D"><figcaption>${cap(im,big)}</figcaption></figure>`;
+  /* la línea completa grande; si hay más de una vista adicional (sectores), en dos columnas */
+  const [a,...rest]=r.imgs,figs=fig(a,true)+(rest.length>1?`<div class="m3d-grid">${rest.map(im=>fig(im,false)).join("")}</div>`:rest.map(im=>fig(im,true)).join(""));
+  hojas.splice(1,0,`<section class="exsec">${exH("3D","Avance en el modelo 3D",`al ${fmtD(R.hasta)} · en naranjo lo ejecutado en ${sem.per}`)}${figs}<p class="small muted" style="margin:0">Mismos datos de la web. Ejecutado en acero y hormigón, lo del período en naranjo y lo pendiente como fantasma; en la vista lejana, cada punto es una estructura con el color de su etapa.${r.imgs.some(im=>M3D_LS.includes(im.v))?" Se trabajó en varios frentes a la vez: en lugar del frente del período van los sectores con avance.":""}</p></section>`);}
 function m3dRepShots(){const R=S.rep;if(!R||!R.desde||!R.hasta)return;const key=m3dRepKey(),id=Date.now();
   let p;try{p=m3dPayload({desde:R.desde,hasta:R.hasta,modo:"cus"});}catch(e){console.error(e);toast("No se pudo calcular el avance para el modelo 3D.",true);return;}
-  M3D.rep={key,busy:true,id};M3D.bg=S.tab!=="modelo3d";const host=m3dHost();if(M3D.bg){host.hidden=false;host.classList.add("m3d-bg");}
-  M3D.shots={type:"av3d:shots",id,payload:p,views:["linea","periodo"],w:1600,h:900};if(M3D.ready){m3dSend(M3D.shots);M3D.shots=null;}
+  M3D.rep={key,busy:true,id,kpi:p.kpi};M3D.bg=S.tab!=="modelo3d";const host=m3dHost();if(M3D.bg){host.hidden=false;host.classList.add("m3d-bg");}
+  M3D.shots={type:"av3d:shots",id,payload:p,views:["linea","periodo","continente","cruce","isla"],w:1600,h:900};if(M3D.ready){m3dSend(M3D.shots);M3D.shots=null;}
   setTimeout(()=>{if(M3D.rep&&M3D.rep.id===id&&M3D.rep.busy){M3D.rep=null;M3D.bg=false;toast("El modelo 3D no respondió. Intenta de nuevo.",true);render();}},120000);
   render();}
 document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-m3modo],[data-m3png],[data-m3full],[data-m3d],[data-m3rep]");if(!b)return;
@@ -1515,7 +1530,7 @@ window.addEventListener("message",ev=>{if(ev.origin!==location.origin)return;con
   else if(m.type==="av3d:serieReq"){let fr2=[];try{fr2=m3dSerie(m.paso||7);}catch(e){console.error(e);}m3dSend({type:"av3d:serie",frames:fr2});}
   else if(m.type==="av3d:shots"){const r=M3D.rep;M3D.bg=false;if(!r||r.id!==m.id)return;
     if(m.err||!m.imgs||!m.imgs.length){M3D.rep=null;toast("No se pudieron generar las vistas 3D"+(m.err?": "+m.err:"")+".",true);}
-    else{M3D.rep={key:r.key,imgs:m.imgs};toast("Vistas 3D agregadas al reporte.");}
+    else{M3D.rep={key:r.key,imgs:m.imgs,kpi:r.kpi};toast("Vistas 3D agregadas al reporte.");}
     render();}});
 function render(){
   CLIPN=0;
